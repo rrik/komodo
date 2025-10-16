@@ -21,6 +21,7 @@ use crate::{
     write::WriteArgs,
   },
   helpers::update::init_execution_update,
+  resource,
 };
 
 use super::{ANY_BRANCH, ListenerLockCache};
@@ -54,7 +55,18 @@ pub async fn handle_build_webhook<B: super::ExtractBranch>(
   let lock = build_locks().get_or_insert_default(&build.id).await;
   let _lock = lock.lock().await;
 
-  B::verify_branch(&body, &build.config.branch)?;
+  // Use the correct target branch when using linked repo.
+  let branch = if build.config.linked_repo.is_empty() {
+    build.config.branch
+  } else {
+    resource::get::<Repo>(&build.config.linked_repo)
+      .await
+      .context("Failed to find 'linked_repo'")?
+      .config
+      .branch
+  };
+
+  B::verify_branch(&body, &branch)?;
 
   let user = git_webhook_user().to_owned();
   let req = ExecuteRequest::RunBuild(RunBuild { build: build.id });
@@ -303,7 +315,18 @@ pub async fn handle_stack_webhook_inner<
   let lock = stack_locks().get_or_insert_default(&stack.id).await;
   let _lock = lock.lock().await;
 
-  B::verify_branch(&body, &stack.config.branch)?;
+  // Use the correct target branch when using linked repo.
+  let branch = if stack.config.linked_repo.is_empty() {
+    stack.config.branch.clone()
+  } else {
+    resource::get::<Repo>(&stack.config.linked_repo)
+      .await
+      .context("Failed to find 'linked_repo'")?
+      .config
+      .branch
+  };
+
+  B::verify_branch(&body, &branch)?;
 
   E::resolve(stack).await.map_err(|e| e.error)
 }
@@ -401,7 +424,18 @@ async fn handle_sync_webhook_inner<
   let lock = sync_locks().get_or_insert_default(&sync.id).await;
   let _lock = lock.lock().await;
 
-  B::verify_branch(&body, &sync.config.branch)?;
+  // Use the correct target branch when using linked repo.
+  let branch = if sync.config.linked_repo.is_empty() {
+    sync.config.branch.clone()
+  } else {
+    resource::get::<Repo>(&sync.config.linked_repo)
+      .await
+      .context("Failed to find 'linked_repo'")?
+      .config
+      .branch
+  };
+
+  B::verify_branch(&body, &branch)?;
 
   E::resolve(sync).await
 }
