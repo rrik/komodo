@@ -23,6 +23,7 @@ use periphery_client::api::build::{
 };
 use resolver_api::Resolve;
 use tokio::fs;
+use tracing::Instrument;
 
 use crate::{
   config::periphery_config,
@@ -75,15 +76,17 @@ impl Resolve<super::Args> for GetDockerfileContentsOnHost {
 
 impl Resolve<super::Args> for WriteDockerfileContentsToHost {
   #[instrument(
-    name = "WriteDockerfileContentsToHost",
+    "WriteDockerfileContentsToHost",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       stack = &self.name,
       build_path = &self.build_path,
       dockerfile_path = &self.dockerfile_path,
     )
   )]
-  async fn resolve(self, _: &super::Args) -> anyhow::Result<Log> {
+  async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let WriteDockerfileContentsToHost {
       name,
       build_path,
@@ -120,10 +123,19 @@ impl Resolve<super::Args> for WriteDockerfileContentsToHost {
 }
 
 impl Resolve<super::Args> for build::Build {
-  #[instrument("Build", skip_all, fields(build = self.build.name.to_string()))]
+  #[instrument(
+    "Build",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      build = self.build.name,
+      repo = self.repo.as_ref().map(|repo| &repo.name),
+    )
+  )]
   async fn resolve(
     self,
-    _: &super::Args,
+    args: &super::Args,
   ) -> anyhow::Result<Vec<Log>> {
     let build::Build {
       mut build,
@@ -250,6 +262,7 @@ impl Resolve<super::Args> for build::Build {
     // Pre Build
     if !pre_build.is_none() {
       let pre_build_path = build_path.join(&pre_build.path);
+      let span = info_span!("RunPreBuild");
       if let Some(log) = run_komodo_command_with_sanitization(
         "Pre Build",
         pre_build_path.as_path(),
@@ -257,6 +270,7 @@ impl Resolve<super::Args> for build::Build {
         true,
         &replacers,
       )
+      .instrument(span)
       .await
       {
         let success = log.success;
@@ -304,6 +318,7 @@ impl Resolve<super::Args> for build::Build {
       "docker{buildx} build{build_args}{command_secret_args}{extra_args}{labels}{image_tags}{maybe_push} -f {dockerfile_path} .",
     );
 
+    let span = info_span!("RunDockerBuild");
     if let Some(build_log) = run_komodo_command_with_sanitization(
       "Docker Build",
       build_path.as_ref(),
@@ -311,6 +326,7 @@ impl Resolve<super::Args> for build::Build {
       false,
       &replacers,
     )
+    .instrument(span)
     .await
     {
       logs.push(build_log);
@@ -323,8 +339,15 @@ impl Resolve<super::Args> for build::Build {
 //
 
 impl Resolve<super::Args> for PruneBuilders {
-  #[instrument("PruneBuilders", skip_all)]
-  async fn resolve(self, _: &super::Args) -> anyhow::Result<Log> {
+  #[instrument(
+    "PruneBuilders",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
+  async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker builder prune -a -f");
     Ok(run_komodo_command("Prune Builders", None, command).await)
   }
@@ -333,8 +356,15 @@ impl Resolve<super::Args> for PruneBuilders {
 //
 
 impl Resolve<super::Args> for PruneBuildx {
-  #[instrument("PruneBuildx", skip_all)]
-  async fn resolve(self, _: &super::Args) -> anyhow::Result<Log> {
+  #[instrument(
+    "PruneBuildx",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
+  async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker buildx prune -a -f");
     Ok(run_komodo_command("Prune Buildx", None, command).await)
   }

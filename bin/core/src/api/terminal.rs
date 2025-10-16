@@ -8,7 +8,6 @@ use komodo_client::{
   },
 };
 use serror::Json;
-use uuid::Uuid;
 
 use crate::{
   auth::auth_request, helpers::periphery_client,
@@ -29,28 +28,22 @@ pub fn router() -> Router {
 //  ExecuteTerminal
 // =================
 
-async fn execute_terminal(
-  Extension(user): Extension<User>,
-  Json(request): Json<ExecuteTerminalBody>,
-) -> serror::Result<axum::body::Body> {
-  execute_terminal_inner(Uuid::new_v4(), request, user).await
-}
-
 #[instrument(
   name = "ExecuteTerminal",
-  skip(user),
+  skip_all,
   fields(
     user_id = user.id,
+    server,
+    terminal,
   )
 )]
-async fn execute_terminal_inner(
-  req_id: Uuid,
-  ExecuteTerminalBody {
+async fn execute_terminal(
+  Extension(user): Extension<User>,
+  Json(ExecuteTerminalBody {
     server,
     terminal,
     command,
-  }: ExecuteTerminalBody,
-  user: User,
+  }): Json<ExecuteTerminalBody>,
 ) -> serror::Result<axum::body::Body> {
   info!("/terminal/execute request | user: {}", user.username);
 
@@ -74,30 +67,26 @@ async fn execute_terminal_inner(
 //  ExecuteContainerExec
 // ======================
 
-async fn execute_container_exec(
-  Extension(user): Extension<User>,
-  Json(request): Json<ExecuteContainerExecBody>,
-) -> serror::Result<axum::body::Body> {
-  execute_container_exec_inner(Uuid::new_v4(), request, user).await
-}
-
 #[instrument(
   name = "ExecuteContainerExec",
-  skip(user),
+  skip_all,
   fields(
     user_id = user.id,
+    server,
+    container,
+    shell,
+    recreate = format!("{recreate:?}"),
   )
 )]
-async fn execute_container_exec_inner(
-  req_id: Uuid,
-  ExecuteContainerExecBody {
+async fn execute_container_exec(
+  Extension(user): Extension<User>,
+  Json(ExecuteContainerExecBody {
     server,
     container,
     shell,
     command,
     recreate,
-  }: ExecuteContainerExecBody,
-  user: User,
+  }): Json<ExecuteContainerExecBody>,
 ) -> serror::Result<axum::body::Body> {
   info!("ExecuteContainerExec request | user: {}", user.username);
 
@@ -124,29 +113,24 @@ async fn execute_container_exec_inner(
 //  ExecuteDeploymentExec
 // =======================
 
-async fn execute_deployment_exec(
-  Extension(user): Extension<User>,
-  Json(request): Json<ExecuteDeploymentExecBody>,
-) -> serror::Result<axum::body::Body> {
-  execute_deployment_exec_inner(Uuid::new_v4(), request, user).await
-}
-
 #[instrument(
   name = "ExecuteDeploymentExec",
-  skip(user),
+  skip_all,
   fields(
     user_id = user.id,
+    deployment,
+    shell,
+    recreate = format!("{recreate:?}"),
   )
 )]
-async fn execute_deployment_exec_inner(
-  req_id: Uuid,
-  ExecuteDeploymentExecBody {
+async fn execute_deployment_exec(
+  Extension(user): Extension<User>,
+  Json(ExecuteDeploymentExecBody {
     deployment,
     shell,
     command,
     recreate,
-  }: ExecuteDeploymentExecBody,
-  user: User,
+  }): Json<ExecuteDeploymentExecBody>,
 ) -> serror::Result<axum::body::Body> {
   info!("ExecuteDeploymentExec request | user: {}", user.username);
 
@@ -175,30 +159,26 @@ async fn execute_deployment_exec_inner(
 //  ExecuteStackExec
 // ==================
 
-async fn execute_stack_exec(
-  Extension(user): Extension<User>,
-  Json(request): Json<ExecuteStackExecBody>,
-) -> serror::Result<axum::body::Body> {
-  execute_stack_exec_inner(Uuid::new_v4(), request, user).await
-}
-
 #[instrument(
   name = "ExecuteStackExec",
-  skip(user),
+  skip_all,
   fields(
     user_id = user.id,
+    stack,
+    service,
+    shell,
+    recreate = format!("{recreate:?}"),
   )
 )]
-async fn execute_stack_exec_inner(
-  req_id: Uuid,
-  ExecuteStackExecBody {
+async fn execute_stack_exec(
+  Extension(user): Extension<User>,
+  Json(ExecuteStackExecBody {
     stack,
     service,
     shell,
     command,
     recreate,
-  }: ExecuteStackExecBody,
-  user: User,
+  }): Json<ExecuteStackExecBody>,
 ) -> serror::Result<axum::body::Body> {
   info!("ExecuteStackExec request | user: {}", user.username);
 

@@ -22,10 +22,19 @@ use crate::{
 use super::ExecuteArgs;
 
 impl Resolve<ExecuteArgs> for TestAlerter {
-  #[instrument("TestAlerter", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "TestAlerter",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      alerter = self.alerter,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     let alerter = get_check_permissions::<Alerter>(
       &self.alerter,
@@ -79,10 +88,19 @@ impl Resolve<ExecuteArgs> for TestAlerter {
 //
 
 impl Resolve<ExecuteArgs> for SendAlert {
-  #[instrument("SendAlert", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "SendAlert",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      request = format!("{self:?}"),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     let alerters =
       list_full_for_user::<Alerter>(Default::default(), user, &[])

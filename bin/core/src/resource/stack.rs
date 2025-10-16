@@ -373,7 +373,7 @@ impl super::KomodoResource for Stack {
   }
 }
 
-#[instrument(skip(user))]
+#[instrument("ValidateStackConfig", skip_all)]
 async fn validate_config(
   config: &mut PartialStackConfig,
   user: &User,

@@ -49,10 +49,21 @@ use crate::{
 use super::ExecuteArgs;
 
 impl Resolve<ExecuteArgs> for RunSync {
-  #[instrument("RunSync", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RunSync",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      sync = self.sync,
+      resource_type = format!("{:?}", self.resource_type),
+      resources = format!("{:?}", self.resources),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let RunSync {
       sync,

@@ -253,7 +253,7 @@ pub async fn refresh_build_state_cache() {
   });
 }
 
-#[instrument(skip(user))]
+#[instrument("ValidateBuildConfig", skip_all)]
 async fn validate_config(
   config: &mut PartialBuildConfig,
   user: &User,

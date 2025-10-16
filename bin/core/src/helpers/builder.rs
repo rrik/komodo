@@ -31,8 +31,16 @@ use super::periphery_client;
 const BUILDER_POLL_RATE_SECS: u64 = 2;
 const BUILDER_POLL_MAX_TRIES: usize = 60;
 
-#[instrument(skip_all, fields(builder_id = builder.id, update_id = update.id))]
-pub async fn get_builder_periphery(
+#[instrument(
+  "ConnectBuilderPeriphery",
+  skip_all,
+  fields(
+    resource_name,
+    builder_id = builder.id,
+    update_id = update.id
+  )
+)]
+pub async fn connect_builder_periphery(
   // build: &Build,
   resource_name: String,
   version: Option<Version>,
@@ -76,7 +84,14 @@ pub async fn get_builder_periphery(
   }
 }
 
-#[instrument(skip_all, fields(resource_name, update_id = update.id))]
+#[instrument(
+  "GetAwsBuilder",
+  skip_all,
+  fields(
+    resource_name,
+    update_id = update.id,
+  )
+)]
 async fn get_aws_builder(
   resource_name: &str,
   version: Option<Version>,
@@ -168,7 +183,11 @@ async fn get_aws_builder(
   )
 }
 
-#[instrument(skip(update))]
+#[instrument(
+  "CleanupBuilderInstance",
+  skip_all,
+  fields(update_id = update.id)
+)]
 pub async fn cleanup_builder_instance(
   periphery: PeripheryClient,
   cleanup_data: BuildCleanupData,

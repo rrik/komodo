@@ -14,6 +14,7 @@ use periphery_client::api::{
 };
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{
   api::compose::list_compose_projects,
@@ -34,6 +35,9 @@ mod keys;
 #[derive(Debug)]
 pub struct Args {
   pub core: String,
+  /// The execution id.
+  /// Unique for every /execute call.
+  pub id: Uuid,
 }
 
 #[derive(
@@ -294,7 +298,14 @@ impl Resolve<Args> for ListSecrets {
 }
 
 impl Resolve<Args> for PruneSystem {
-  #[instrument("PruneSystem", skip_all, fields(core = args.core))]
+  #[instrument(
+    "PruneSystem",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(self, args: &Args) -> anyhow::Result<Log> {
     let command = String::from("docker system prune -a -f --volumes");
     Ok(run_komodo_command("Prune System", None, command).await)

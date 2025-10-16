@@ -37,12 +37,13 @@ use komodo_client::{
 use periphery_client::api;
 use resolver_api::Resolve;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 
 use crate::{
   alert::send_alerts,
   helpers::{
     build_git_token,
-    builder::{cleanup_builder_instance, get_builder_periphery},
+    builder::{cleanup_builder_instance, connect_builder_periphery},
     channel::build_cancel_channel,
     query::{
       VariablesAndSecrets, get_deployment_state,
@@ -66,10 +67,18 @@ impl super::BatchExecute for BatchRunBuild {
 }
 
 impl Resolve<ExecuteArgs> for BatchRunBuild {
-  #[instrument("BatchRunBuild", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchRunBuild",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchRunBuild>(&self.pattern, user)
@@ -79,10 +88,19 @@ impl Resolve<ExecuteArgs> for BatchRunBuild {
 }
 
 impl Resolve<ExecuteArgs> for RunBuild {
-  #[instrument("RunBuild", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RunBuild",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      build = self.build,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let mut build = get_check_permissions::<Build>(
       &self.build,
@@ -186,7 +204,7 @@ impl Resolve<ExecuteArgs> for RunBuild {
     });
 
     // GET BUILDER PERIPHERY
-    let (periphery, cleanup_data) = match get_builder_periphery(
+    let (periphery, cleanup_data) = match connect_builder_periphery(
       build.name.clone(),
       Some(build.config.version),
       builder,
@@ -395,7 +413,7 @@ impl Resolve<ExecuteArgs> for RunBuild {
   }
 }
 
-#[instrument(skip(update))]
+#[instrument("HandleEarlyReturn", skip(update))]
 async fn handle_early_return(
   mut update: Update,
   build_id: String,
@@ -489,10 +507,19 @@ pub async fn validate_cancel_build(
 }
 
 impl Resolve<ExecuteArgs> for CancelBuild {
-  #[instrument("CancelBuild", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "CancelBuild",
+    skip(user, update),
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      build = self.build,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let build = get_check_permissions::<Build>(
       &self.build,
@@ -585,7 +612,11 @@ async fn handle_post_build_redeploy(build_id: &str) {
               stop_signal: None,
               stop_time: None,
             }
-            .resolve(&ExecuteArgs { user, update })
+            .resolve(&ExecuteArgs {
+              user,
+              update,
+              id: Uuid::new_v4(),
+            })
             .await
           }
           .await;
@@ -611,6 +642,7 @@ async fn handle_post_build_redeploy(build_id: &str) {
 /// This will make sure that a build with non-none image registry has an account attached,
 /// and will check the core config for a token matching requirements.
 /// Otherwise it is left to periphery.
+#[instrument("ValidateRegistryTokens")]
 async fn validate_account_extract_registry_tokens(
   Build {
     config: BuildConfig { image_registry, .. },

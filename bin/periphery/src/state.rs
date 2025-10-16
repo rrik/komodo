@@ -213,7 +213,6 @@ impl TerminalTriggers {
     self.0.insert(channel, trigger).await;
   }
 
-  #[instrument("SendTerminalTrigger", skip(self))]
   pub async fn send(&self, channel: &Uuid) -> anyhow::Result<()> {
     let trigger = self.0.get(channel).await.with_context(|| {
       format!("No trigger found for channel {channel}")
@@ -221,7 +220,6 @@ impl TerminalTriggers {
     trigger.send().await
   }
 
-  #[instrument("ReceiveTerminalTrigger", skip(self))]
   pub async fn recv(&self, channel: &Uuid) -> anyhow::Result<()> {
     let trigger = self.0.get(channel).await.with_context(|| {
       format!("No trigger found for channel {channel}")

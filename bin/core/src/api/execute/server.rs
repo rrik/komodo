@@ -22,10 +22,20 @@ use crate::{
 use super::ExecuteArgs;
 
 impl Resolve<ExecuteArgs> for StartContainer {
-  #[instrument("StartContainer", skip(self, user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StartContainer",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      container = self.container,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -76,10 +86,20 @@ impl Resolve<ExecuteArgs> for StartContainer {
 }
 
 impl Resolve<ExecuteArgs> for RestartContainer {
-  #[instrument("RestartContainer", skip(self, user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RestartContainer",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      container = self.container,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -132,10 +152,20 @@ impl Resolve<ExecuteArgs> for RestartContainer {
 }
 
 impl Resolve<ExecuteArgs> for PauseContainer {
-  #[instrument("PauseContainer", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PauseContainer",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      container = self.container,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -186,10 +216,20 @@ impl Resolve<ExecuteArgs> for PauseContainer {
 }
 
 impl Resolve<ExecuteArgs> for UnpauseContainer {
-  #[instrument("UnpauseContainer", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "UnpauseContainer",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      container = self.container,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -242,10 +282,22 @@ impl Resolve<ExecuteArgs> for UnpauseContainer {
 }
 
 impl Resolve<ExecuteArgs> for StopContainer {
-  #[instrument("StopContainer", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StopContainer",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      container = self.container,
+      signal = format!("{:?}", self.signal),
+      time = self.time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -298,10 +350,22 @@ impl Resolve<ExecuteArgs> for StopContainer {
 }
 
 impl Resolve<ExecuteArgs> for DestroyContainer {
-  #[instrument("DestroyContainer", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DestroyContainer",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      container = self.container,
+      signal = format!("{:?}", self.signal),
+      time = self.time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let DestroyContainer {
       server,
@@ -360,10 +424,19 @@ impl Resolve<ExecuteArgs> for DestroyContainer {
 }
 
 impl Resolve<ExecuteArgs> for StartAllContainers {
-  #[instrument("StartAllContainers", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StartAllContainers",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -411,10 +484,19 @@ impl Resolve<ExecuteArgs> for StartAllContainers {
 }
 
 impl Resolve<ExecuteArgs> for RestartAllContainers {
-  #[instrument("RestartAllContainers", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RestartAllContainers",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -464,10 +546,19 @@ impl Resolve<ExecuteArgs> for RestartAllContainers {
 }
 
 impl Resolve<ExecuteArgs> for PauseAllContainers {
-  #[instrument("PauseAllContainers", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PauseAllContainers",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -515,10 +606,19 @@ impl Resolve<ExecuteArgs> for PauseAllContainers {
 }
 
 impl Resolve<ExecuteArgs> for UnpauseAllContainers {
-  #[instrument("UnpauseAllContainers", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "UnpauseAllContainers",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -568,10 +668,19 @@ impl Resolve<ExecuteArgs> for UnpauseAllContainers {
 }
 
 impl Resolve<ExecuteArgs> for StopAllContainers {
-  #[instrument("StopAllContainers", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StopAllContainers",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -619,10 +728,19 @@ impl Resolve<ExecuteArgs> for StopAllContainers {
 }
 
 impl Resolve<ExecuteArgs> for PruneContainers {
-  #[instrument("PruneContainers", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneContainers",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -675,10 +793,20 @@ impl Resolve<ExecuteArgs> for PruneContainers {
 }
 
 impl Resolve<ExecuteArgs> for DeleteNetwork {
-  #[instrument("DeleteNetwork", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DeleteNetwork",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      network = self.name
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -726,10 +854,19 @@ impl Resolve<ExecuteArgs> for DeleteNetwork {
 }
 
 impl Resolve<ExecuteArgs> for PruneNetworks {
-  #[instrument("PruneNetworks", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneNetworks",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -780,10 +917,20 @@ impl Resolve<ExecuteArgs> for PruneNetworks {
 }
 
 impl Resolve<ExecuteArgs> for DeleteImage {
-  #[instrument("DeleteImage", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DeleteImage",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      image = self.name,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -828,10 +975,19 @@ impl Resolve<ExecuteArgs> for DeleteImage {
 }
 
 impl Resolve<ExecuteArgs> for PruneImages {
-  #[instrument("PruneImages", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneImages",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -880,10 +1036,20 @@ impl Resolve<ExecuteArgs> for PruneImages {
 }
 
 impl Resolve<ExecuteArgs> for DeleteVolume {
-  #[instrument("DeleteVolume", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DeleteVolume",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+      volume = self.name,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -931,10 +1097,19 @@ impl Resolve<ExecuteArgs> for DeleteVolume {
 }
 
 impl Resolve<ExecuteArgs> for PruneVolumes {
-  #[instrument("PruneVolumes", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneVolumes",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -983,10 +1158,19 @@ impl Resolve<ExecuteArgs> for PruneVolumes {
 }
 
 impl Resolve<ExecuteArgs> for PruneDockerBuilders {
-  #[instrument("PruneDockerBuilders", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneDockerBuilders",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -1035,10 +1219,19 @@ impl Resolve<ExecuteArgs> for PruneDockerBuilders {
 }
 
 impl Resolve<ExecuteArgs> for PruneBuildx {
-  #[instrument("PruneBuildx", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneBuildx",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,
@@ -1087,10 +1280,19 @@ impl Resolve<ExecuteArgs> for PruneBuildx {
 }
 
 impl Resolve<ExecuteArgs> for PruneSystem {
-  #[instrument("PruneSystem", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PruneSystem",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      server = self.server,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let server = get_check_permissions::<Server>(
       &self.server,

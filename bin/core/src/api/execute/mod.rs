@@ -55,6 +55,9 @@ pub use {
 };
 
 pub struct ExecuteArgs {
+  /// The execution id.
+  /// Unique for every /execute call.
+  pub id: Uuid,
   pub user: User,
   pub update: Update,
 }
@@ -207,7 +210,7 @@ pub fn inner_handler(
   >,
 > {
   Box::pin(async move {
-    let req_id = Uuid::new_v4();
+    let task_id = Uuid::new_v4();
 
     // Need to validate no cancel is active before any update is created.
     // This ensures no double update created if Cancel is called more than once for the same request.
@@ -223,14 +226,14 @@ pub fn inner_handler(
     // here either.
     if update.operation == Operation::None {
       return Ok(ExecutionResult::Batch(
-        task(req_id, request, user, update).await?,
+        task(task_id, request, user, update).await?,
       ));
     }
 
     // Spawn a task for the execution which continues
     // running after this method returns.
     let handle =
-      tokio::spawn(task(req_id, request, user, update.clone()));
+      tokio::spawn(task(task_id, request, user, update.clone()));
 
     // Spawns another task to monitor the first for failures,
     // and add the log to Update about it (which primary task can't do because it errored out)
@@ -239,11 +242,11 @@ pub fn inner_handler(
       async move {
         let log = match handle.await {
           Ok(Err(e)) => {
-            warn!("/execute request {req_id} task error: {e:#}",);
+            warn!("/execute request {task_id} task error: {e:#}",);
             Log::error("Task Error", format_serror(&e.into()))
           }
           Err(e) => {
-            warn!("/execute request {req_id} spawn error: {e:?}",);
+            warn!("/execute request {task_id} spawn error: {e:?}",);
             Log::error("Spawn Error", format!("{e:#?}"))
           }
           _ => return,
@@ -278,7 +281,7 @@ pub fn inner_handler(
 }
 
 async fn task(
-  req_id: Uuid,
+  id: Uuid,
   request: ExecuteRequest,
   user: User,
   update: Update,
@@ -286,21 +289,22 @@ async fn task(
   let variant = request.extract_variant();
 
   info!(
-    "/execute request {req_id} | {variant} | user: {}",
+    "/execute request {id} | {variant} | user: {}",
     user.username
   );
 
-  let res = match request.resolve(&ExecuteArgs { user, update }).await
-  {
-    Err(e) => Err(e.error),
-    Ok(JsonString::Err(e)) => Err(
-      anyhow::Error::from(e).context("failed to serialize response"),
-    ),
-    Ok(JsonString::Ok(res)) => Ok(res),
-  };
+  let res =
+    match request.resolve(&ExecuteArgs { user, update, id }).await {
+      Err(e) => Err(e.error),
+      Ok(JsonString::Err(e)) => Err(
+        anyhow::Error::from(e)
+          .context("failed to serialize response"),
+      ),
+      Ok(JsonString::Ok(res)) => Ok(res),
+    };
 
   if let Err(e) = &res {
-    warn!("/execute request {req_id} error: {e:#}");
+    warn!("/execute request {id} error: {e:#}");
   }
 
   res

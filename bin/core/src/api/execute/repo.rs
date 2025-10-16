@@ -30,7 +30,7 @@ use crate::{
   alert::send_alerts,
   api::write::WriteArgs,
   helpers::{
-    builder::{cleanup_builder_instance, get_builder_periphery},
+    builder::{cleanup_builder_instance, connect_builder_periphery},
     channel::repo_cancel_channel,
     git_token, periphery_client,
     query::{VariablesAndSecrets, get_variables_and_secrets},
@@ -51,10 +51,18 @@ impl super::BatchExecute for BatchCloneRepo {
 }
 
 impl Resolve<ExecuteArgs> for BatchCloneRepo {
-  #[instrument("BatchCloneRepo", skip( user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchCloneRepo",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchCloneRepo>(&self.pattern, user)
@@ -64,10 +72,19 @@ impl Resolve<ExecuteArgs> for BatchCloneRepo {
 }
 
 impl Resolve<ExecuteArgs> for CloneRepo {
-  #[instrument("CloneRepo", skip( user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "CloneRepo",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      repo = self.repo,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let mut repo = get_check_permissions::<Repo>(
       &self.repo,
@@ -165,10 +182,18 @@ impl super::BatchExecute for BatchPullRepo {
 }
 
 impl Resolve<ExecuteArgs> for BatchPullRepo {
-  #[instrument("BatchPullRepo", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchPullRepo",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchPullRepo>(&self.pattern, user)
@@ -178,10 +203,19 @@ impl Resolve<ExecuteArgs> for BatchPullRepo {
 }
 
 impl Resolve<ExecuteArgs> for PullRepo {
-  #[instrument("PullRepo", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PullRepo",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      repo = self.repo,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let mut repo = get_check_permissions::<Repo>(
       &self.repo,
@@ -275,7 +309,11 @@ impl Resolve<ExecuteArgs> for PullRepo {
   }
 }
 
-#[instrument(skip_all, fields(update_id = update.id))]
+#[instrument(
+  "HandleRepoEarlyReturn",
+  skip_all,
+  fields(update_id = update.id)
+)]
 async fn handle_repo_update_return(
   update: Update,
 ) -> serror::Result<Update> {
@@ -297,6 +335,7 @@ async fn handle_repo_update_return(
   Ok(update)
 }
 
+#[instrument("UpdateLastPulledTime")]
 async fn update_last_pulled_time(repo_name: &str) {
   let res = db_client()
     .repos
@@ -320,10 +359,18 @@ impl super::BatchExecute for BatchBuildRepo {
 }
 
 impl Resolve<ExecuteArgs> for BatchBuildRepo {
-  #[instrument("BatchBuildRepo", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchBuildRepo",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchBuildRepo>(&self.pattern, user)
@@ -333,10 +380,19 @@ impl Resolve<ExecuteArgs> for BatchBuildRepo {
 }
 
 impl Resolve<ExecuteArgs> for BuildRepo {
-  #[instrument("BuildRepo", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "BuildRepo",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      repo = self.repo,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let mut repo = get_check_permissions::<Repo>(
       &self.repo,
@@ -418,7 +474,7 @@ impl Resolve<ExecuteArgs> for BuildRepo {
 
     // GET BUILDER PERIPHERY
 
-    let (periphery, cleanup_data) = match get_builder_periphery(
+    let (periphery, cleanup_data) = match connect_builder_periphery(
       repo.name.clone(),
       None,
       builder,
@@ -553,7 +609,7 @@ impl Resolve<ExecuteArgs> for BuildRepo {
   }
 }
 
-#[instrument(skip(update))]
+#[instrument("HandleRepoBuildEarlyReturn", skip(update))]
 async fn handle_builder_early_return(
   mut update: Update,
   repo_id: String,
@@ -647,10 +703,19 @@ pub async fn validate_cancel_repo_build(
 }
 
 impl Resolve<ExecuteArgs> for CancelRepoBuild {
-  #[instrument("CancelRepoBuild", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "CancelRepoBuild",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      repo = self.repo,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let repo = get_check_permissions::<Repo>(
       &self.repo,
@@ -707,6 +772,13 @@ impl Resolve<ExecuteArgs> for CancelRepoBuild {
   }
 }
 
+#[instrument(
+  "Interpolate",
+  skip_all,
+  fields(
+    skip_secret_interp = repo.config.skip_secret_interp
+  )
+)]
 async fn interpolate(
   repo: &mut Repo,
   update: &mut Update,

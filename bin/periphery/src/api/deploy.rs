@@ -16,6 +16,7 @@ use komodo_client::{
 };
 use periphery_client::api::container::{Deploy, RemoveContainer};
 use resolver_api::Resolve;
+use tracing::Instrument;
 
 use crate::{
   config::periphery_config,
@@ -28,6 +29,8 @@ impl Resolve<super::Args> for Deploy {
     "Deploy",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       deployment = &self.deployment.name,
       stop_signal = format!("{:?}", self.stop_signal),
       stop_time = self.stop_time,
@@ -94,6 +97,7 @@ impl Resolve<super::Args> for Deploy {
     let command = docker_run_command(&deployment, image)
       .context("Unable to generate valid docker run command")?;
 
+    let span = info_span!("RunDockerRun");
     let Some(log) = run_komodo_command_with_sanitization(
       "Docker Run",
       None,
@@ -101,6 +105,7 @@ impl Resolve<super::Args> for Deploy {
       false,
       &replacers,
     )
+    .instrument(span)
     .await
     else {
       // The none case is only for empty command,

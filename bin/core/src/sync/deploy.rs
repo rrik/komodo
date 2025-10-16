@@ -25,6 +25,7 @@ use komodo_client::{
   },
 };
 use resolver_api::Resolve;
+use uuid::Uuid;
 
 use crate::{
   api::{
@@ -84,6 +85,7 @@ pub async fn deploy_from_cache(
     // Deploy the ones ready for deployment
     let res = join_all(good_to_deploy.iter().map(
       |(target, reason)| async move {
+        let id = Uuid::new_v4();
         let res = async {
           match &target {
             ResourceTarget::Deployment(name) => {
@@ -101,6 +103,7 @@ pub async fn deploy_from_cache(
                 .resolve(&ExecuteArgs {
                   user: user.to_owned(),
                   update,
+                  id,
                 })
                 .await
             }
@@ -119,6 +122,7 @@ pub async fn deploy_from_cache(
                 .resolve(&ExecuteArgs {
                   user: user.to_owned(),
                   update,
+                  id,
                 })
                 .await
             }

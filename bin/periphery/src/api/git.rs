@@ -35,12 +35,13 @@ impl Resolve<super::Args> for GetLatestCommit {
 
 impl Resolve<super::Args> for CloneRepo {
   #[instrument(
-    name = "CloneRepo",
+    "CloneRepo",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       args = format!("{:?}", self.args),
       skip_secret_interp = self.skip_secret_interp,
-      core = args.core,
     )
   )]
   async fn resolve(
@@ -80,12 +81,13 @@ impl Resolve<super::Args> for CloneRepo {
 
 impl Resolve<super::Args> for PullRepo {
   #[instrument(
-    name = "PullRepo",
+    "PullRepo",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       args = format!("{:?}", self.args),
       skip_secret_interp = self.skip_secret_interp,
-      core = args.core,
     )
   )]
   async fn resolve(
@@ -124,12 +126,13 @@ impl Resolve<super::Args> for PullRepo {
 
 impl Resolve<super::Args> for PullOrCloneRepo {
   #[instrument(
-    name = "PullOrCloneRepo",
+    "PullOrCloneRepo",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       args = format!("{:?}", self.args),
       skip_secret_interp = self.skip_secret_interp,
-      core = args.core,
     )
   )]
   async fn resolve(
@@ -169,7 +172,16 @@ impl Resolve<super::Args> for PullOrCloneRepo {
 //
 
 impl Resolve<super::Args> for RenameRepo {
-  #[instrument("RenameRepo", skip(args), fields(core = args.core))]
+  #[instrument(
+    "RenameRepo",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      current_name = self.curr_name,
+      new_name = self.new_name,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let RenameRepo {
       curr_name,
@@ -194,9 +206,10 @@ impl Resolve<super::Args> for DeleteRepo {
     "DeleteRepo",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       repo = self.name,
       is_build = self.is_build,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {

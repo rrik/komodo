@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use anyhow::anyhow;
 use encoding::{
@@ -61,14 +61,13 @@ async fn handle_login<W: Websocket, L: LoginFlow>(
 
 async fn handle_socket<W: Websocket>(
   socket: W,
-  args: &Arc<Args>,
+  core: &str,
   sender: &Sender<EncodedTransportMessage>,
   receiver: &mut BufferedReceiver<EncodedTransportMessage>,
 ) {
   let config = periphery_config();
   info!(
-    "Logged in to Komodo Core {} websocket{}",
-    args.core,
+    "Logged in to Komodo Core {core} websocket{}",
     if !config.core_addresses.is_empty()
       && !config.connect_as.is_empty()
     {
@@ -112,7 +111,7 @@ async fn handle_socket<W: Websocket>(
       };
       match message {
         TransportMessage::Request(message) => {
-          handle_request(args.clone(), sender.clone(), message)
+          handle_request(core.to_string(), sender.clone(), message)
         }
         TransportMessage::Terminal(message) => {
           crate::terminal::handle_message(message).await
@@ -130,7 +129,7 @@ async fn handle_socket<W: Websocket>(
 }
 
 fn handle_request(
-  args: Arc<Args>,
+  core: String,
   sender: Sender<EncodedTransportMessage>,
   message: EncodedRequestMessage,
 ) {
@@ -149,10 +148,11 @@ fn handle_request(
       };
 
     let resolve_response = async {
-      let response = match request.resolve(&args).await {
-        Ok(res) => res,
-        Err(e) => (&e).encode(),
-      };
+      let response =
+        match request.resolve(&Args { core, id: channel }).await {
+          Ok(res) => res,
+          Err(e) => (&e).encode(),
+        };
       if let Err(e) = sender.send_response(channel, response).await {
         error!("Failed to send response over channel | {e:?}");
       }

@@ -22,6 +22,7 @@ use komodo_client::{
 };
 use periphery_client::api::compose::*;
 use resolver_api::Resolve;
+use uuid::Uuid;
 
 use crate::{
   api::write::WriteArgs,
@@ -54,10 +55,18 @@ impl super::BatchExecute for BatchDeployStack {
 }
 
 impl Resolve<ExecuteArgs> for BatchDeployStack {
-  #[instrument("BatchDeployStack", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchDeployStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchDeployStack>(&self.pattern, user)
@@ -67,10 +76,21 @@ impl Resolve<ExecuteArgs> for BatchDeployStack {
 }
 
 impl Resolve<ExecuteArgs> for DeployStack {
-  #[instrument("DeployStack", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DeployStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+      stop_time = self.stop_time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (mut stack, server) = get_stack_and_server(
       &self.stack,
@@ -281,10 +301,18 @@ impl super::BatchExecute for BatchDeployStackIfChanged {
 }
 
 impl Resolve<ExecuteArgs> for BatchDeployStackIfChanged {
-  #[instrument("BatchDeployStackIfChanged", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchDeployStackIfChanged",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchDeployStackIfChanged>(
@@ -297,10 +325,20 @@ impl Resolve<ExecuteArgs> for BatchDeployStackIfChanged {
 }
 
 impl Resolve<ExecuteArgs> for DeployStackIfChanged {
-  #[instrument("DeployStackIfChanged", skip(user, update), fields(user_id = user.id))]
+  #[instrument(
+    "DeployStackIfChanged",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      stop_time = self.stop_time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let stack = get_check_permissions::<Stack>(
       &self.stack,
@@ -358,6 +396,7 @@ impl Resolve<ExecuteArgs> for DeployStackIfChanged {
         .resolve(&ExecuteArgs {
           user: user.clone(),
           update,
+          id: *id,
         })
         .await
       }
@@ -467,6 +506,14 @@ impl Resolve<ExecuteArgs> for DeployStackIfChanged {
   }
 }
 
+#[instrument(
+  "DeployStackServices",
+  skip_all,
+  fields(
+    stack = stack,
+    services = format!("{services:?}")
+  )
+)]
 async fn deploy_services(
   stack: String,
   services: Vec<String>,
@@ -488,10 +535,19 @@ async fn deploy_services(
     .resolve(&ExecuteArgs {
       user: user.clone(),
       update,
+      id: Uuid::new_v4(),
     })
     .await
 }
 
+#[instrument(
+  "RestartStackServices",
+  skip_all,
+  fields(
+    stack = stack,
+    services = format!("{services:?}")
+  )
+)]
 async fn restart_services(
   stack: String,
   services: Vec<String>,
@@ -510,6 +566,7 @@ async fn restart_services(
     .resolve(&ExecuteArgs {
       user: user.clone(),
       update,
+      id: Uuid::new_v4(),
     })
     .await
 }
@@ -526,6 +583,11 @@ async fn restart_services(
 /// Changes to config files after restart is applied should
 /// be taken as the deployed contents, otherwise next changed check
 /// will restart service again for no reason.
+#[instrument(
+  "UpdateStackDeployedContents",
+  skip_all,
+  fields(stack = id)
+)]
 async fn update_deployed_contents_with_latest(
   id: &str,
   contents: Option<Vec<StackRemoteFileContents>>,
@@ -663,10 +725,18 @@ impl super::BatchExecute for BatchPullStack {
 }
 
 impl Resolve<ExecuteArgs> for BatchPullStack {
-  #[instrument("BatchPullStack", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchPullStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchPullStack>(&self.pattern, user)
@@ -700,6 +770,14 @@ async fn maybe_pull_stack(
   Ok(())
 }
 
+#[instrument(
+  "PullStackInner",
+  skip_all,
+  fields(
+    stack = stack.id,
+    services = format!("{services:?}"),
+  )
+)]
 pub async fn pull_stack_inner(
   mut stack: Stack,
   services: Vec<String>,
@@ -769,10 +847,20 @@ pub async fn pull_stack_inner(
 }
 
 impl Resolve<ExecuteArgs> for PullStack {
-  #[instrument("PullStack", skip(user, update), fields(user_id = user.id))]
+  #[instrument(
+    "PullStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (stack, server) = get_stack_and_server(
       &self.stack,
@@ -822,10 +910,20 @@ impl Resolve<ExecuteArgs> for PullStack {
 }
 
 impl Resolve<ExecuteArgs> for StartStack {
-  #[instrument("StartStack", skip(user, update), fields(user_id = user.id))]
+  #[instrument(
+    "StartStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     execute_compose::<StartStack>(
       &self.stack,
@@ -841,10 +939,20 @@ impl Resolve<ExecuteArgs> for StartStack {
 }
 
 impl Resolve<ExecuteArgs> for RestartStack {
-  #[instrument("RestartStack", skip(user, update), fields(user_id = user.id))]
+  #[instrument(
+    "RestartStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     execute_compose::<RestartStack>(
       &self.stack,
@@ -862,10 +970,20 @@ impl Resolve<ExecuteArgs> for RestartStack {
 }
 
 impl Resolve<ExecuteArgs> for PauseStack {
-  #[instrument("PauseStack", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PauseStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     execute_compose::<PauseStack>(
       &self.stack,
@@ -881,10 +999,20 @@ impl Resolve<ExecuteArgs> for PauseStack {
 }
 
 impl Resolve<ExecuteArgs> for UnpauseStack {
-  #[instrument("UnpauseStack", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "UnpauseStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     execute_compose::<UnpauseStack>(
       &self.stack,
@@ -900,10 +1028,20 @@ impl Resolve<ExecuteArgs> for UnpauseStack {
 }
 
 impl Resolve<ExecuteArgs> for StopStack {
-  #[instrument("StopStack", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StopStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     execute_compose::<StopStack>(
       &self.stack,
@@ -931,10 +1069,18 @@ impl super::BatchExecute for BatchDestroyStack {
 }
 
 impl Resolve<ExecuteArgs> for BatchDestroyStack {
-  #[instrument("BatchDestroyStack", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchDestroyStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     super::batch_execute::<BatchDestroyStack>(&self.pattern, user)
       .await
@@ -943,10 +1089,22 @@ impl Resolve<ExecuteArgs> for BatchDestroyStack {
 }
 
 impl Resolve<ExecuteArgs> for DestroyStack {
-  #[instrument("DestroyStack", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DestroyStack",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      services = format!("{:?}", self.services),
+      remove_orphans = self.remove_orphans,
+      stop_time = self.stop_time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     execute_compose::<DestroyStack>(
       &self.stack,
@@ -962,10 +1120,21 @@ impl Resolve<ExecuteArgs> for DestroyStack {
 }
 
 impl Resolve<ExecuteArgs> for RunStackService {
-  #[instrument("RunStackService", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RunStackService",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      stack = self.stack,
+      service = self.service,
+      request = format!("{self:?}"),
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (mut stack, server) = get_stack_and_server(
       &self.stack,

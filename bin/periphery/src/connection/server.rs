@@ -2,7 +2,7 @@ use std::{
   net::{IpAddr, SocketAddr},
   str::FromStr,
   sync::{
-    Arc, OnceLock,
+    OnceLock,
     atomic::{self, AtomicBool},
   },
 };
@@ -33,9 +33,7 @@ use transport::{
   },
 };
 
-use crate::{
-  api::Args, config::periphery_config, state::core_connections,
-};
+use crate::{config::periphery_config, state::core_connections};
 
 #[instrument("RunCoreConnectionServer")]
 pub async fn run()
@@ -97,10 +95,7 @@ async fn handler(
     HeaderConnectionIdentifiers::extract(&mut headers)
       .status_code(StatusCode::UNAUTHORIZED)?;
 
-  let args = Arc::new(Args { core });
-
-  let channel =
-    core_connections().get_or_insert_default(&args.core).await;
+  let channel = core_connections().get_or_insert_default(&core).await;
 
   // Ensure the receiver is free before upgrading connection.
   // Due to ownership, it needs to be re-locked inside the ws handler,
@@ -109,7 +104,7 @@ async fn handler(
     channel
       .receiver()
       .with_context(|| {
-        format!("Connection for {} is already connected", args.core)
+        format!("Connection for {core} is already active")
       })
       .inspect_err(|e| warn!("{e:#}"))?,
   );
@@ -139,7 +134,7 @@ async fn handler(
       }
     };
 
-    let query = format!("core={}", urlencoding::encode(&args.core));
+    let query = format!("core={}", urlencoding::encode(&core));
 
     if let Err(e) =
       handle_login(&mut socket, identifiers.build(query.as_bytes()))
@@ -159,7 +154,7 @@ async fn handler(
 
     super::handle_socket(
       socket,
-      &args,
+      &core,
       &channel.sender,
       &mut receiver,
     )

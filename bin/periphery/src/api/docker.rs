@@ -61,7 +61,16 @@ fn pull_cache() -> &'static TimeoutCache<String, Log> {
 }
 
 impl Resolve<super::Args> for PullImage {
-  #[instrument("PullImage", skip_all, fields(name = self.name, core = args.core))]
+  #[instrument(
+    "PullImage",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      image = self.name,
+      account = self.account,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let PullImage {
       name,
@@ -110,7 +119,15 @@ impl Resolve<super::Args> for PullImage {
 //
 
 impl Resolve<super::Args> for DeleteImage {
-  #[instrument("DeleteImage", skip_all, fields(image_name = self.name, core = args.core))]
+  #[instrument(
+    "DeleteImage",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      image = self.name,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = format!("docker image rm {}", self.name);
     Ok(run_komodo_command("Delete Image", None, command).await)
@@ -120,7 +137,14 @@ impl Resolve<super::Args> for DeleteImage {
 //
 
 impl Resolve<super::Args> for PruneImages {
-  #[instrument("PruneImages", skip_all, fields(core = args.core))]
+  #[instrument(
+    "PruneImages",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker image prune -a -f");
     Ok(run_komodo_command("Prune Images", None, command).await)
@@ -145,7 +169,16 @@ impl Resolve<super::Args> for InspectNetwork {
 //
 
 impl Resolve<super::Args> for CreateNetwork {
-  #[instrument("CreateNetwork", skip(args), fields(core = args.core))]
+  #[instrument(
+    "CreateNetwork",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      network = self.name,
+      driver = self.driver,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let CreateNetwork { name, driver } = self;
     let driver = match driver {
@@ -160,7 +193,15 @@ impl Resolve<super::Args> for CreateNetwork {
 //
 
 impl Resolve<super::Args> for DeleteNetwork {
-  #[instrument("DeleteNetwork", skip_all, fields(network_name = self.name, core = args.core))]
+  #[instrument(
+    "DeleteNetwork",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      network = self.name,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = format!("docker network rm {}", self.name);
     Ok(run_komodo_command("Delete Network", None, command).await)
@@ -170,7 +211,14 @@ impl Resolve<super::Args> for DeleteNetwork {
 //
 
 impl Resolve<super::Args> for PruneNetworks {
-  #[instrument("PruneNetworks", skip_all, fields(core = args.core))]
+  #[instrument(
+    "PruneNetworks",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker network prune -f");
     Ok(run_komodo_command("Prune Networks", None, command).await)
@@ -195,7 +243,15 @@ impl Resolve<super::Args> for InspectVolume {
 //
 
 impl Resolve<super::Args> for DeleteVolume {
-  #[instrument("DeleteVolume", skip_all, fields(volume_name = self.name, core = args.core))]
+  #[instrument(
+    "DeleteVolume",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      volume = self.name,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = format!("docker volume rm {}", self.name);
     Ok(run_komodo_command("Delete Volume", None, command).await)
@@ -205,7 +261,14 @@ impl Resolve<super::Args> for DeleteVolume {
 //
 
 impl Resolve<super::Args> for PruneVolumes {
-  #[instrument("PruneVolumes", skip_all, fields(core = args.core))]
+  #[instrument(
+    "PruneVolumes",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker volume prune -a -f");
     Ok(run_komodo_command("Prune Volumes", None, command).await)

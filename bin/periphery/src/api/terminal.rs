@@ -38,7 +38,17 @@ impl Resolve<super::Args> for ListTerminals {
 //
 
 impl Resolve<super::Args> for CreateTerminal {
-  #[instrument("CreateTerminal", skip(args), fields(core = args.core))]
+  #[instrument(
+    "CreateTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      terminal = self.name,
+      command = self.command,
+      recreate = format!("{:?}", self.recreate),
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -57,7 +67,15 @@ impl Resolve<super::Args> for CreateTerminal {
 //
 
 impl Resolve<super::Args> for DeleteTerminal {
-  #[instrument("DeleteTerminal", skip(args), fields(core = args.core))]
+  #[instrument(
+    "DeleteTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      terminal = self.terminal,
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -70,7 +88,14 @@ impl Resolve<super::Args> for DeleteTerminal {
 //
 
 impl Resolve<super::Args> for DeleteAllTerminals {
-  #[instrument("DeleteAllTerminals", skip_all, fields(core = args.core))]
+  #[instrument(
+    "DeleteAllTerminals",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -83,7 +108,15 @@ impl Resolve<super::Args> for DeleteAllTerminals {
 //
 
 impl Resolve<super::Args> for ConnectTerminal {
-  #[instrument("ConnectTerminal", skip(args), fields(core = args.core))]
+  #[instrument(
+    "ConnectTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      terminal = self.terminal,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
     if periphery_config().disable_terminals {
       return Err(anyhow!(
@@ -110,7 +143,17 @@ impl Resolve<super::Args> for ConnectTerminal {
 //
 
 impl Resolve<super::Args> for ConnectContainerExec {
-  #[instrument("ConnectContainerExec", skip(args), fields(core = args.core))]
+  #[instrument(
+    "ConnectContainerExec",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      container = self.container,
+      shell = self.shell,
+      recreate = format!("{:?}", self.recreate),
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
     if periphery_config().disable_container_terminals {
       return Err(anyhow!(
@@ -155,7 +198,16 @@ impl Resolve<super::Args> for ConnectContainerExec {
 //
 
 impl Resolve<super::Args> for ConnectContainerAttach {
-  #[instrument("ConnectContainerAttach", skip(args), fields(core = args.core))]
+  #[instrument(
+    "ConnectContainerAttach",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      container = self.container,
+      recreate = format!("{:?}", self.recreate),
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
     if periphery_config().disable_container_terminals {
       return Err(anyhow!(
@@ -199,7 +251,15 @@ impl Resolve<super::Args> for ConnectContainerAttach {
 //
 
 impl Resolve<super::Args> for DisconnectTerminal {
-  #[instrument("DisconnectTerminal", skip(args), fields(core = args.core))]
+  #[instrument(
+    "DisconnectTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      channel_id = self.id.to_string(),
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -215,7 +275,16 @@ impl Resolve<super::Args> for DisconnectTerminal {
 //
 
 impl Resolve<super::Args> for ExecuteTerminal {
-  #[instrument("ExecuteTerminal", skip(args), fields(core = args.core))]
+  #[instrument(
+    "ExecuteTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      terminal = self.terminal,
+      command = self.command,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
     if periphery_config().disable_terminals {
       return Err(anyhow!(
@@ -255,7 +324,18 @@ impl Resolve<super::Args> for ExecuteTerminal {
 //
 
 impl Resolve<super::Args> for ExecuteContainerExec {
-  #[instrument("ExecuteContainerExec", skip(args), fields(core = args.core))]
+  #[instrument(
+    "ExecuteContainerExec",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      container = self.container,
+      shell = self.shell,
+      command = self.command,
+      recreate = format!("{:?}", self.recreate)
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
     if periphery_config().disable_container_terminals {
       return Err(anyhow!(
@@ -435,6 +515,7 @@ async fn handle_terminal_forwarding(
 }
 
 /// This is run before spawning task handler
+#[instrument("SetupExecuteTerminal", skip(terminal))]
 async fn setup_execute_command_on_terminal(
   channel_id: Uuid,
   terminal: &Terminal,

@@ -33,6 +33,7 @@ use komodo_client::{
   },
 };
 use resolver_api::Resolve;
+use uuid::Uuid;
 
 use crate::{
   api::{
@@ -90,6 +91,7 @@ pub async fn run_startup_actions() {
     .resolve(&ExecuteArgs {
       user: action_user().to_owned(),
       update,
+      id: Uuid::new_v4(),
     })
     .await
     {

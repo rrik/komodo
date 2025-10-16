@@ -216,7 +216,7 @@ impl super::KomodoResource for ResourceSync {
   }
 }
 
-#[instrument(skip(user))]
+#[instrument("ValidateSyncConfig", skip_all)]
 async fn validate_config(
   config: &mut PartialResourceSyncConfig,
   user: &User,

@@ -58,10 +58,18 @@ impl super::BatchExecute for BatchRunAction {
 }
 
 impl Resolve<ExecuteArgs> for BatchRunAction {
-  #[instrument("BatchRunAction", skip(self, user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchRunAction",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchRunAction>(&self.pattern, user)
@@ -71,10 +79,19 @@ impl Resolve<ExecuteArgs> for BatchRunAction {
 }
 
 impl Resolve<ExecuteArgs> for RunAction {
-  #[instrument("RunAction", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RunAction",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      action = self.action,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let mut action = get_check_permissions::<Action>(
       &self.action,

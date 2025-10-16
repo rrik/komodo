@@ -21,6 +21,7 @@ use komodo_client::{
   },
 };
 use resolver_api::Resolve;
+use uuid::Uuid;
 
 use crate::{
   alert::send_alerts,
@@ -108,6 +109,7 @@ pub fn spawn_schedule_executor() {
                     .resolve(&ExecuteArgs {
                       user: action_user().to_owned(),
                       update,
+                      id: Uuid::new_v4(),
                     })
                     .await
                   {
@@ -178,6 +180,7 @@ pub fn spawn_schedule_executor() {
                     .resolve(&ExecuteArgs {
                       user: procedure_user().to_owned(),
                       update,
+                      id: Uuid::new_v4(),
                     })
                     .await
                   {

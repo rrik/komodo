@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use anyhow::{Context, anyhow};
 use axum::http::{HeaderValue, StatusCode};
@@ -19,7 +19,6 @@ use transport::{
 };
 
 use crate::{
-  api::Args,
   config::periphery_config,
   connection::core_public_keys,
   state::{core_connections, periphery_keys},
@@ -43,12 +42,9 @@ pub async fn handler(
   let mut already_logged_login_error = false;
   let mut already_logged_onboarding_error = false;
 
-  let args = Arc::new(Args {
-    core: identifiers.host().to_string(),
-  });
+  let core = identifiers.host().to_string();
 
-  let channel =
-    core_connections().get_or_insert_default(&args.core).await;
+  let channel = core_connections().get_or_insert_default(&core).await;
 
   let handle = tokio::spawn(async move {
     let mut receiver = channel.receiver()?;
@@ -146,7 +142,7 @@ pub async fn handler(
 
         super::handle_socket(
           socket,
-          &args,
+          &core,
           &channel.sender,
           &mut receiver,
         )

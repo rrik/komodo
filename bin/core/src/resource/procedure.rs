@@ -171,7 +171,7 @@ impl super::KomodoResource for Procedure {
   }
 }
 
-#[instrument(skip(user))]
+#[instrument("ValidateProcedureConfig", skip_all)]
 async fn validate_config(
   config: &mut PartialProcedureConfig,
   user: &User,

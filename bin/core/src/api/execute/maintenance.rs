@@ -45,13 +45,17 @@ fn clear_repo_cache_lock() -> &'static Mutex<()> {
 
 impl Resolve<ExecuteArgs> for ClearRepoCache {
   #[instrument(
-    name = "ClearRepoCache",
-    skip(user, update),
-    fields(user_id = user.id, update_id = update.id)
+    "ClearRepoCache",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id
+    )
   )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     if !user.admin {
       return Err(
@@ -120,13 +124,17 @@ fn backup_database_lock() -> &'static Mutex<()> {
 
 impl Resolve<ExecuteArgs> for BackupCoreDatabase {
   #[instrument(
-    name = "BackupCoreDatabase",
-    skip(user, update),
-    fields(user_id = user.id, update_id = update.id)
+    "BackupCoreDatabase",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+    )
   )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     if !user.admin {
       return Err(
@@ -169,13 +177,17 @@ fn global_update_lock() -> &'static Mutex<()> {
 
 impl Resolve<ExecuteArgs> for GlobalAutoUpdate {
   #[instrument(
-    name = "GlobalAutoUpdate",
-    skip(user, update),
-    fields(user_id = user.id, update_id = update.id)
+    "GlobalAutoUpdate",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+    )
   )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     if !user.admin {
       return Err(
@@ -335,13 +347,17 @@ fn global_rotate_lock() -> &'static Mutex<()> {
 
 impl Resolve<ExecuteArgs> for RotateAllServerKeys {
   #[instrument(
-    name = "RotateAllServerKeys",
-    skip(user, update),
-    fields(user_id = user.id, update_id = update.id)
+    "RotateAllServerKeys",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+    )
   )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     if !user.admin {
       return Err(
@@ -445,13 +461,18 @@ impl Resolve<ExecuteArgs> for RotateAllServerKeys {
 
 impl Resolve<ExecuteArgs> for RotateCoreKeys {
   #[instrument(
-    name = "RotateCoreKeys",
-    skip(user, update),
-    fields(user_id = user.id, update_id = update.id)
+    "RotateCoreKeys",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      force = self.force,
+    )
   )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
     if !user.admin {
       return Err(

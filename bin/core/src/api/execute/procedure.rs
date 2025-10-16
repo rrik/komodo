@@ -59,6 +59,7 @@ impl Resolve<ExecuteArgs> for RunProcedure {
     "RunProcedure",
     skip_all,
     fields(
+      id = id.to_string(),
       user_id = user.id,
       update_id = update.id,
       procedure = self.procedure,
@@ -66,7 +67,7 @@ impl Resolve<ExecuteArgs> for RunProcedure {
   )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     Ok(
       resolve_inner(self.procedure, user.clone(), update.clone())

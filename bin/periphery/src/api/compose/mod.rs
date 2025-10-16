@@ -20,6 +20,7 @@ use periphery_client::api::compose::*;
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
 use shell_escape::unix::escape;
+use tracing::Instrument;
 
 use crate::{
   config::periphery_config,
@@ -201,10 +202,11 @@ impl Resolve<super::Args> for WriteComposeContentsToHost {
     "WriteComposeContentsToHost",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       stack = self.name,
       run_directory = self.run_directory,
       file_path = self.file_path,
-      core = args.core,
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -242,10 +244,11 @@ impl Resolve<super::Args> for WriteCommitComposeContents {
     "WriteCommitComposeContents",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       stack = &self.stack.name,
       username = &self.username,
       file_path = &self.file_path,
-      core = args.core,
     )
   )]
   async fn resolve(
@@ -296,9 +299,10 @@ impl Resolve<super::Args> for ComposePull {
     "ComposePull",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       stack = &self.stack.name,
       services = format!("{:?}", self.services),
-      core = args.core,
     )
   )]
   async fn resolve(
@@ -390,6 +394,7 @@ impl Resolve<super::Args> for ComposePull {
 
     let project_name = stack.project_name(false);
 
+    let span = info_span!("RunComposePull");
     let log = run_komodo_command(
       "Compose Pull",
       run_directory.as_ref(),
@@ -397,6 +402,7 @@ impl Resolve<super::Args> for ComposePull {
         "{docker_compose} -p {project_name} -f {file_args}{env_file_args} pull{service_args}",
       ),
     )
+    .instrument(span)
     .await;
 
     res.logs.push(log);
@@ -412,6 +418,8 @@ impl Resolve<super::Args> for ComposeUp {
     "ComposeUp",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       stack = self.stack.name,
       repo = self.repo.as_ref().map(|repo| &repo.name),
       services = format!("{:?}", self.services),
@@ -479,6 +487,7 @@ impl Resolve<super::Args> for ComposeUp {
     if !stack.config.pre_deploy.is_none() {
       let pre_deploy_path =
         run_directory.join(&stack.config.pre_deploy.path);
+      let span = info_span!("RunPreDeploy");
       if let Some(log) = run_komodo_command_with_sanitization(
         "Pre Deploy",
         pre_deploy_path.as_path(),
@@ -486,6 +495,7 @@ impl Resolve<super::Args> for ComposeUp {
         true,
         &replacers,
       )
+      .instrument(span)
       .await
       {
         res.logs.push(log);
@@ -521,6 +531,7 @@ impl Resolve<super::Args> for ComposeUp {
       let command = format!(
         "{docker_compose} -p {project_name} -f {file_args}{env_file_args} config",
       );
+      let span = info_span!("GetComposeConfig", command);
       let Some(config_log) = run_komodo_command_with_sanitization(
         "Compose Config",
         run_directory.as_path(),
@@ -528,6 +539,7 @@ impl Resolve<super::Args> for ComposeUp {
         false,
         &replacers,
       )
+      .instrument(span)
       .await
       else {
         // Only reachable if command is empty,
@@ -586,6 +598,7 @@ impl Resolve<super::Args> for ComposeUp {
       let command = format!(
         "{docker_compose} -p {project_name} -f {file_args}{env_file_args} build{build_extra_args}{service_args}",
       );
+      let span = info_span!("RunComposeBuild");
       let Some(log) = run_komodo_command_with_sanitization(
         "Compose Build",
         run_directory.as_path(),
@@ -593,6 +606,7 @@ impl Resolve<super::Args> for ComposeUp {
         false,
         &replacers,
       )
+      .instrument(span)
       .await
       else {
         unreachable!()
@@ -610,11 +624,13 @@ impl Resolve<super::Args> for ComposeUp {
       let command = format!(
         "{docker_compose} -p {project_name} -f {file_args}{env_file_args} pull{service_args}",
       );
+      let span = info_span!("RunComposePull");
       let log = run_komodo_command(
         "Compose Pull",
         run_directory.as_ref(),
         command,
       )
+      .instrument(span)
       .await;
       res.logs.push(log);
       if !all_logs_success(&res.logs) {
@@ -639,6 +655,7 @@ impl Resolve<super::Args> for ComposeUp {
       "{docker_compose} -p {project_name} -f {file_args}{env_file_args} up -d{extra_args}{service_args}",
     );
 
+    let span = info_span!("RunComposeUp");
     let Some(log) = run_komodo_command_with_sanitization(
       "Compose Up",
       run_directory.as_path(),
@@ -646,6 +663,7 @@ impl Resolve<super::Args> for ComposeUp {
       false,
       &replacers,
     )
+    .instrument(span)
     .await
     else {
       unreachable!()
@@ -657,6 +675,7 @@ impl Resolve<super::Args> for ComposeUp {
     if res.deployed && !stack.config.post_deploy.is_none() {
       let post_deploy_path =
         run_directory.join(&stack.config.post_deploy.path);
+      let span = info_span!("RunPostDeploy");
       if let Some(log) = run_komodo_command_with_sanitization(
         "Post Deploy",
         post_deploy_path.as_path(),
@@ -664,6 +683,7 @@ impl Resolve<super::Args> for ComposeUp {
         true,
         &replacers,
       )
+      .instrument(span)
       .await
       {
         res.logs.push(log);
@@ -677,7 +697,16 @@ impl Resolve<super::Args> for ComposeUp {
 //
 
 impl Resolve<super::Args> for ComposeExecution {
-  #[instrument("ComposeExecution", skip(args), fields(core = args.core))]
+  #[instrument(
+    "ComposeExecution",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      project = self.project,
+      command = self.command,
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let ComposeExecution { project, command } = self;
     let docker_compose = docker_compose();
@@ -698,6 +727,8 @@ impl Resolve<super::Args> for ComposeRun {
     "ComposeRun",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       stack = self.stack.name,
       repo = self.repo.as_ref().map(|repo| &repo.name),
       service = &self.service
@@ -831,6 +862,7 @@ impl Resolve<super::Args> for ComposeRun {
       "{docker_compose} -p {project_name} -f {file_args}{env_file_args} run{run_flags} {service}{command_args}",
     );
 
+    let span = info_span!("RunComposeRun", command);
     let Some(log) = run_komodo_command_with_sanitization(
       "Compose Run",
       run_directory.as_path(),
@@ -838,6 +870,7 @@ impl Resolve<super::Args> for ComposeRun {
       false,
       &replacers,
     )
+    .instrument(span)
     .await
     else {
       unreachable!()

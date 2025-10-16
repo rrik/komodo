@@ -309,7 +309,7 @@ impl super::KomodoResource for Deployment {
   }
 }
 
-#[instrument(skip(user))]
+#[instrument("ValidateDeploymentConfig", skip_all)]
 async fn validate_config(
   config: &mut PartialDeploymentConfig,
   user: &User,

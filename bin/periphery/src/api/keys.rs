@@ -13,7 +13,14 @@ use crate::{
 //
 
 impl Resolve<super::Args> for RotatePrivateKey {
-  #[instrument("RotatePrivateKey", skip_all, fields(core = args.core))]
+  #[instrument(
+    "RotatePrivateKey",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -31,8 +38,9 @@ impl Resolve<super::Args> for RotateCorePublicKey {
     "RotateCorePublicKey",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       public_key = self.public_key,
-      core = args.core
     )
   )]
   async fn resolve(

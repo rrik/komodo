@@ -49,10 +49,18 @@ impl super::BatchExecute for BatchDeploy {
 }
 
 impl Resolve<ExecuteArgs> for BatchDeploy {
-  #[instrument("BatchDeploy", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchDeploy",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchDeploy>(&self.pattern, user)
@@ -61,6 +69,7 @@ impl Resolve<ExecuteArgs> for BatchDeploy {
   }
 }
 
+#[instrument("SetupDeploy", skip_all)]
 async fn setup_deployment_execution(
   deployment: &str,
   user: &User,
@@ -87,10 +96,21 @@ async fn setup_deployment_execution(
 }
 
 impl Resolve<ExecuteArgs> for Deploy {
-  #[instrument("Deploy", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "Deploy",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+      stop_signal = format!("{:?}", self.stop_signal),
+      stop_time = self.stop_time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (mut deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -243,6 +263,14 @@ fn pull_cache() -> &'static PullCache {
   PULL_CACHE.get_or_init(Default::default)
 }
 
+#[instrument(
+  "PullDeploymentInner",
+  skip_all,
+  fields(
+    deployment = deployment.id,
+    server = server.id
+  )
+)]
 pub async fn pull_deployment_inner(
   deployment: Deployment,
   server: &Server,
@@ -358,10 +386,19 @@ pub async fn pull_deployment_inner(
 }
 
 impl Resolve<ExecuteArgs> for PullDeployment {
-  #[instrument("PullDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PullDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -392,10 +429,19 @@ impl Resolve<ExecuteArgs> for PullDeployment {
 }
 
 impl Resolve<ExecuteArgs> for StartDeployment {
-  #[instrument("StartDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StartDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -440,10 +486,19 @@ impl Resolve<ExecuteArgs> for StartDeployment {
 }
 
 impl Resolve<ExecuteArgs> for RestartDeployment {
-  #[instrument("RestartDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "RestartDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -490,10 +545,19 @@ impl Resolve<ExecuteArgs> for RestartDeployment {
 }
 
 impl Resolve<ExecuteArgs> for PauseDeployment {
-  #[instrument("PauseDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "PauseDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -538,10 +602,19 @@ impl Resolve<ExecuteArgs> for PauseDeployment {
 }
 
 impl Resolve<ExecuteArgs> for UnpauseDeployment {
-  #[instrument("UnpauseDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "UnpauseDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -588,10 +661,21 @@ impl Resolve<ExecuteArgs> for UnpauseDeployment {
 }
 
 impl Resolve<ExecuteArgs> for StopDeployment {
-  #[instrument("StopDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "StopDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+      signal = format!("{:?}", self.signal),
+      time = self.time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;
@@ -655,10 +739,18 @@ impl super::BatchExecute for BatchDestroyDeployment {
 }
 
 impl Resolve<ExecuteArgs> for BatchDestroyDeployment {
-  #[instrument("BatchDestroyDeployment", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "BatchDestroyDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      pattern = self.pattern,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, .. }: &ExecuteArgs,
+    ExecuteArgs { user, id, .. }: &ExecuteArgs,
   ) -> serror::Result<BatchExecutionResponse> {
     Ok(
       super::batch_execute::<BatchDestroyDeployment>(
@@ -671,10 +763,21 @@ impl Resolve<ExecuteArgs> for BatchDestroyDeployment {
 }
 
 impl Resolve<ExecuteArgs> for DestroyDeployment {
-  #[instrument("DestroyDeployment", skip(user, update), fields(user_id = user.id, update_id = update.id))]
+  #[instrument(
+    "DestroyDeployment",
+    skip_all,
+    fields(
+      id = id.to_string(),
+      user_id = user.id,
+      update_id = update.id,
+      deployment = self.deployment,
+      signal = format!("{:?}", self.signal),
+      time = self.time,
+    )
+  )]
   async fn resolve(
     self,
-    ExecuteArgs { user, update }: &ExecuteArgs,
+    ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> serror::Result<Update> {
     let (deployment, server) =
       setup_deployment_execution(&self.deployment, user).await?;

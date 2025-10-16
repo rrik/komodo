@@ -14,6 +14,7 @@ use komodo_client::{
 use resolver_api::Resolve;
 use serde::Deserialize;
 use serde_json::json;
+use uuid::Uuid;
 
 use crate::{
   api::{
@@ -75,7 +76,11 @@ pub async fn handle_build_webhook<B: super::ExtractBranch>(
     unreachable!()
   };
   req
-    .resolve(&ExecuteArgs { user, update })
+    .resolve(&ExecuteArgs {
+      user,
+      update,
+      id: Uuid::new_v4(),
+    })
     .await
     .map_err(|e| e.error)?;
   Ok(())
@@ -113,7 +118,11 @@ impl RepoExecution for CloneRepo {
       unreachable!()
     };
     req
-      .resolve(&ExecuteArgs { user, update })
+      .resolve(&ExecuteArgs {
+        user,
+        update,
+        id: Uuid::new_v4(),
+      })
       .await
       .map_err(|e| e.error)?;
     Ok(())
@@ -133,7 +142,11 @@ impl RepoExecution for PullRepo {
       unreachable!()
     };
     req
-      .resolve(&ExecuteArgs { user, update })
+      .resolve(&ExecuteArgs {
+        user,
+        update,
+        id: Uuid::new_v4(),
+      })
       .await
       .map_err(|e| e.error)?;
     Ok(())
@@ -153,7 +166,11 @@ impl RepoExecution for BuildRepo {
       unreachable!()
     };
     req
-      .resolve(&ExecuteArgs { user, update })
+      .resolve(&ExecuteArgs {
+        user,
+        update,
+        id: Uuid::new_v4(),
+      })
       .await
       .map_err(|e| e.error)?;
     Ok(())
@@ -252,7 +269,11 @@ impl StackExecution for DeployStack {
         unreachable!()
       };
       req
-        .resolve(&ExecuteArgs { user, update })
+        .resolve(&ExecuteArgs {
+          user,
+          update,
+          id: Uuid::new_v4(),
+        })
         .await
         .map_err(|e| e.error)?;
     } else {
@@ -266,7 +287,11 @@ impl StackExecution for DeployStack {
         unreachable!()
       };
       req
-        .resolve(&ExecuteArgs { user, update })
+        .resolve(&ExecuteArgs {
+          user,
+          update,
+          id: Uuid::new_v4(),
+        })
         .await
         .map_err(|e| e.error)?;
     }
@@ -375,7 +400,11 @@ impl SyncExecution for RunSync {
       unreachable!()
     };
     req
-      .resolve(&ExecuteArgs { user, update })
+      .resolve(&ExecuteArgs {
+        user,
+        update,
+        id: Uuid::new_v4(),
+      })
       .await
       .map_err(|e| e.error)?;
     Ok(())
@@ -485,7 +514,11 @@ pub async fn handle_procedure_webhook<B: super::ExtractBranch>(
     unreachable!()
   };
   req
-    .resolve(&ExecuteArgs { user, update })
+    .resolve(&ExecuteArgs {
+      user,
+      update,
+      id: Uuid::new_v4(),
+    })
     .await
     .map_err(|e| e.error)?;
   Ok(())
@@ -547,7 +580,11 @@ pub async fn handle_action_webhook<B: super::ExtractBranch>(
     unreachable!()
   };
   req
-    .resolve(&ExecuteArgs { user, update })
+    .resolve(&ExecuteArgs {
+      user,
+      update,
+      id: Uuid::new_v4(),
+    })
     .await
     .map_err(|e| e.error)?;
   Ok(())

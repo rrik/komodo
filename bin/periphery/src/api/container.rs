@@ -134,8 +134,9 @@ impl Resolve<super::Args> for StartContainer {
     "StartContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       container = self.name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -157,8 +158,9 @@ impl Resolve<super::Args> for RestartContainer {
     "RestartContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       container = self.name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -180,8 +182,9 @@ impl Resolve<super::Args> for PauseContainer {
     "PauseContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       container = self.name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -201,8 +204,9 @@ impl Resolve<super::Args> for UnpauseContainer {
     "UnpauseContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       container = self.name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -224,8 +228,9 @@ impl Resolve<super::Args> for StopContainer {
     "StopContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       container = self.name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -258,8 +263,9 @@ impl Resolve<super::Args> for RemoveContainer {
     "RemoveContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       container = self.name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -299,9 +305,10 @@ impl Resolve<super::Args> for RenameContainer {
     "RenameContainer",
     skip_all,
     fields(
+      id = args.id.to_string(),
+      core = args.core,
       current = self.curr_name,
       new = self.new_name,
-      core = args.core
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
@@ -317,7 +324,14 @@ impl Resolve<super::Args> for RenameContainer {
 //
 
 impl Resolve<super::Args> for PruneContainers {
-  #[instrument("PruneContainers", skip_all, fields(core = args.core))]
+  #[instrument(
+    "PruneContainers",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker container prune -f");
     Ok(run_komodo_command("Prune Containers", None, command).await)
@@ -327,7 +341,14 @@ impl Resolve<super::Args> for PruneContainers {
 //
 
 impl Resolve<super::Args> for StartAllContainers {
-  #[instrument("StartAllContainers", skip_all, fields(core = args.core))]
+  #[instrument(
+    "StartAllContainers",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -361,7 +382,14 @@ impl Resolve<super::Args> for StartAllContainers {
 //
 
 impl Resolve<super::Args> for RestartAllContainers {
-  #[instrument("RestartAllContainers", skip_all, fields(core = args.core))]
+  #[instrument(
+    "RestartAllContainers",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -395,7 +423,14 @@ impl Resolve<super::Args> for RestartAllContainers {
 //
 
 impl Resolve<super::Args> for PauseAllContainers {
-  #[instrument("PauseAllContainers", skip_all, fields(core = args.core))]
+  #[instrument(
+    "PauseAllContainers",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -429,7 +464,14 @@ impl Resolve<super::Args> for PauseAllContainers {
 //
 
 impl Resolve<super::Args> for UnpauseAllContainers {
-  #[instrument("UnpauseAllContainers", skip_all, fields(core = args.core))]
+  #[instrument(
+    "UnpauseAllContainers",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,
@@ -463,7 +505,14 @@ impl Resolve<super::Args> for UnpauseAllContainers {
 //
 
 impl Resolve<super::Args> for StopAllContainers {
-  #[instrument("StopAllContainers", skip_all, fields(core = args.core))]
+  #[instrument(
+    "StopAllContainers",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core
+    )
+  )]
   async fn resolve(
     self,
     args: &super::Args,

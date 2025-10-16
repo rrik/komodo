@@ -89,7 +89,7 @@ impl JwtClient {
     );
     exchange_token
   }
-  
+
   pub async fn redeem_exchange_token(
     &self,
     exchange_token: &str,

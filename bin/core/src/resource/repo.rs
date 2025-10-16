@@ -231,7 +231,7 @@ pub async fn refresh_repo_state_cache() {
   });
 }
 
-#[instrument(skip(user))]
+#[instrument("ValidateRepoConfig", skip_all)]
 async fn validate_config(
   config: &mut PartialRepoConfig,
   user: &User,
