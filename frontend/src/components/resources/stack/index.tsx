@@ -287,7 +287,11 @@ export const StackComponents: RequiredResourceComponents = {
       if (
         !info ||
         !info?.project_missing ||
-        [Types.StackState.Down, Types.StackState.Unknown].includes(state)
+        [
+          Types.StackState.Deploying,
+          Types.StackState.Down,
+          Types.StackState.Unknown,
+        ].includes(state)
       ) {
         return null;
       }
