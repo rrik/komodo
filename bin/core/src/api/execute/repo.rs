@@ -586,7 +586,6 @@ impl Resolve<ExecuteArgs> for BuildRepo {
     update_update(update.clone()).await?;
 
     if !update.success {
-      warn!("repo build unsuccessful, alerting...");
       let target = update.target.clone();
       tokio::spawn(async move {
         let alert = Alert {
@@ -633,7 +632,6 @@ async fn handle_builder_early_return(
   }
   update_update(update.clone()).await?;
   if !update.success && !is_cancel {
-    warn!("repo build unsuccessful, alerting...");
     let target = update.target.clone();
     tokio::spawn(async move {
       let alert = Alert {

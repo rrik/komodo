@@ -265,11 +265,11 @@ impl Resolve<ExecuteArgs> for RunBuild {
             replacers: Default::default(),
           }) => res,
         _ = cancel.cancelled() => {
-          debug!("build cancelled during clone, cleaning up builder");
-          update.push_error_log("build cancelled", String::from("user cancelled build during repo clone"));
+          debug!("Build cancelled during clone, cleaning up builder");
+          update.push_error_log("Build cancelled", String::from("user cancelled build during repo clone"));
           cleanup_builder_instance(periphery, cleanup_data, &mut update)
             .await;
-          info!("builder cleaned up");
+          info!("Builder cleaned up");
           return handle_early_return(update, build.id, build.name, true).await
         },
       };
@@ -314,8 +314,8 @@ impl Resolve<ExecuteArgs> for RunBuild {
             additional_tags: Default::default(),
           }) => res.context("failed at call to periphery to build"),
         _ = cancel.cancelled() => {
-          info!("build cancelled during build, cleaning up builder");
-          update.push_error_log("build cancelled", String::from("user cancelled build during docker build"));
+          info!("Build cancelled during build, cleaning up builder");
+          update.push_error_log("Build cancelled", String::from("user cancelled build during docker build"));
           cleanup_builder_instance(periphery, cleanup_data, &mut update)
             .await;
           return handle_early_return(update, build.id, build.name, true).await
@@ -330,7 +330,7 @@ impl Resolve<ExecuteArgs> for RunBuild {
         Err(e) => {
           warn!("error in build | {e:#}");
           update.push_error_log(
-            "build",
+            "Build Error",
             format_serror(&e.context("failed to build").into()),
           )
         }
@@ -388,7 +388,6 @@ impl Resolve<ExecuteArgs> for RunBuild {
         handle_post_build_redeploy(&build.id).await;
       });
     } else {
-      warn!("build unsuccessful, alerting...");
       let target = update.target.clone();
       let version = update.version;
       tokio::spawn(async move {
@@ -437,7 +436,6 @@ async fn handle_early_return(
   }
   update_update(update.clone()).await?;
   if !update.success && !is_cancel {
-    warn!("build unsuccessful, alerting...");
     let target = update.target.clone();
     let version = update.version;
     tokio::spawn(async move {

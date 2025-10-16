@@ -159,7 +159,6 @@ fn resolve_inner(
     update_update(update.clone()).await?;
 
     if !update.success && procedure.config.failure_alert {
-      warn!("procedure unsuccessful, alerting...");
       let target = update.target.clone();
       tokio::spawn(async move {
         let alert = Alert {

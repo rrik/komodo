@@ -229,7 +229,6 @@ impl Resolve<ExecuteArgs> for RunAction {
     update_update(update.clone()).await?;
 
     if !update.success && action.config.failure_alert {
-      warn!("action unsuccessful, alerting...");
       let target = update.target.clone();
       tokio::spawn(async move {
         let alert = Alert {
