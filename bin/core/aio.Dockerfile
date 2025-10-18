@@ -48,6 +48,9 @@ RUN mkdir /action-cache && \
   cd /action-cache && \
   deno install jsr:@std/yaml jsr:@std/toml
 
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Hint at the port
 EXPOSE 9120
 

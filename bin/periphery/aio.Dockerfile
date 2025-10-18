@@ -22,6 +22,9 @@ RUN sh ./debian-deps.sh && rm ./debian-deps.sh
 
 COPY --from=builder /builder/target/release/periphery /usr/local/bin/periphery
 
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 EXPOSE 8120
 
 # Can mount config file to /config/*config*.toml and it will be picked up.
@@ -29,7 +32,8 @@ ENV PERIPHERY_CONFIG_PATHS="/config"
 # Change the default in container to /config/keys to match Core
 ENV PERIPHERY_PRIVATE_KEY="file:/config/keys/periphery.key"
 
-CMD [ "/bin/bash", "-c", "update-ca-certificates && periphery" ]
+ENTRYPOINT [ "entrypoint.sh" ]
+CMD [ "periphery" ]
 
 # Label to prevent Komodo from stopping with StopAllContainers
 LABEL komodo.skip="true"

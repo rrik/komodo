@@ -33,6 +33,9 @@ RUN mkdir /action-cache && \
 	cd /action-cache && \
 	deno install jsr:@std/yaml jsr:@std/toml
 
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Hint at the port
 EXPOSE 9120
 
@@ -40,7 +43,8 @@ ENV KOMODO_CLI_CONFIG_PATHS="/config"
 # This ensures any `komodo.cli.*` takes precedence over the Core `/config/*config.*`
 ENV KOMODO_CLI_CONFIG_KEYWORDS="*config.*,*komodo.cli*.*"
 
-CMD [ "/bin/bash", "-c", "update-ca-certificates && core" ]
+ENTRYPOINT [ "entrypoint.sh" ]
+CMD [ "core" ]
 
 # Label to prevent Komodo from stopping with StopAllContainers
 LABEL komodo.skip="true"

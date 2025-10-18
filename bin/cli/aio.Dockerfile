@@ -16,8 +16,12 @@ FROM gcr.io/distroless/cc
 
 COPY --from=builder /builder/target/release/km /usr/local/bin/km
 
+COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 ENV KOMODO_CLI_CONFIG_PATHS="/config"
 
+ENTRYPOINT [ "entrypoint.sh" ]
 CMD [ "km" ]
 
 LABEL org.opencontainers.image.source="https://github.com/moghtech/komodo"
