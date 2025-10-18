@@ -27,7 +27,7 @@ impl Resolve<ExecuteArgs> for TestAlerter {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       alerter = self.alerter,
     )
@@ -93,7 +93,7 @@ impl Resolve<ExecuteArgs> for SendAlert {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       request = format!("{self:?}"),
     )

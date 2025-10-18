@@ -54,7 +54,7 @@ impl Resolve<ExecuteArgs> for BatchDeploy {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -101,7 +101,7 @@ impl Resolve<ExecuteArgs> for Deploy {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
       stop_signal = format!("{:?}", self.stop_signal),
@@ -391,7 +391,7 @@ impl Resolve<ExecuteArgs> for PullDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
     )
@@ -434,7 +434,7 @@ impl Resolve<ExecuteArgs> for StartDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
     )
@@ -491,7 +491,7 @@ impl Resolve<ExecuteArgs> for RestartDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
     )
@@ -550,7 +550,7 @@ impl Resolve<ExecuteArgs> for PauseDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
     )
@@ -607,7 +607,7 @@ impl Resolve<ExecuteArgs> for UnpauseDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
     )
@@ -666,7 +666,7 @@ impl Resolve<ExecuteArgs> for StopDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
       signal = format!("{:?}", self.signal),
@@ -744,7 +744,7 @@ impl Resolve<ExecuteArgs> for BatchDestroyDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -768,7 +768,7 @@ impl Resolve<ExecuteArgs> for DestroyDeployment {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       deployment = self.deployment,
       signal = format!("{:?}", self.signal),

@@ -72,7 +72,7 @@ impl Resolve<ExecuteArgs> for BatchRunBuild {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -93,7 +93,7 @@ impl Resolve<ExecuteArgs> for RunBuild {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       build = self.build,
     )
@@ -510,7 +510,7 @@ impl Resolve<ExecuteArgs> for CancelBuild {
     skip(user, update),
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       build = self.build,
     )

@@ -33,6 +33,7 @@ use komodo_client::{
   },
 };
 use resolver_api::Resolve;
+use tracing::Instrument;
 
 use crate::{
   alert::send_alerts,
@@ -56,7 +57,15 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateResourceSync {
-  #[instrument("CreateResourceSync", skip(user))]
+  #[instrument(
+    "CreateResourceSync",
+    skip_all,
+    fields(
+      operator = user.id,
+      sync = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -72,7 +81,15 @@ impl Resolve<WriteArgs> for CreateResourceSync {
 }
 
 impl Resolve<WriteArgs> for CopyResourceSync {
-  #[instrument("CopyResourceSync", skip(user))]
+  #[instrument(
+    "CopyResourceSync",
+    skip_all,
+    fields(
+      operator = user.id,
+      sync = self.name,
+      copy_sync = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -95,7 +112,14 @@ impl Resolve<WriteArgs> for CopyResourceSync {
 }
 
 impl Resolve<WriteArgs> for DeleteResourceSync {
-  #[instrument("DeleteResourceSync", skip(user))]
+  #[instrument(
+    "DeleteResourceSync",
+    skip_all,
+    fields(
+      operator = user.id,
+      sync = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -105,7 +129,15 @@ impl Resolve<WriteArgs> for DeleteResourceSync {
 }
 
 impl Resolve<WriteArgs> for UpdateResourceSync {
-  #[instrument("UpdateResourceSync", skip(user))]
+  #[instrument(
+    "UpdateResourceSync",
+    skip_all,
+    fields(
+      operator = user.id,
+      sync = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -118,7 +150,15 @@ impl Resolve<WriteArgs> for UpdateResourceSync {
 }
 
 impl Resolve<WriteArgs> for RenameResourceSync {
-  #[instrument("RenameResourceSync", skip(user))]
+  #[instrument(
+    "RenameResourceSync",
+    skip_all,
+    fields(
+      operator = user.id,
+      sync = self.id,
+      new_name = self.name
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -131,7 +171,16 @@ impl Resolve<WriteArgs> for RenameResourceSync {
 }
 
 impl Resolve<WriteArgs> for WriteSyncFileContents {
-  #[instrument("WriteSyncFileContents", skip(args))]
+  #[instrument(
+    "WriteSyncFileContents",
+    skip_all,
+    fields(
+      operator = args.user.id,
+      sync = self.sync,
+      resource_path = self.resource_path,
+      file_path = self.file_path,
+    )
+  )]
   async fn resolve(self, args: &WriteArgs) -> serror::Result<Update> {
     let sync = get_check_permissions::<ResourceSync>(
       &self.sync,
@@ -176,6 +225,7 @@ impl Resolve<WriteArgs> for WriteSyncFileContents {
   }
 }
 
+#[instrument("WriteSyncFileContentsOnHost", skip_all)]
 async fn write_sync_file_contents_on_host(
   req: WriteSyncFileContents,
   args: &WriteArgs,
@@ -238,6 +288,7 @@ async fn write_sync_file_contents_on_host(
   Ok(update)
 }
 
+#[instrument("WriteSyncFileContentsGit", skip_all)]
 async fn write_sync_file_contents_git(
   req: WriteSyncFileContents,
   args: &WriteArgs,
@@ -389,7 +440,14 @@ async fn write_sync_file_contents_git(
 }
 
 impl Resolve<WriteArgs> for CommitSync {
-  #[instrument("CommitSync", skip(args))]
+  #[instrument(
+    "CommitSync",
+    skip_all,
+    fields(
+      operator = args.user.id,
+      sync = self.sync,
+    )
+  )]
   async fn resolve(self, args: &WriteArgs) -> serror::Result<Update> {
     let WriteArgs { user } = args;
 
@@ -476,7 +534,9 @@ impl Resolve<WriteArgs> for CommitSync {
         .sync_directory
         .join(to_path_compatible_name(&sync.name))
         .join(&resource_path);
+      let span = info_span!("CommitSyncOnHost");
       if let Err(e) = secret_file::write_async(&file_path, &res.toml)
+        .instrument(span)
         .await
         .with_context(|| {
           format!("Failed to write resource file to {file_path:?}",)
@@ -569,6 +629,7 @@ impl Resolve<WriteArgs> for CommitSync {
   }
 }
 
+#[instrument("CommitSyncGit", skip_all)]
 async fn commit_git_sync(
   mut args: RepoExecutionArgs,
   resource_path: &Path,

@@ -11,7 +11,15 @@ use crate::{permission::get_check_permissions, resource};
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateAlerter {
-  #[instrument("CreateAlerter", skip(user))]
+  #[instrument(
+    "CreateAlerter",
+    skip_all,
+    fields(
+      operator = user.id,
+      alerter = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -22,7 +30,15 @@ impl Resolve<WriteArgs> for CreateAlerter {
 }
 
 impl Resolve<WriteArgs> for CopyAlerter {
-  #[instrument("CopyAlerter", skip(user))]
+  #[instrument(
+    "CopyAlerter",
+    skip_all,
+    fields(
+      operator = user.id,
+      alerter = self.name,
+      copy_alerter = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -39,7 +55,14 @@ impl Resolve<WriteArgs> for CopyAlerter {
 }
 
 impl Resolve<WriteArgs> for DeleteAlerter {
-  #[instrument("DeleteAlerter", skip(user))]
+  #[instrument(
+    "DeleteAlerter",
+    skip_all,
+    fields(
+      operator = user.id,
+      alerter = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -49,7 +72,15 @@ impl Resolve<WriteArgs> for DeleteAlerter {
 }
 
 impl Resolve<WriteArgs> for UpdateAlerter {
-  #[instrument("UpdateAlerter", skip(user))]
+  #[instrument(
+    "UpdateAlerter",
+    skip_all,
+    fields(
+      operator = user.id,
+      alerter = self.id,
+      update = serde_json::to_string(&self.config).unwrap()
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -62,7 +93,15 @@ impl Resolve<WriteArgs> for UpdateAlerter {
 }
 
 impl Resolve<WriteArgs> for RenameAlerter {
-  #[instrument("RenameAlerter", skip(user))]
+  #[instrument(
+    "RenameAlerter",
+    skip_all,
+    fields(
+      operator = user.id,
+      alerter = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

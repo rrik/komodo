@@ -33,7 +33,15 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateDeployment {
-  #[instrument("CreateDeployment", skip(user))]
+  #[instrument(
+    "CreateDeployment",
+    skip_all,
+    fields(
+      operator = user.id,
+      deployment = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -49,7 +57,15 @@ impl Resolve<WriteArgs> for CreateDeployment {
 }
 
 impl Resolve<WriteArgs> for CopyDeployment {
-  #[instrument("CopyDeployment", skip(user))]
+  #[instrument(
+    "CopyDeployment",
+    skip_all,
+    fields(
+      operator = user.id,
+      deployment = self.name,
+      copy_deployment = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -72,7 +88,15 @@ impl Resolve<WriteArgs> for CopyDeployment {
 }
 
 impl Resolve<WriteArgs> for CreateDeploymentFromContainer {
-  #[instrument("CreateDeploymentFromContainer", skip(user))]
+  #[instrument(
+    "CreateDeploymentFromContainer",
+    skip_all,
+    fields(
+      operator = user.id,
+      server = self.server,
+      deployment = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -166,7 +190,14 @@ impl Resolve<WriteArgs> for CreateDeploymentFromContainer {
 }
 
 impl Resolve<WriteArgs> for DeleteDeployment {
-  #[instrument("DeleteDeployment", skip(user))]
+  #[instrument(
+    "DeleteDeployment",
+    skip_all,
+    fields(
+      operator = user.id,
+      deployment = self.id
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -176,7 +207,15 @@ impl Resolve<WriteArgs> for DeleteDeployment {
 }
 
 impl Resolve<WriteArgs> for UpdateDeployment {
-  #[instrument("UpdateDeployment", skip(user))]
+  #[instrument(
+    "UpdateDeployment",
+    skip_all,
+    fields(
+      operator = user.id,
+      deployment = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -189,7 +228,15 @@ impl Resolve<WriteArgs> for UpdateDeployment {
 }
 
 impl Resolve<WriteArgs> for RenameDeployment {
-  #[instrument("RenameDeployment", skip(user))]
+  #[instrument(
+    "RenameDeployment",
+    skip_all,
+    fields(
+      operator = user.id,
+      deployment = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

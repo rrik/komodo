@@ -41,7 +41,7 @@ impl Resolve<ExecuteArgs> for BatchRunProcedure {
   #[instrument(
     "BatchRunProcedure",
     skip_all,
-    fields(user_id = user.id)
+    fields(operator = user.id)
   )]
   async fn resolve(
     self,
@@ -60,7 +60,7 @@ impl Resolve<ExecuteArgs> for RunProcedure {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       procedure = self.procedure,
     )

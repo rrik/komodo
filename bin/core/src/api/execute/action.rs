@@ -63,7 +63,7 @@ impl Resolve<ExecuteArgs> for BatchRunAction {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -84,7 +84,7 @@ impl Resolve<ExecuteArgs> for RunAction {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       action = self.action,
     )

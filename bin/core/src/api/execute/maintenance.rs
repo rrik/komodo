@@ -49,7 +49,7 @@ impl Resolve<ExecuteArgs> for ClearRepoCache {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id
     )
   )]
@@ -128,7 +128,7 @@ impl Resolve<ExecuteArgs> for BackupCoreDatabase {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
     )
   )]
@@ -181,7 +181,7 @@ impl Resolve<ExecuteArgs> for GlobalAutoUpdate {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
     )
   )]
@@ -351,7 +351,7 @@ impl Resolve<ExecuteArgs> for RotateAllServerKeys {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
     )
   )]
@@ -465,7 +465,7 @@ impl Resolve<ExecuteArgs> for RotateCoreKeys {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       force = self.force,
     )

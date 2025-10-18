@@ -24,7 +24,14 @@ use super::WriteArgs;
 //
 
 impl Resolve<WriteArgs> for CreateLocalUser {
-  #[instrument("CreateLocalUser", skip(admin, self), fields(admin_id = admin.id, username = self.username))]
+  #[instrument(
+    "CreateLocalUser",
+    skip_all,
+    fields(
+      admin_id = admin.id,
+      username = self.username
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -101,7 +108,14 @@ impl Resolve<WriteArgs> for CreateLocalUser {
 //
 
 impl Resolve<WriteArgs> for UpdateUserUsername {
-  #[instrument("UpdateUserUsername", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "UpdateUserUsername",
+    skip_all,
+    fields(
+      operator = user.id,
+      new_username = self.username,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -152,7 +166,11 @@ impl Resolve<WriteArgs> for UpdateUserUsername {
 //
 
 impl Resolve<WriteArgs> for UpdateUserPassword {
-  #[instrument("UpdateUserPassword", skip(user, self), fields(user_id = user.id))]
+  #[instrument(
+    "UpdateUserPassword",
+    skip_all,
+    fields(operator = user.id)
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -175,7 +193,14 @@ impl Resolve<WriteArgs> for UpdateUserPassword {
 //
 
 impl Resolve<WriteArgs> for DeleteUser {
-  #[instrument("DeleteUser", skip(admin), fields(user = self.user))]
+  #[instrument(
+    "DeleteUser",
+    skip_all,
+    fields(
+      admin_id = admin.id,
+      user_to_delete = self.user
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,

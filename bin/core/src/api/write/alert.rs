@@ -10,6 +10,14 @@ use serror::AddStatusCodeError;
 use crate::{api::write::WriteArgs, state::db_client};
 
 impl Resolve<WriteArgs> for CloseAlert {
+  #[instrument(
+    "CloseAlert",
+    skip_all,
+    fields(
+      operator = admin.id,
+      alert_id = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,

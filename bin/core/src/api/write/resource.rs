@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use derive_variants::ExtractVariant as _;
 use komodo_client::{
   api::write::{UpdateResourceMeta, UpdateResourceMetaResponse},
   entities::{
@@ -7,14 +8,27 @@ use komodo_client::{
     repo::Repo, server::Server, stack::Stack, sync::ResourceSync,
   },
 };
+use reqwest::StatusCode;
 use resolver_api::Resolve;
+use serror::AddStatusCodeError;
 
 use crate::resource::{self, ResourceMetaUpdate};
 
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for UpdateResourceMeta {
-  #[instrument("UpdateResourceMeta", skip(args))]
+  #[instrument(
+    "UpdateResourceMeta",
+    skip_all,
+    fields(
+      operator = args.user.id,
+      resource_type = self.target.extract_variant().to_string(),
+      resource_id = self.target.extract_variant_id().1,
+      description = self.description,
+      template = self.template,
+      tags = format!("{:?}", self.tags),
+    )
+  )]
   async fn resolve(
     self,
     args: &WriteArgs,
@@ -28,7 +42,7 @@ impl Resolve<WriteArgs> for UpdateResourceMeta {
       ResourceTarget::System(_) => {
         return Err(
           anyhow!("cannot update meta of System resource target")
-            .into(),
+            .status_code(StatusCode::BAD_REQUEST),
         );
       }
       ResourceTarget::Server(id) => {

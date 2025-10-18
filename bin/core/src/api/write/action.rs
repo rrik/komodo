@@ -11,7 +11,15 @@ use crate::{permission::get_check_permissions, resource};
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateAction {
-  #[instrument("CreateAction", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "CreateAction",
+    skip_all,
+    fields(
+      operator = user.id,
+      action = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -22,7 +30,15 @@ impl Resolve<WriteArgs> for CreateAction {
 }
 
 impl Resolve<WriteArgs> for CopyAction {
-  #[instrument("CopyAction", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "CopyAction",
+    skip_all,
+    fields(
+      operator = user.id,
+      action = self.name,
+      copy_action = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -39,7 +55,15 @@ impl Resolve<WriteArgs> for CopyAction {
 }
 
 impl Resolve<WriteArgs> for UpdateAction {
-  #[instrument("UpdateAction", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "UpdateAction",
+    skip_all,
+    fields(
+      operator = user.id,
+      action = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -49,7 +73,15 @@ impl Resolve<WriteArgs> for UpdateAction {
 }
 
 impl Resolve<WriteArgs> for RenameAction {
-  #[instrument("RenameAction", skip(user), fields(user_id = user.id))]
+  #[instrument(
+    "RenameAction",
+    skip_all,
+    fields(
+      operator = user.id,
+      action = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -61,8 +93,11 @@ impl Resolve<WriteArgs> for RenameAction {
 impl Resolve<WriteArgs> for DeleteAction {
   #[instrument(
     "DeleteAction",
-    skip(self, user),
-    fields(user_id = user.id, action_id = self.id)
+    skip_all,
+    fields(
+      operator = user.id,
+      action = self.id
+    )
   )]
   async fn resolve(
     self,

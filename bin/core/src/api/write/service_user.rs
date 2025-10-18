@@ -19,7 +19,15 @@ use crate::{api::user::UserArgs, state::db_client};
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateServiceUser {
-  #[instrument("CreateServiceUser", skip(user))]
+  #[instrument(
+    "CreateServiceUser",
+    skip_all,
+    fields(
+      operator = user.id,
+      username = self.username,
+      description = self.description,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -63,7 +71,15 @@ impl Resolve<WriteArgs> for CreateServiceUser {
 }
 
 impl Resolve<WriteArgs> for UpdateServiceUserDescription {
-  #[instrument("UpdateServiceUserDescription", skip(user))]
+  #[instrument(
+    "UpdateServiceUserDescription",
+    skip_all,
+    fields(
+      operator = user.id,
+      username = self.username,
+      description = self.description,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -99,7 +115,16 @@ impl Resolve<WriteArgs> for UpdateServiceUserDescription {
 }
 
 impl Resolve<WriteArgs> for CreateApiKeyForServiceUser {
-  #[instrument("CreateApiKeyForServiceUser", skip(user))]
+  #[instrument(
+    "CreateApiKeyForServiceUser",
+    skip_all,
+    fields(
+      operator = user.id,
+      service_user = self.user_id,
+      name = self.name,
+      expires = self.expires,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -125,7 +150,14 @@ impl Resolve<WriteArgs> for CreateApiKeyForServiceUser {
 }
 
 impl Resolve<WriteArgs> for DeleteApiKeyForServiceUser {
-  #[instrument("DeleteApiKeyForServiceUser", skip(user))]
+  #[instrument(
+    "DeleteApiKeyForServiceUser",
+    skip_all,
+    fields(
+      operator = user.id,
+      key = self.key,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

@@ -149,7 +149,7 @@ impl Resolve<UserArgs> for CreateApiKey {
   #[instrument(
     "CreateApiKey",
     skip_all,
-    fields(user_id = user.id)
+    fields(operator = user.id)
   )]
   async fn resolve(
     self,
@@ -183,7 +183,7 @@ impl Resolve<UserArgs> for DeleteApiKey {
   #[instrument(
     "DeleteApiKey",
     skip_all,
-    fields(user_id = user.id)
+    fields(operator = user.id)
   )]
   async fn resolve(
     self,

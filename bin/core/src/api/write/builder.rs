@@ -11,7 +11,15 @@ use crate::{permission::get_check_permissions, resource};
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateBuilder {
-  #[instrument("CreateBuilder", skip(user))]
+  #[instrument(
+    "CreateBuilder",
+    skip_all,
+    fields(
+      operator = user.id,
+      builder = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -22,7 +30,15 @@ impl Resolve<WriteArgs> for CreateBuilder {
 }
 
 impl Resolve<WriteArgs> for CopyBuilder {
-  #[instrument("CopyBuilder", skip(user))]
+  #[instrument(
+    "CopyBuilder",
+    skip_all,
+    fields(
+      operator = user.id,
+      builder = self.name,
+      copy_builder = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -39,7 +55,14 @@ impl Resolve<WriteArgs> for CopyBuilder {
 }
 
 impl Resolve<WriteArgs> for DeleteBuilder {
-  #[instrument("DeleteBuilder", skip(user))]
+  #[instrument(
+    "DeleteBuilder",
+    skip_all,
+    fields(
+      operator = user.id,
+      builder = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -49,7 +72,15 @@ impl Resolve<WriteArgs> for DeleteBuilder {
 }
 
 impl Resolve<WriteArgs> for UpdateBuilder {
-  #[instrument("UpdateBuilder", skip(user))]
+  #[instrument(
+    "UpdateBuilder",
+    skip_all,
+    fields(
+      operator = user.id,
+      builder = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -62,7 +93,15 @@ impl Resolve<WriteArgs> for UpdateBuilder {
 }
 
 impl Resolve<WriteArgs> for RenameBuilder {
-  #[instrument("RenameBuilder", skip(user))]
+  #[instrument(
+    "RenameBuilder",
+    skip_all,
+    fields(
+      operator = user.id,
+      builder = self.id,
+      new_name = self.name
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

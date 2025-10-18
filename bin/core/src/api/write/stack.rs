@@ -42,7 +42,15 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateStack {
-  #[instrument("CreateStack", skip(user))]
+  #[instrument(
+    "CreateStack",
+    skip_all,
+    fields(
+      operator = user.id,
+      stack = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -53,7 +61,15 @@ impl Resolve<WriteArgs> for CreateStack {
 }
 
 impl Resolve<WriteArgs> for CopyStack {
-  #[instrument("CopyStack", skip(user))]
+  #[instrument(
+    "CopyStack",
+    skip_all,
+    fields(
+      operator = user.id,
+      stack = self.name,
+      copy_stack = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -71,7 +87,14 @@ impl Resolve<WriteArgs> for CopyStack {
 }
 
 impl Resolve<WriteArgs> for DeleteStack {
-  #[instrument("DeleteStack", skip(user))]
+  #[instrument(
+    "DeleteStack",
+    skip_all,
+    fields(
+      operator = user.id,
+      stack = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -81,7 +104,15 @@ impl Resolve<WriteArgs> for DeleteStack {
 }
 
 impl Resolve<WriteArgs> for UpdateStack {
-  #[instrument("UpdateStack", skip(user))]
+  #[instrument(
+    "UpdateStack",
+    skip_all,
+    fields(
+      operator = user.id,
+      stack = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -91,7 +122,15 @@ impl Resolve<WriteArgs> for UpdateStack {
 }
 
 impl Resolve<WriteArgs> for RenameStack {
-  #[instrument("RenameStack", skip(user))]
+  #[instrument(
+    "RenameStack",
+    skip_all,
+    fields(
+      operator = user.id,
+      stack = self.id,
+      new_name = self.name
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -101,7 +140,15 @@ impl Resolve<WriteArgs> for RenameStack {
 }
 
 impl Resolve<WriteArgs> for WriteStackFileContents {
-  #[instrument("WriteStackFileContents", skip(user))]
+  #[instrument(
+    "WriteStackFileContents",
+    skip_all,
+    fields(
+      operator = user.id,
+      stack = self.stack,
+      path = self.file_path,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -150,6 +197,7 @@ impl Resolve<WriteArgs> for WriteStackFileContents {
   }
 }
 
+#[instrument("WriteStackFileContentsOnHost", skip_all)]
 async fn write_stack_file_contents_on_host(
   stack: Stack,
   file_path: String,
@@ -222,6 +270,7 @@ async fn write_stack_file_contents_on_host(
   Ok(update)
 }
 
+#[instrument("WriteStackFileContentsGit", skip_all)]
 async fn write_stack_file_contents_git(
   mut stack: Stack,
   file_path: &str,

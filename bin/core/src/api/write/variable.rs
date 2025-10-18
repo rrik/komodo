@@ -19,7 +19,16 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateVariable {
-  #[instrument("CreateVariable", skip(user, self), fields(name = &self.name))]
+  #[instrument(
+    "CreateVariable",
+    skip_all,
+    fields(
+      operator = user.id,
+      variable = self.name,
+      description = self.description,
+      is_secret = self.is_secret,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -68,7 +77,14 @@ impl Resolve<WriteArgs> for CreateVariable {
 }
 
 impl Resolve<WriteArgs> for UpdateVariableValue {
-  #[instrument("UpdateVariableValue", skip(user, self), fields(name = &self.name))]
+  #[instrument(
+    "UpdateVariableValue",
+    skip_all,
+    fields(
+      operator = user.id,
+      variable = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -125,7 +141,15 @@ impl Resolve<WriteArgs> for UpdateVariableValue {
 }
 
 impl Resolve<WriteArgs> for UpdateVariableDescription {
-  #[instrument("UpdateVariableDescription", skip(user))]
+  #[instrument(
+    "UpdateVariableDescription",
+    skip_all,
+    fields(
+      operator = user.id,
+      variable = self.name,
+      description = self.description,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -149,7 +173,15 @@ impl Resolve<WriteArgs> for UpdateVariableDescription {
 }
 
 impl Resolve<WriteArgs> for UpdateVariableIsSecret {
-  #[instrument("UpdateVariableIsSecret", skip(user))]
+  #[instrument(
+    "UpdateVariableIsSecret",
+    skip_all,
+    fields(
+      operator = user.id,
+      variable = self.name,
+      is_secret = self.is_secret,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -173,6 +205,14 @@ impl Resolve<WriteArgs> for UpdateVariableIsSecret {
 }
 
 impl Resolve<WriteArgs> for DeleteVariable {
+  #[instrument(
+    "DeleteVariable",
+    skip_all,
+    fields(
+      operator = user.id,
+      variable = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

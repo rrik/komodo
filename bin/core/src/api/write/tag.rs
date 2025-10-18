@@ -27,7 +27,15 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateTag {
-  #[instrument("CreateTag", skip(user))]
+  #[instrument(
+    "CreateTag",
+    skip_all,
+    fields(
+      operator = user.id,
+      tag = self.name,
+      color = format!("{:?}", self.color),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -68,7 +76,15 @@ impl Resolve<WriteArgs> for CreateTag {
 }
 
 impl Resolve<WriteArgs> for RenameTag {
-  #[instrument("RenameTag", skip(user))]
+  #[instrument(
+    "RenameTag",
+    skip_all,
+    fields(
+      operator = user.id,
+      tag = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -93,7 +109,15 @@ impl Resolve<WriteArgs> for RenameTag {
 }
 
 impl Resolve<WriteArgs> for UpdateTagColor {
-  #[instrument("UpdateTagColor", skip(user))]
+  #[instrument(
+    "UpdateTagColor",
+    skip_all,
+    fields(
+      operator = user.id,
+      tag = self.tag,
+      color = format!("{:?}", self.color),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -114,7 +138,14 @@ impl Resolve<WriteArgs> for UpdateTagColor {
 }
 
 impl Resolve<WriteArgs> for DeleteTag {
-  #[instrument("DeleteTag", skip(user))]
+  #[instrument(
+    "DeleteTag",
+    skip_all,
+    fields(
+      operator = user.id,
+      tag_id = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

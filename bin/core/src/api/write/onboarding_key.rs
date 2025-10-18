@@ -20,7 +20,18 @@ use crate::{api::write::WriteArgs, state::db_client};
 //
 
 impl Resolve<WriteArgs> for CreateOnboardingKey {
-  #[instrument("CreateServerOnboardingKey", skip(self, admin))]
+  #[instrument(
+    "CreateOnboardingKey",
+    skip_all,
+    fields(
+      operator = admin.id,
+      name = self.name,
+      expires = self.expires,
+      tags = format!("{:?}", self.tags),
+      copy_server = self.copy_server,
+      create_builder = self.create_builder,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -76,6 +87,15 @@ impl Resolve<WriteArgs> for CreateOnboardingKey {
 //
 
 impl Resolve<WriteArgs> for UpdateOnboardingKey {
+  #[instrument(
+    "UpdateOnboardingKey",
+    skip_all,
+    fields(
+      operator = admin.id,
+      public_key = self.public_key,
+      update = format!("{:?}", self),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -145,7 +165,14 @@ impl Resolve<WriteArgs> for UpdateOnboardingKey {
 //
 
 impl Resolve<WriteArgs> for DeleteOnboardingKey {
-  #[instrument("DeleteServerOnboardingKey", skip(admin))]
+  #[instrument(
+    "DeleteOnboardingKey",
+    skip_all,
+    fields(
+      operator = admin.id,
+      public_key = self.public_key,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,

@@ -32,7 +32,15 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateRepo {
-  #[instrument("CreateRepo", skip(user))]
+  #[instrument(
+    "CreateRepo",
+    skip_all,
+    fields(
+      operator = user.id,
+      repo = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -43,7 +51,15 @@ impl Resolve<WriteArgs> for CreateRepo {
 }
 
 impl Resolve<WriteArgs> for CopyRepo {
-  #[instrument("CopyRepo", skip(user))]
+  #[instrument(
+    "CopyRepo",
+    skip_all,
+    fields(
+      operator = user.id,
+      repo = self.name,
+      copy_repo = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -60,7 +76,14 @@ impl Resolve<WriteArgs> for CopyRepo {
 }
 
 impl Resolve<WriteArgs> for DeleteRepo {
-  #[instrument("DeleteRepo", skip(user))]
+  #[instrument(
+    "DeleteRepo",
+    skip_all,
+    fields(
+      operator = user.id,
+      repo = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -70,7 +93,15 @@ impl Resolve<WriteArgs> for DeleteRepo {
 }
 
 impl Resolve<WriteArgs> for UpdateRepo {
-  #[instrument("UpdateRepo", skip(user))]
+  #[instrument(
+    "UpdateRepo",
+    skip_all,
+    fields(
+      operator = user.id,
+      repo = self.id,
+      update = serde_json::to_string(&self.config).unwrap()
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -80,7 +111,15 @@ impl Resolve<WriteArgs> for UpdateRepo {
 }
 
 impl Resolve<WriteArgs> for RenameRepo {
-  #[instrument("RenameRepo", skip(user))]
+  #[instrument(
+    "RenameRepo",
+    skip_all,
+    fields(
+      operator = user.id,
+      repo = self.id,
+      new_name = self.name
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

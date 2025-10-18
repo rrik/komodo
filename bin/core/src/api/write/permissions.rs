@@ -8,6 +8,7 @@ use database::mungos::{
     options::UpdateOptions,
   },
 };
+use derive_variants::ExtractVariant as _;
 use komodo_client::{
   api::write::*,
   entities::{
@@ -22,7 +23,15 @@ use crate::{helpers::query::get_user, state::db_client};
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for UpdateUserAdmin {
-  #[instrument("UpdateUserAdmin", skip(super_admin))]
+  #[instrument(
+    "UpdateUserAdmin",
+    skip_all,
+    fields(
+      operator = super_admin.id,
+      target_user = self.user_id,
+      admin = self.admin,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: super_admin }: &WriteArgs,
@@ -60,7 +69,17 @@ impl Resolve<WriteArgs> for UpdateUserAdmin {
 }
 
 impl Resolve<WriteArgs> for UpdateUserBasePermissions {
-  #[instrument("UpdateUserBasePermissions", skip(admin))]
+  #[instrument(
+    "UpdateUserBasePermissions",
+    skip_all,
+    fields(
+      operator = admin.id,
+      target_user = self.user_id,
+      enabled = self.enabled,
+      create_servers = self.create_servers,
+      create_builds = self.create_builds,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -117,7 +136,16 @@ impl Resolve<WriteArgs> for UpdateUserBasePermissions {
 }
 
 impl Resolve<WriteArgs> for UpdatePermissionOnResourceType {
-  #[instrument("UpdatePermissionOnResourceType", skip(admin))]
+  #[instrument(
+    "UpdatePermissionOnResourceType",
+    skip_all,
+    fields(
+      operator = admin.id,
+      user_target = format!("{:?}", self.user_target),
+      resource_type = self.resource_type.to_string(),
+      permission = format!("{:?}", self.permission),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -185,7 +213,17 @@ impl Resolve<WriteArgs> for UpdatePermissionOnResourceType {
 }
 
 impl Resolve<WriteArgs> for UpdatePermissionOnTarget {
-  #[instrument("UpdatePermissionOnTarget", skip(admin))]
+  #[instrument(
+    "UpdatePermissionOnTarget",
+    skip_all,
+    fields(
+      operator = admin.id,
+      user_target = format!("{:?}", self.user_target),
+      resource_type = self.resource_target.extract_variant().to_string(),
+      resource_id = self.resource_target.extract_variant_id().1,
+      permission = format!("{:?}", self.permission),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,

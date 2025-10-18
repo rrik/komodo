@@ -54,7 +54,7 @@ impl Resolve<ExecuteArgs> for RunSync {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       sync = self.sync,
       resource_type = format!("{:?}", self.resource_type),

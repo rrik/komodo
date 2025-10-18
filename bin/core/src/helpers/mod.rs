@@ -194,7 +194,7 @@ pub async fn periphery_client(
   "CreatePermission",
   skip(user),
   fields(
-    user_id = user.id,
+    operator = user.id,
     username = user.username
   )
 )]

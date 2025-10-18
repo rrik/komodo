@@ -56,7 +56,7 @@ impl Resolve<ExecuteArgs> for BatchCloneRepo {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -77,7 +77,7 @@ impl Resolve<ExecuteArgs> for CloneRepo {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       repo = self.repo,
     )
@@ -187,7 +187,7 @@ impl Resolve<ExecuteArgs> for BatchPullRepo {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern
     )
   )]
@@ -208,7 +208,7 @@ impl Resolve<ExecuteArgs> for PullRepo {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       repo = self.repo,
     )
@@ -364,7 +364,7 @@ impl Resolve<ExecuteArgs> for BatchBuildRepo {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -385,7 +385,7 @@ impl Resolve<ExecuteArgs> for BuildRepo {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       repo = self.repo,
     )
@@ -706,7 +706,7 @@ impl Resolve<ExecuteArgs> for CancelRepoBuild {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       repo = self.repo,
     )

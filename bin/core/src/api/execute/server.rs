@@ -27,7 +27,7 @@ impl Resolve<ExecuteArgs> for StartContainer {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       container = self.container,
@@ -91,7 +91,7 @@ impl Resolve<ExecuteArgs> for RestartContainer {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       container = self.container,
@@ -157,7 +157,7 @@ impl Resolve<ExecuteArgs> for PauseContainer {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       container = self.container,
@@ -221,7 +221,7 @@ impl Resolve<ExecuteArgs> for UnpauseContainer {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       container = self.container,
@@ -287,7 +287,7 @@ impl Resolve<ExecuteArgs> for StopContainer {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       container = self.container,
@@ -355,7 +355,7 @@ impl Resolve<ExecuteArgs> for DestroyContainer {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       container = self.container,
@@ -429,7 +429,7 @@ impl Resolve<ExecuteArgs> for StartAllContainers {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -489,7 +489,7 @@ impl Resolve<ExecuteArgs> for RestartAllContainers {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -551,7 +551,7 @@ impl Resolve<ExecuteArgs> for PauseAllContainers {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -611,7 +611,7 @@ impl Resolve<ExecuteArgs> for UnpauseAllContainers {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -673,7 +673,7 @@ impl Resolve<ExecuteArgs> for StopAllContainers {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -733,7 +733,7 @@ impl Resolve<ExecuteArgs> for PruneContainers {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -798,7 +798,7 @@ impl Resolve<ExecuteArgs> for DeleteNetwork {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       network = self.name
@@ -859,7 +859,7 @@ impl Resolve<ExecuteArgs> for PruneNetworks {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -922,7 +922,7 @@ impl Resolve<ExecuteArgs> for DeleteImage {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       image = self.name,
@@ -980,7 +980,7 @@ impl Resolve<ExecuteArgs> for PruneImages {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -1041,7 +1041,7 @@ impl Resolve<ExecuteArgs> for DeleteVolume {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
       volume = self.name,
@@ -1102,7 +1102,7 @@ impl Resolve<ExecuteArgs> for PruneVolumes {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -1163,7 +1163,7 @@ impl Resolve<ExecuteArgs> for PruneDockerBuilders {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -1224,7 +1224,7 @@ impl Resolve<ExecuteArgs> for PruneBuildx {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )
@@ -1285,7 +1285,7 @@ impl Resolve<ExecuteArgs> for PruneSystem {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       server = self.server,
     )

@@ -32,7 +32,7 @@ pub fn router() -> Router {
   name = "ExecuteTerminal",
   skip_all,
   fields(
-    user_id = user.id,
+    operator = user.id,
     server,
     terminal,
   )
@@ -71,7 +71,7 @@ async fn execute_terminal(
   name = "ExecuteContainerExec",
   skip_all,
   fields(
-    user_id = user.id,
+    operator = user.id,
     server,
     container,
     shell,
@@ -117,7 +117,7 @@ async fn execute_container_exec(
   name = "ExecuteDeploymentExec",
   skip_all,
   fields(
-    user_id = user.id,
+    operator = user.id,
     deployment,
     shell,
     recreate = format!("{recreate:?}"),
@@ -163,7 +163,7 @@ async fn execute_deployment_exec(
   name = "ExecuteStackExec",
   skip_all,
   fields(
-    user_id = user.id,
+    operator = user.id,
     stack,
     service,
     shell,

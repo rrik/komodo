@@ -60,7 +60,7 @@ impl Resolve<ExecuteArgs> for BatchDeployStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -81,7 +81,7 @@ impl Resolve<ExecuteArgs> for DeployStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -306,7 +306,7 @@ impl Resolve<ExecuteArgs> for BatchDeployStackIfChanged {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -330,7 +330,7 @@ impl Resolve<ExecuteArgs> for DeployStackIfChanged {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       stop_time = self.stop_time,
@@ -730,7 +730,7 @@ impl Resolve<ExecuteArgs> for BatchPullStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -852,7 +852,7 @@ impl Resolve<ExecuteArgs> for PullStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -915,7 +915,7 @@ impl Resolve<ExecuteArgs> for StartStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -944,7 +944,7 @@ impl Resolve<ExecuteArgs> for RestartStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -975,7 +975,7 @@ impl Resolve<ExecuteArgs> for PauseStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -1004,7 +1004,7 @@ impl Resolve<ExecuteArgs> for UnpauseStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -1033,7 +1033,7 @@ impl Resolve<ExecuteArgs> for StopStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -1074,7 +1074,7 @@ impl Resolve<ExecuteArgs> for BatchDestroyStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       pattern = self.pattern,
     )
   )]
@@ -1094,7 +1094,7 @@ impl Resolve<ExecuteArgs> for DestroyStack {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       services = format!("{:?}", self.services),
@@ -1125,7 +1125,7 @@ impl Resolve<ExecuteArgs> for RunStackService {
     skip_all,
     fields(
       id = id.to_string(),
-      user_id = user.id,
+      operator = user.id,
       update_id = update.id,
       stack = self.stack,
       service = self.service,

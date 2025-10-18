@@ -11,7 +11,15 @@ use crate::{permission::get_check_permissions, resource};
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateProcedure {
-  #[instrument("CreateProcedure", skip(user))]
+  #[instrument(
+    "CreateProcedure",
+    skip_all,
+    fields(
+      operator = user.id,
+      procedure = self.name,
+      config = serde_json::to_string(&self.config).unwrap()
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -22,7 +30,15 @@ impl Resolve<WriteArgs> for CreateProcedure {
 }
 
 impl Resolve<WriteArgs> for CopyProcedure {
-  #[instrument("CopyProcedure", skip(user))]
+  #[instrument(
+    "CopyProcedure",
+    skip_all,
+    fields(
+      operator = user.id,
+      procedure = self.name,
+      copy_procedure = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -45,7 +61,15 @@ impl Resolve<WriteArgs> for CopyProcedure {
 }
 
 impl Resolve<WriteArgs> for UpdateProcedure {
-  #[instrument("UpdateProcedure", skip(user))]
+  #[instrument(
+    "UpdateProcedure",
+    skip_all,
+    fields(
+      operator = user.id,
+      procedure = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -58,7 +82,15 @@ impl Resolve<WriteArgs> for UpdateProcedure {
 }
 
 impl Resolve<WriteArgs> for RenameProcedure {
-  #[instrument("RenameProcedure", skip(user))]
+  #[instrument(
+    "RenameProcedure",
+    skip_all,
+    fields(
+      operator = user.id,
+      procedure = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -71,7 +103,14 @@ impl Resolve<WriteArgs> for RenameProcedure {
 }
 
 impl Resolve<WriteArgs> for DeleteProcedure {
-  #[instrument("DeleteProcedure", skip(user))]
+  #[instrument(
+    "DeleteProcedure",
+    skip_all,
+    fields(
+      operator = user.id,
+      procedure = self.id
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,

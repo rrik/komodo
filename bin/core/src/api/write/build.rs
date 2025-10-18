@@ -42,7 +42,15 @@ use crate::{
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateBuild {
-  #[instrument("CreateBuild", skip(user))]
+  #[instrument(
+    "CreateBuild",
+    skip_all,
+    fields(
+      operator = user.id,
+      build = self.name,
+      config = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -53,7 +61,15 @@ impl Resolve<WriteArgs> for CreateBuild {
 }
 
 impl Resolve<WriteArgs> for CopyBuild {
-  #[instrument("CopyBuild", skip(user))]
+  #[instrument(
+    "CopyBuild",
+    skip_all,
+    fields(
+      operator = user.id,
+      build = self.name,
+      copy_build = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -72,7 +88,14 @@ impl Resolve<WriteArgs> for CopyBuild {
 }
 
 impl Resolve<WriteArgs> for DeleteBuild {
-  #[instrument("DeleteBuild", skip(user))]
+  #[instrument(
+    "DeleteBuild",
+    skip_all,
+    fields(
+      operator = user.id,
+      build = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -82,7 +105,15 @@ impl Resolve<WriteArgs> for DeleteBuild {
 }
 
 impl Resolve<WriteArgs> for UpdateBuild {
-  #[instrument("UpdateBuild", skip(user))]
+  #[instrument(
+    "UpdateBuild",
+    skip_all,
+    fields(
+      operator = user.id,
+      build = self.id,
+      update = serde_json::to_string(&self.config).unwrap(),
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -92,7 +123,15 @@ impl Resolve<WriteArgs> for UpdateBuild {
 }
 
 impl Resolve<WriteArgs> for RenameBuild {
-  #[instrument("RenameBuild", skip(user))]
+  #[instrument(
+    "RenameBuild",
+    skip_all,
+    fields(
+      operator = user.id,
+      build = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user }: &WriteArgs,
@@ -102,7 +141,14 @@ impl Resolve<WriteArgs> for RenameBuild {
 }
 
 impl Resolve<WriteArgs> for WriteBuildFileContents {
-  #[instrument("WriteBuildFileContents", skip(args))]
+  #[instrument(
+    "WriteBuildFileContents",
+    skip_all,
+    fields(
+      operator = args.user.id,
+      build = self.build,
+    )
+  )]
   async fn resolve(self, args: &WriteArgs) -> serror::Result<Update> {
     let build = get_check_permissions::<Build>(
       &self.build,
@@ -174,6 +220,7 @@ impl Resolve<WriteArgs> for WriteBuildFileContents {
   }
 }
 
+#[instrument("WriteDockerfileContentsGit", skip_all)]
 async fn write_dockerfile_contents_git(
   req: WriteBuildFileContents,
   args: &WriteArgs,

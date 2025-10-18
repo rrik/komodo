@@ -19,7 +19,14 @@ use crate::state::db_client;
 use super::WriteArgs;
 
 impl Resolve<WriteArgs> for CreateUserGroup {
-  #[instrument("CreateUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "CreateUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -57,7 +64,15 @@ impl Resolve<WriteArgs> for CreateUserGroup {
 }
 
 impl Resolve<WriteArgs> for RenameUserGroup {
-  #[instrument("RenameUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "RenameUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.id,
+      new_name = self.name,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -86,7 +101,14 @@ impl Resolve<WriteArgs> for RenameUserGroup {
 }
 
 impl Resolve<WriteArgs> for DeleteUserGroup {
-  #[instrument("DeleteUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "DeleteUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.id,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -122,7 +144,15 @@ impl Resolve<WriteArgs> for DeleteUserGroup {
 }
 
 impl Resolve<WriteArgs> for AddUserToUserGroup {
-  #[instrument("AddUserToUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "AddUserToUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.user_group,
+      user = self.user,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -169,7 +199,15 @@ impl Resolve<WriteArgs> for AddUserToUserGroup {
 }
 
 impl Resolve<WriteArgs> for RemoveUserFromUserGroup {
-  #[instrument("RemoveUserFromUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "RemoveUserFromUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.user_group,
+      user = self.user,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -216,7 +254,15 @@ impl Resolve<WriteArgs> for RemoveUserFromUserGroup {
 }
 
 impl Resolve<WriteArgs> for SetUsersInUserGroup {
-  #[instrument("SetUsersInUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "SetUsersInUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.user_group,
+      users = format!("{:?}", self.users)
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
@@ -266,7 +312,15 @@ impl Resolve<WriteArgs> for SetUsersInUserGroup {
 }
 
 impl Resolve<WriteArgs> for SetEveryoneUserGroup {
-  #[instrument("SetEveryoneUserGroup", skip(admin), fields(admin = admin.username))]
+  #[instrument(
+    "SetEveryoneUserGroup",
+    skip_all,
+    fields(
+      operator = admin.id,
+      group = self.user_group,
+      everyone = self.everyone,
+    )
+  )]
   async fn resolve(
     self,
     WriteArgs { user: admin }: &WriteArgs,
