@@ -55,7 +55,7 @@ ENV KOMODO_CLI_CONFIG_PATHS="/config"
 # This ensures any `komodo.cli.*` takes precedence over the Core `/config/*config.*`
 ENV KOMODO_CLI_CONFIG_KEYWORDS="*config.*,*komodo.cli*.*"
 
-CMD [ "core" ]
+CMD [ "/bin/bash", "-c", "update-ca-certificates && core" ]
 
 # Label to prevent Komodo from stopping with StopAllContainers
 LABEL komodo.skip="true"

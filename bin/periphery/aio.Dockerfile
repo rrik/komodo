@@ -29,7 +29,7 @@ ENV PERIPHERY_CONFIG_PATHS="/config"
 # Change the default in container to /config/keys to match Core
 ENV PERIPHERY_PRIVATE_KEY="file:/config/keys/periphery.key"
 
-CMD [ "periphery" ]
+CMD [ "/bin/bash", "-c", "update-ca-certificates && periphery" ]
 
 # Label to prevent Komodo from stopping with StopAllContainers
 LABEL komodo.skip="true"
