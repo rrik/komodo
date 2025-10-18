@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { useRead, useSettingsView, useUser } from "@lib/hooks";
+import { useSettingsView, useUser } from "@lib/hooks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
 import { Page } from "@components/layouts";
 import { ExportButton } from "@components/export";
@@ -9,15 +9,13 @@ import { UsersPage } from "./users";
 import { Profile } from "./profile";
 import { ProvidersPage } from "./providers";
 import { Onboarding } from "./onboarding";
-import { Input } from "@ui/input";
-import { CopyButton } from "@components/util";
+import { CoreInfo } from "./core-info";
 
 const Resources = lazy(() => import("@pages/resources"));
 
 export default function Settings() {
   const user = useUser().data;
   const [view, setView] = useSettingsView();
-  const info = useRead("GetCoreInfo", {}).data;
   const currentView =
     (view === "Users" || view === "Providers") && !user?.admin
       ? "Variables"
@@ -25,21 +23,7 @@ export default function Settings() {
   return (
     <Page>
       <div className="flex flex-col gap-4">
-        <div className="flex gap-4 items-center flex-wrap">
-          <div className="font-mono bg-secondary px-2 py-1 rounded-md">
-            {info?.title}
-          </div>
-          |
-          <div className="flex gap-3 items-center justify-between">
-            Public Key
-            <Input
-              className="w-72 bg-secondary"
-              value={info?.public_key}
-              disabled
-            />
-            <CopyButton content={info?.public_key} />
-          </div>
-        </div>
+        <CoreInfo />
         <Tabs
           value={currentView}
           onValueChange={setView as any}
