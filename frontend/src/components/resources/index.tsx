@@ -6,7 +6,7 @@ import { DeploymentComponents } from "./deployment";
 import { RepoComponents } from "./repo";
 import { ServerComponents } from "./server";
 import { ProcedureComponents } from "./procedure/index";
-import { ResourceSyncComponents } from "./resource-sync";
+import { ResourceSyncComponents } from "./sync";
 import { StackComponents } from "./stack";
 import { ActionComponents } from "./action";
 

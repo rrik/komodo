@@ -1,4 +1,4 @@
-import { atomWithStorage, useRead, useUser } from "@lib/hooks";
+import { useRead, useUser } from "@lib/hooks";
 import { RequiredResourceComponents } from "@types";
 import { Card } from "@ui/card";
 import { Clock, FolderSync } from "lucide-react";
@@ -16,18 +16,14 @@ import {
   resource_sync_state_intention,
   stroke_color_class_by_intention,
 } from "@lib/color";
-import { cn, sync_no_changes } from "@lib/utils";
+import { cn } from "@lib/utils";
 import { fmt_date } from "@lib/formatting";
 import { DashboardPieChart } from "@pages/home/dashboard";
 import { StatusBadge } from "@components/util";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
-import { ResourceSyncConfig } from "./config";
-import { ResourceSyncInfo } from "./info";
-import { ResourceSyncPending } from "./pending";
 import { Badge } from "@ui/badge";
 import { GroupActions } from "@components/group-actions";
-import { useAtom } from "jotai";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
+import { SyncTabs } from "./tabs";
 
 export const useResourceSync = (id?: string) =>
   useRead("ListResourceSyncs", {}, { refetchInterval: 10_000 }).data?.find(
@@ -43,100 +39,6 @@ const ResourceSyncIcon = ({ id, size }: { id?: string; size: number }) => {
     resource_sync_state_intention(state)
   );
   return <FolderSync className={cn(`w-${size} h-${size}`, state && color)} />;
-};
-
-type ResourceSyncTabsView = "Config" | "Info" | "Execute" | "Commit";
-const syncTabsViewAtom = atomWithStorage<ResourceSyncTabsView>(
-  "sync-tabs-v4",
-  "Config"
-);
-
-export const useResourceSyncTabsView = (
-  sync: Types.ResourceSync | undefined
-) => {
-  const [_view, setView] = useAtom<ResourceSyncTabsView>(syncTabsViewAtom);
-
-  const hideInfo = sync?.config?.files_on_host
-    ? false
-    : sync?.config?.file_contents
-      ? true
-      : false;
-
-  const showPending =
-    sync && (!sync_no_changes(sync) || sync.info?.pending_error);
-
-  const view =
-    _view === "Info" && hideInfo
-      ? "Config"
-      : (_view === "Execute" || _view === "Commit") && !showPending
-        ? sync?.config?.files_on_host ||
-          sync?.config?.repo ||
-          sync?.config?.linked_repo
-          ? "Info"
-          : "Config"
-        : _view === "Commit" && !sync?.config?.managed
-          ? "Execute"
-          : _view;
-
-  return {
-    view,
-    setView,
-    hideInfo,
-    showPending,
-  };
-};
-
-const ConfigInfoPending = ({ id }: { id: string }) => {
-  const sync = useFullResourceSync(id);
-  const { view, setView, hideInfo, showPending } =
-    useResourceSyncTabsView(sync);
-
-  const title = (
-    <TabsList className="justify-start w-fit">
-      <TabsTrigger value="Config" className="w-[110px]">
-        Config
-      </TabsTrigger>
-      <TabsTrigger
-        value="Info"
-        className={cn("w-[110px]", hideInfo && "hidden")}
-        disabled={hideInfo}
-      >
-        Info
-      </TabsTrigger>
-      <TabsTrigger
-        value="Execute"
-        className="w-[110px]"
-        disabled={!showPending}
-      >
-        Execute
-      </TabsTrigger>
-      {sync?.config?.managed && (
-        <TabsTrigger
-          value="Commit"
-          className="w-[110px]"
-          disabled={!showPending}
-        >
-          Commit
-        </TabsTrigger>
-      )}
-    </TabsList>
-  );
-  return (
-    <Tabs value={view} onValueChange={setView as any}>
-      <TabsContent value="Config">
-        <ResourceSyncConfig id={id} titleOther={title} />
-      </TabsContent>
-      <TabsContent value="Info">
-        <ResourceSyncInfo id={id} titleOther={title} />
-      </TabsContent>
-      <TabsContent value="Execute">
-        <ResourceSyncPending id={id} titleOther={title} />
-      </TabsContent>
-      <TabsContent value="Commit">
-        <ResourceSyncPending id={id} titleOther={title} />
-      </TabsContent>
-    </Tabs>
-  );
 };
 
 export const ResourceSyncComponents: RequiredResourceComponents = {
@@ -279,7 +181,7 @@ export const ResourceSyncComponents: RequiredResourceComponents = {
 
   Page: {},
 
-  Config: ConfigInfoPending,
+  Config: SyncTabs,
 
   DangerZone: ({ id }) => <DeleteResource type="ResourceSync" id={id} />,
 

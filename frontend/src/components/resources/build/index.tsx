@@ -1,14 +1,6 @@
-import { Section } from "@components/layouts";
-import {
-  useInvalidate,
-  useLocalStorage,
-  useRead,
-  useUser,
-  useWrite,
-} from "@lib/hooks";
+import { useInvalidate, useRead, useUser, useWrite } from "@lib/hooks";
 import { RequiredResourceComponents } from "@types";
 import { Factory, FolderGit, Hammer, Loader2, RefreshCcw } from "lucide-react";
-import { BuildConfig } from "./config";
 import { BuildTable } from "./table";
 import {
   DeleteResource,
@@ -17,7 +9,6 @@ import {
   ResourcePageHeader,
   StandardSource,
 } from "../common";
-import { DeploymentTable } from "../deployment/table";
 import { RunBuild } from "./actions";
 import {
   border_color_class_by_intention,
@@ -25,8 +16,6 @@ import {
   stroke_color_class_by_intention,
 } from "@lib/color";
 import { cn } from "@lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
-import { ResourceComponents } from "..";
 import { Types } from "komodo_client";
 import { DashboardPieChart } from "@pages/home/dashboard";
 import { StatusBadge } from "@components/util";
@@ -37,7 +26,7 @@ import { Button } from "@ui/button";
 import { useBuilder } from "../builder";
 import { GroupActions } from "@components/group-actions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
-import { BuildInfo } from "./info";
+import { BuildTabs } from "./tabs";
 
 export const useBuild = (id?: string) =>
   useRead("ListBuilds", {}, { refetchInterval: 10_000 }).data?.find(
@@ -51,55 +40,6 @@ const BuildIcon = ({ id, size }: { id?: string; size: number }) => {
   const state = useBuild(id)?.info.state;
   const color = stroke_color_class_by_intention(build_state_intention(state));
   return <Hammer className={cn(`w-${size} h-${size}`, state && color)} />;
-};
-
-const ConfigInfoDeployments = ({ id }: { id: string }) => {
-  const [view, setView] = useLocalStorage<"Config" | "Info" | "Deployments">(
-    "build-tabs-v1",
-    "Config"
-  );
-  const deployments = useRead("ListDeployments", {}).data?.filter(
-    (deployment) => deployment.info.build_id === id
-  );
-  const deploymentsDisabled = (deployments?.length || 0) === 0;
-  const titleOther = (
-    <TabsList className="justify-start w-fit">
-      <TabsTrigger value="Config" className="w-[110px]">
-        Config
-      </TabsTrigger>
-      <TabsTrigger value="Info" className="w-[110px]">
-        Info
-      </TabsTrigger>
-      <TabsTrigger
-        value="Deployments"
-        className="w-[110px]"
-        disabled={deploymentsDisabled}
-      >
-        Deployments
-      </TabsTrigger>
-    </TabsList>
-  );
-  return (
-    <Tabs
-      value={deploymentsDisabled && view === "Deployments" ? "Config" : view}
-      onValueChange={setView as any}
-    >
-      <TabsContent value="Config">
-        <BuildConfig id={id} titleOther={titleOther} />
-      </TabsContent>
-      <TabsContent value="Info">
-        <BuildInfo id={id} titleOther={titleOther} />
-      </TabsContent>
-      <TabsContent value="Deployments">
-        <Section
-          titleOther={titleOther}
-          actions={<ResourceComponents.Deployment.New build_id={id} />}
-        >
-          <DeploymentTable deployments={deployments ?? []} />
-        </Section>
-      </TabsContent>
-    </Tabs>
-  );
 };
 
 export const BuildComponents: RequiredResourceComponents = {
@@ -279,7 +219,7 @@ export const BuildComponents: RequiredResourceComponents = {
 
   Page: {},
 
-  Config: ConfigInfoDeployments,
+  Config: BuildTabs,
 
   DangerZone: ({ id }) => <DeleteResource type="Build" id={id} />,
 

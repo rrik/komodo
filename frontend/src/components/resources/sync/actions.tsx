@@ -7,7 +7,8 @@ import { useExecute, useInvalidate, useRead, useWrite } from "@lib/hooks";
 import { file_contents_empty, sync_no_changes } from "@lib/utils";
 import { usePermissions } from "@lib/hooks";
 import { NotebookPen, RefreshCcw, SquarePlay } from "lucide-react";
-import { useFullResourceSync, useResourceSyncTabsView } from ".";
+import { useFullResourceSync } from ".";
+import { useResourceSyncTabsView } from "./tabs";
 
 export const RefreshSync = ({ id }: { id: string }) => {
   const inv = useInvalidate();

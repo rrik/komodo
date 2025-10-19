@@ -10,8 +10,9 @@ import { cn, sanitizeOnlySpan } from "@lib/utils";
 import { ConfirmButton } from "@components/util";
 import { SquarePlay } from "lucide-react";
 import { usePermissions } from "@lib/hooks";
-import { useFullResourceSync, useResourceSyncTabsView } from ".";
+import { useFullResourceSync } from ".";
 import { ResourceDiff } from "komodo_client/dist/types";
+import { useResourceSyncTabsView } from "./tabs";
 
 export const ResourceSyncPending = ({
   id,

@@ -1,10 +1,4 @@
-import {
-  useInvalidate,
-  useLocalStorage,
-  usePermissions,
-  useRead,
-  useWrite,
-} from "@lib/hooks";
+import { useInvalidate, useRead, useWrite } from "@lib/hooks";
 import { RequiredResourceComponents } from "@types";
 import { Card } from "@ui/card";
 import {
@@ -38,18 +32,14 @@ import {
   RestartStack,
   StartStopStack,
 } from "./actions";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
-import { StackInfo } from "./info";
 import { Badge } from "@ui/badge";
 import { Button } from "@ui/button";
 import { useToast } from "@ui/use-toast";
-import { StackServices } from "./services";
 import { DashboardPieChart } from "@pages/home/dashboard";
 import { StatusBadge } from "@components/util";
-import { StackConfig } from "./config";
 import { GroupActions } from "@components/group-actions";
-import { StackLogs } from "./log";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@ui/tooltip";
+import { StackTabs } from "./tabs";
 
 export const useStack = (id?: string) =>
   useRead("ListStacks", {}, { refetchInterval: 10_000 }).data?.find(
@@ -63,73 +53,6 @@ const StackIcon = ({ id, size }: { id?: string; size: number }) => {
   const state = useStack(id)?.info.state;
   const color = stroke_color_class_by_intention(stack_state_intention(state));
   return <Layers className={cn(`w-${size} h-${size}`, state && color)} />;
-};
-
-const ConfigInfoServicesLog = ({ id }: { id: string }) => {
-  const [_view, setView] = useLocalStorage<
-    "Config" | "Info" | "Services" | "Log"
-  >("stack-tabs-v1", "Config");
-  const info = useStack(id)?.info;
-  const { specific } = usePermissions({ type: "Stack", id });
-
-  const state = info?.state;
-  const hideInfo = !info?.files_on_host && !info?.repo && !info?.linked_repo;
-  const hideServices =
-    state === undefined ||
-    state === Types.StackState.Unknown ||
-    state === Types.StackState.Down;
-  const hideLogs =
-    hideServices || !specific.includes(Types.SpecificPermission.Logs);
-
-  const view =
-    (_view === "Info" && hideInfo) ||
-    (_view === "Services" && hideServices) ||
-    (_view === "Log" && hideLogs)
-      ? "Config"
-      : _view;
-
-  const title = (
-    <TabsList className="justify-start w-fit">
-      <TabsTrigger value="Config" className="w-[110px]">
-        Config
-      </TabsTrigger>
-      <TabsTrigger
-        value="Info"
-        className={cn("w-[110px]", hideInfo && "hidden")}
-        disabled={hideInfo}
-      >
-        Info
-      </TabsTrigger>
-      <TabsTrigger
-        value="Services"
-        className="w-[110px]"
-        disabled={hideServices}
-      >
-        Services
-      </TabsTrigger>
-      {specific.includes(Types.SpecificPermission.Logs) && (
-        <TabsTrigger value="Log" className="w-[110px]" disabled={hideLogs}>
-          Log
-        </TabsTrigger>
-      )}
-    </TabsList>
-  );
-  return (
-    <Tabs value={view} onValueChange={setView as any}>
-      <TabsContent value="Config">
-        <StackConfig id={id} titleOther={title} />
-      </TabsContent>
-      <TabsContent value="Info">
-        <StackInfo id={id} titleOther={title} />
-      </TabsContent>
-      <TabsContent value="Services">
-        <StackServices id={id} titleOther={title} />
-      </TabsContent>
-      <TabsContent value="Log">
-        <StackLogs id={id} titleOther={title} />
-      </TabsContent>
-    </Tabs>
-  );
 };
 
 export const StackComponents: RequiredResourceComponents = {
@@ -444,7 +367,7 @@ export const StackComponents: RequiredResourceComponents = {
 
   Page: {},
 
-  Config: ConfigInfoServicesLog,
+  Config: StackTabs,
 
   DangerZone: ({ id }) => <DeleteResource type="Stack" id={id} />,
 
