@@ -42,8 +42,8 @@ export const ContainerTerminal = ({
     "sh"
   );
   const [mode, setMode] = useLocalStorage<Types.ContainerTerminalMode>(
-    `${storageKey}-term-mode-v1`,
-    Types.ContainerTerminalMode.Attach
+    `${storageKey}-term-mode-v2`,
+    Types.ContainerTerminalMode.Exec
   );
   const [otherShell, setOtherShell] = useState("");
 
@@ -68,76 +68,74 @@ export const ContainerTerminal = ({
     <Section
       titleOther={titleOther}
       actions={
-        <div className="flex items-center gap-4 mr-[16px]">
-          <CardTitle className="text-muted-foreground flex items-center gap-2">
-            docker
-            <Select
-              value={mode}
-              onValueChange={(mode) =>
-                setMode(mode as Types.ContainerTerminalMode)
-              }
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {Object.values(Types.ContainerTerminalMode).map((mode) => (
-                    <SelectItem key={mode} value={mode}>
-                      {mode}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            {mode === Types.ContainerTerminalMode.Exec ? "-it " : ""}container
-            <Select
-              value={shell}
-              onValueChange={setShell}
+        <CardTitle className="text-muted-foreground flex items-center gap-2 flex-wrap">
+          docker
+          <Select
+            value={mode}
+            onValueChange={(mode) =>
+              setMode(mode as Types.ContainerTerminalMode)
+            }
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Object.values(Types.ContainerTerminalMode).map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    {mode}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          {mode === Types.ContainerTerminalMode.Exec ? "-it " : ""}container
+          <Select
+            value={shell}
+            onValueChange={setShell}
+            disabled={mode === Types.ContainerTerminalMode.Attach}
+          >
+            <SelectTrigger
+              className="w-[120px]"
               disabled={mode === Types.ContainerTerminalMode.Attach}
             >
-              <SelectTrigger
-                className="w-[120px]"
-                disabled={mode === Types.ContainerTerminalMode.Attach}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {[
-                    ...BASE_SHELLS,
-                    ...(!BASE_SHELLS.includes(shell) ? [shell] : []),
-                  ].map((shell) => (
-                    <SelectItem key={shell} value={shell}>
-                      {shell}
-                    </SelectItem>
-                  ))}
-                  <Input
-                    placeholder="other"
-                    value={otherShell}
-                    onChange={(e) => setOtherShell(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        setShell(otherShell);
-                        setOtherShell("");
-                      } else {
-                        e.stopPropagation();
-                      }
-                    }}
-                  />
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </CardTitle>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {[
+                  ...BASE_SHELLS,
+                  ...(!BASE_SHELLS.includes(shell) ? [shell] : []),
+                ].map((shell) => (
+                  <SelectItem key={shell} value={shell}>
+                    {shell}
+                  </SelectItem>
+                ))}
+                <Input
+                  placeholder="other"
+                  value={otherShell}
+                  onChange={(e) => setOtherShell(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setShell(otherShell);
+                      setOtherShell("");
+                    } else {
+                      e.stopPropagation();
+                    }
+                  }}
+                />
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <Button
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 ml-2"
             variant="secondary"
             onClick={() => triggerReconnect()}
           >
             Reconnect
             <RefreshCcw className="w-4 h-4" />
           </Button>
-        </div>
+        </CardTitle>
       }
     >
       <div className="min-h-[65vh]">
