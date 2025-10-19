@@ -101,10 +101,6 @@ const ResourceInner = ({ type, id }: { type: UsableResource; id: string }) => {
           <Section
             title="Danger Zone"
             icon={<AlertTriangle className="w-6 h-6" />}
-            // actions={
-            // type !== "Server" &&
-            // canCreate && <CopyResource type={type} id={id} />
-            // }
           >
             <Components.DangerZone id={id} />
           </Section>

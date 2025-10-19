@@ -16,21 +16,21 @@ import { useState } from "react";
 export const CoreInfo = () => {
   const info = useRead("GetCoreInfo", {}).data;
   return (
-    <div className="flex gap-4 items-center flex-wrap">
+    <div className="flex gap-4 items-center flex-wrap w-fit pb-4 border-b-2">
       <div className="font-mono bg-secondary px-2 py-1 rounded-md">
         {info?.title}
       </div>
       |
       <div className="flex gap-3 items-center justify-between">
-        Public Key
+        <div className="hidden md:block">Public Key</div>
         <Input
-          className="w-72 bg-secondary"
+          className="w-[150px] md:w-[230px] bg-secondary"
           value={info?.public_key}
           disabled
         />
         <CopyButton content={info?.public_key} />
       </div>
-      |
+      <div className="hidden md:flex gap-3 items-center">|</div>
       <AllInfo />
     </div>
   );
@@ -45,7 +45,7 @@ const AllInfo = () => {
         <Button
           variant="secondary"
           size="icon"
-          className="flex gap-2 items-center"
+          className="hidden md:flex gap-2 items-center"
         >
           <Info className="w-4 h-4" />
         </Button>
