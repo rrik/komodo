@@ -34,11 +34,14 @@ import { ExportButton } from "@components/export";
 import { ContainerPortLink, DockerResourceLink } from "@components/util";
 import { ResourceNotifications } from "@pages/resource-notifications";
 import { Fragment } from "react/jsx-runtime";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
 import { ContainerTerminal } from "@components/terminal/container";
 import { useServer } from "@components/resources/server";
 import { StackServiceInspect } from "./inspect";
 import { useMemo } from "react";
+import {
+  MobileFriendlyTabsSelector,
+  TabNoContent,
+} from "@ui/mobile-friendly-tabs";
 
 type IdServiceComponent = React.FC<{ id: string; service?: string }>;
 
@@ -222,6 +225,8 @@ const StackServicePageInner = ({
   );
 };
 
+type StackServiceTabsView = "Log" | "Inspect" | "Terminal";
+
 const StackServiceTabs = ({
   stack,
   service,
@@ -231,7 +236,7 @@ const StackServiceTabs = ({
   service: string;
   container_state: Types.ContainerStateStatusEnum;
 }) => {
-  const [_view, setView] = useLocalStorage<"Log" | "Inspect" | "Terminal">(
+  const [_view, setView] = useLocalStorage<StackServiceTabsView>(
     `stack-${stack.id}-${service}-tabs-v1`,
     "Log"
   );
@@ -255,33 +260,27 @@ const StackServiceTabs = ({
     (terminalDisabled && _view === "Terminal")
       ? "Log"
       : _view;
-  const tabs = useMemo(
-    () => (
-      <TabsList className="justify-start w-fit">
-        <TabsTrigger value="Log" className="w-[110px]" disabled={logDisabled}>
-          Log
-        </TabsTrigger>
-        {specificInspect && (
-          <TabsTrigger
-            value="Inspect"
-            className="w-[110px]"
-            disabled={inspectDisabled}
-          >
-            Inspect
-          </TabsTrigger>
-        )}
-        {specificTerminal && (
-          <TabsTrigger
-            value="Terminal"
-            className="w-[110px]"
-            disabled={terminalDisabled}
-          >
-            Terminal
-          </TabsTrigger>
-        )}
-      </TabsList>
-    ),
+
+  const tabsNoContent = useMemo<TabNoContent[]>(
+    () => [
+      {
+        value: "Log",
+        hidden: !specificLogs,
+        disabled: logDisabled,
+      },
+      {
+        value: "Inspect",
+        hidden: !specificInspect,
+        disabled: inspectDisabled,
+      },
+      {
+        value: "Terminal",
+        hidden: !specificTerminal,
+        disabled: terminalDisabled,
+      },
+    ],
     [
+      specificLogs,
       logDisabled,
       specificInspect,
       inspectDisabled,
@@ -289,6 +288,16 @@ const StackServiceTabs = ({
       terminalDisabled,
     ]
   );
+
+  const Selector = (
+    <MobileFriendlyTabsSelector
+      tabs={tabsNoContent}
+      value={view}
+      onValueChange={setView as any}
+      tabsTriggerClassname="w-[110px]"
+    />
+  );
+
   const terminalQuery = useMemo(
     () =>
       ({
@@ -302,26 +311,26 @@ const StackServiceTabs = ({
       }) as ConnectExecQuery,
     [stack.id, service]
   );
-  return (
-    <Tabs value={view} onValueChange={setView as any}>
-      <TabsContent value="Log">
+
+  switch (view) {
+    case "Log":
+      return (
         <StackServiceLogs
           id={stack.id}
           service={service}
-          titleOther={tabs}
+          titleOther={Selector}
           disabled={logDisabled}
         />
-      </TabsContent>
-      <TabsContent value="Inspect">
+      );
+    case "Inspect":
+      return (
         <StackServiceInspect
           id={stack.id}
           service={service}
-          titleOther={tabs}
+          titleOther={Selector}
         />
-      </TabsContent>
-      <TabsContent value="Terminal">
-        <ContainerTerminal query={terminalQuery} titleOther={tabs} />
-      </TabsContent>
-    </Tabs>
-  );
+      );
+    case "Terminal":
+      return <ContainerTerminal query={terminalQuery} titleOther={Selector} />;
+  }
 };

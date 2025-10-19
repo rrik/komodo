@@ -1,5 +1,5 @@
 import { Section } from "@components/layouts";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { Networks } from "./networks";
 import { useServer } from "..";
 import { Types } from "komodo_client";
@@ -7,7 +7,12 @@ import { useLocalStorage } from "@lib/hooks";
 import { Images } from "./images";
 import { Containers } from "./containers";
 import { Volumes } from "./volumes";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
+import {
+  MobileFriendlyTabsSelector,
+  TabNoContent,
+} from "@ui/mobile-friendly-tabs";
+
+type ServerInfoView = "Containers" | "Networks" | "Volumes" | "Images";
 
 export const ServerInfo = ({
   id,
@@ -18,9 +23,10 @@ export const ServerInfo = ({
 }) => {
   const _search = useState("");
   const state = useServer(id)?.info.state ?? Types.ServerState.NotOk;
-  const [show2, setShow2] = useLocalStorage<
-    "Containers" | "Networks" | "Volumes" | "Images"
-  >("server-info-show-config-v2", "Containers");
+  const [view, setView] = useLocalStorage<ServerInfoView>(
+    "server-info-view-v1",
+    "Containers"
+  );
 
   if ([Types.ServerState.NotOk, Types.ServerState.Disabled].includes(state)) {
     return (
@@ -32,39 +38,41 @@ export const ServerInfo = ({
     );
   }
 
-  const tabsList = (
-    <TabsList className="justify-start w-fit">
-      <TabsTrigger value="Containers" className="w-[110px]">
-        Containers
-      </TabsTrigger>
-      <TabsTrigger value="Networks" className="w-[110px]">
-        Networks
-      </TabsTrigger>
-      <TabsTrigger value="Volumes" className="w-[110px]">
-        Volumes
-      </TabsTrigger>
-      <TabsTrigger value="Images" className="w-[110px]">
-        Images
-      </TabsTrigger>
-    </TabsList>
+  const tabsNoContent = useMemo<TabNoContent[]>(
+    () => [
+      {
+        value: "Containers",
+      },
+      {
+        value: "Networks",
+      },
+      {
+        value: "Volumes",
+      },
+      {
+        value: "Images",
+      },
+    ],
+    []
   );
 
-  return (
-    <Section titleOther={titleOther}>
-      <Tabs value={show2} onValueChange={setShow2 as any}>
-        <TabsContent value="Containers">
-          <Containers id={id} titleOther={tabsList} _search={_search} />
-        </TabsContent>
-        <TabsContent value="Networks">
-          <Networks id={id} titleOther={tabsList} _search={_search} />
-        </TabsContent>
-        <TabsContent value="Volumes">
-          <Volumes id={id} titleOther={tabsList} _search={_search} />
-        </TabsContent>
-        <TabsContent value="Images">
-          <Images id={id} titleOther={tabsList} _search={_search} />
-        </TabsContent>
-      </Tabs>
-    </Section>
+  const Selector = (
+    <MobileFriendlyTabsSelector
+      tabs={tabsNoContent}
+      value={view}
+      onValueChange={setView as any}
+      tabsTriggerClassname="w-[110px]"
+    />
   );
+
+  switch (view) {
+    case "Containers":
+      return <Containers id={id} titleOther={Selector} _search={_search} />;
+    case "Networks":
+      return <Networks id={id} titleOther={Selector} _search={_search} />;
+    case "Volumes":
+      return <Volumes id={id} titleOther={Selector} _search={_search} />;
+    case "Images":
+      return <Images id={id} titleOther={Selector} _search={_search} />;
+  }
 };

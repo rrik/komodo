@@ -33,10 +33,13 @@ import { UsableResource } from "@types";
 import { Fragment } from "react/jsx-runtime";
 import { usePermissions } from "@lib/hooks";
 import { ResourceNotifications } from "@pages/resource-notifications";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
 import { ContainerTerminal } from "@components/terminal/container";
 import { ContainerInspect } from "./inspect";
 import { useMemo } from "react";
+import {
+  MobileFriendlyTabsSelector,
+  TabNoContent,
+} from "@ui/mobile-friendly-tabs";
 
 export default function ContainerPage() {
   const { type, id, container } = useParams() as {
@@ -211,6 +214,8 @@ const ContainerPageInner = ({
   );
 };
 
+type ContainerTabsView = "Log" | "Inspect" | "Terminal";
+
 const ContainerTabs = ({
   server,
   container,
@@ -220,7 +225,7 @@ const ContainerTabs = ({
   container: string;
   state: Types.ContainerStateStatusEnum;
 }) => {
-  const [_view, setView] = useLocalStorage<"Log" | "Inspect" | "Terminal">(
+  const [_view, setView] = useLocalStorage<ContainerTabsView>(
     `server-${server}-${container}-tabs-v1`,
     "Log"
   );
@@ -243,39 +248,44 @@ const ContainerTabs = ({
     (terminalDisabled && _view === "Terminal")
       ? "Log"
       : _view;
-  const tabs = useMemo(() => {
-    return (
-      <TabsList className="justify-start w-fit">
-        <TabsTrigger value="Log" className="w-[110px]" disabled={logDisabled}>
-          Log
-        </TabsTrigger>
-        {specificInspect && (
-          <TabsTrigger
-            value="Inspect"
-            className="w-[110px]"
-            disabled={inspectDisabled}
-          >
-            Inspect
-          </TabsTrigger>
-        )}
-        {specificTerminal && (
-          <TabsTrigger
-            value="Terminal"
-            className="w-[110px]"
-            disabled={terminalDisabled}
-          >
-            Terminal
-          </TabsTrigger>
-        )}
-      </TabsList>
-    );
-  }, [
-    logDisabled,
-    specificInspect,
-    inspectDisabled,
-    specificTerminal,
-    terminalDisabled,
-  ]);
+
+  const tabsNoContent = useMemo<TabNoContent[]>(
+    () => [
+      {
+        value: "Log",
+        hidden: !specificLogs,
+        disabled: logDisabled,
+      },
+      {
+        value: "Inspect",
+        hidden: !specificInspect,
+        disabled: inspectDisabled,
+      },
+      {
+        value: "Terminal",
+        hidden: !specificTerminal,
+        disabled: terminalDisabled,
+      },
+    ],
+    [
+      specificLogs,
+      logDisabled,
+      specificInspect,
+      inspectDisabled,
+      specificTerminal,
+      terminalDisabled,
+    ]
+  );
+
+  const Selector = (
+    <MobileFriendlyTabsSelector
+      tabs={tabsNoContent}
+      value={view}
+      onValueChange={setView as any}
+      tabsTriggerClassname="w-[110px]"
+    />
+  );
+
   const terminalQuery = useMemo(
     () =>
       ({
@@ -289,24 +299,28 @@ const ContainerTabs = ({
       }) as ConnectExecQuery,
     [server, container]
   );
-  return (
-    <Tabs value={view} onValueChange={setView as any}>
-      <TabsContent value="Log">
+
+  switch (view) {
+    case "Log":
+      return (
         <ContainerLogs
           id={server}
           container_name={container}
-          titleOther={tabs}
+          titleOther={Selector}
           disabled={logDisabled}
         />
-      </TabsContent>
-      <TabsContent value="Inspect">
-        <ContainerInspect id={server} container={container} titleOther={tabs} />
-      </TabsContent>
-      <TabsContent value="Terminal">
-        <ContainerTerminal query={terminalQuery} titleOther={tabs} />
-      </TabsContent>
-    </Tabs>
-  );
+      );
+    case "Inspect":
+      return (
+        <ContainerInspect
+          id={server}
+          container={container}
+          titleOther={Selector}
+        />
+      );
+    case "Terminal":
+      return <ContainerTerminal query={terminalQuery} titleOther={Selector} />;
+  }
 };
 
 const AttachedResource = ({
