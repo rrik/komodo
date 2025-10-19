@@ -640,6 +640,10 @@ const KeyboardShortcut = ({
 
 export const CopyCorePubkey = () => {
   const public_key = useRead("GetCoreInfo", {}).data?.public_key;
+
+  // Don't show for non https, copy / clipboard won't work.
+  if (!location.protocol.startsWith("https")) return;
+
   return (
     <HoverCard>
       <HoverCardTrigger className="hidden lg:block">
