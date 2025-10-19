@@ -10,8 +10,10 @@ import { ResourceComponents } from "..";
 import { DeploymentTable } from "../deployment/table";
 import { BuildConfig } from "./config";
 
+type BuildTabsView = "Config" | "Info" | "Deployments";
+
 export const BuildTabs = ({ id }: { id: string }) => {
-  const [view, setView] = useLocalStorage<"Config" | "Info" | "Deployments">(
+  const [view, setView] = useLocalStorage<BuildTabsView>(
     "build-tabs-v1",
     "Config"
   );
@@ -20,7 +22,7 @@ export const BuildTabs = ({ id }: { id: string }) => {
   );
   const deploymentsDisabled = (deployments?.length || 0) === 0;
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<BuildTabsView>[]>(
     () => [
       {
         value: "Config",
@@ -46,6 +48,8 @@ export const BuildTabs = ({ id }: { id: string }) => {
   );
 
   switch (view) {
+    case "Config":
+      return <BuildConfig id={id} titleOther={Selector} />;
     case "Info":
       return <BuildInfo id={id} titleOther={Selector} />;
     case "Deployments":
@@ -57,7 +61,5 @@ export const BuildTabs = ({ id }: { id: string }) => {
           <DeploymentTable deployments={deployments ?? []} />
         </Section>
       );
-    default:
-      return <BuildConfig id={id} titleOther={Selector} />;
   }
 };

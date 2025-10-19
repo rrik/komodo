@@ -11,10 +11,13 @@ import { StackServices } from "./services";
 import { StackLogs } from "./log";
 import { StackConfig } from "./config";
 
+type StackTabsView = "Config" | "Info" | "Services" | "Log";
+
 export const StackTabs = ({ id }: { id: string }) => {
-  const [_view, setView] = useLocalStorage<
-    "Config" | "Info" | "Services" | "Log"
-  >("stack-tabs-v1", "Config");
+  const [_view, setView] = useLocalStorage<StackTabsView>(
+    "stack-tabs-v1",
+    "Config"
+  );
   const info = useStack(id)?.info;
   const { specific, specificLogs } = usePermissions({ type: "Stack", id });
 
@@ -34,7 +37,7 @@ export const StackTabs = ({ id }: { id: string }) => {
       ? "Config"
       : _view;
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<StackTabsView>[]>(
     () => [
       {
         value: "Config",
@@ -44,7 +47,7 @@ export const StackTabs = ({ id }: { id: string }) => {
         hidden: hideInfo,
       },
       {
-        value: "Service",
+        value: "Services",
         disabled: hideServices,
       },
       {
@@ -66,13 +69,13 @@ export const StackTabs = ({ id }: { id: string }) => {
   );
 
   switch (view) {
+    case "Config":
+      return <StackConfig id={id} titleOther={Selector} />;
     case "Info":
       return <StackInfo id={id} titleOther={Selector} />;
     case "Services":
       return <StackServices id={id} titleOther={Selector} />;
     case "Log":
       return <StackLogs id={id} titleOther={Selector} />;
-    default:
-      return <StackConfig id={id} titleOther={Selector} />;
   }
 };

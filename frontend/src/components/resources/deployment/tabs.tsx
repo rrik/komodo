@@ -18,14 +18,17 @@ export const DeploymentTabs = ({ id }: { id: string }) => {
   return <DeploymentTabsInner deployment={deployment} />;
 };
 
+type DeploymentTabsView = "Config" | "Log" | "Inspect" | "Terminal";
+
 const DeploymentTabsInner = ({
   deployment,
 }: {
   deployment: Types.DeploymentListItem;
 }) => {
-  const [_view, setView] = useLocalStorage<
-    "Config" | "Log" | "Inspect" | "Terminal"
-  >("deployment-tabs-v1", "Config");
+  const [_view, setView] = useLocalStorage<DeploymentTabsView>(
+    "deployment-tabs-v1",
+    "Config"
+  );
   const { specificLogs, specificInspect, specificTerminal } = usePermissions({
     type: "Deployment",
     id: deployment.id,
@@ -55,7 +58,7 @@ const DeploymentTabsInner = ({
       ? "Config"
       : _view;
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<DeploymentTabsView>[]>(
     () => [
       {
         value: "Config",
@@ -109,13 +112,13 @@ const DeploymentTabsInner = ({
   );
 
   switch (view) {
+    case "Config":
+      return <DeploymentConfig id={deployment.id} titleOther={Selector} />;
     case "Log":
       return <DeploymentLogs id={deployment.id} titleOther={Selector} />;
     case "Inspect":
       return <DeploymentInspect id={deployment.id} titleOther={Selector} />;
     case "Terminal":
       return <ContainerTerminal query={terminalQuery} titleOther={Selector} />;
-    default:
-      return <DeploymentConfig id={deployment.id} titleOther={Selector} />;
   }
 };

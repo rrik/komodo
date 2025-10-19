@@ -14,7 +14,7 @@ import { ResourceSyncConfig } from "./config";
 
 type ResourceSyncTabsView = "Config" | "Info" | "Execute" | "Commit";
 const syncTabsViewAtom = atomWithStorage<ResourceSyncTabsView>(
-  "sync-tabs-v4",
+  "sync-tabs-v5",
   "Config"
 );
 
@@ -58,7 +58,7 @@ export const SyncTabs = ({ id }: { id: string }) => {
   const { view, setView, hideInfo, showPending } =
     useResourceSyncTabsView(sync);
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<ResourceSyncTabsView>[]>(
     () => [
       {
         value: "Config",
@@ -90,13 +90,13 @@ export const SyncTabs = ({ id }: { id: string }) => {
   );
 
   switch (view) {
+    case "Config":
+      return <ResourceSyncConfig id={id} titleOther={Selector} />;
     case "Info":
       return <ResourceSyncInfo id={id} titleOther={Selector} />;
     case "Execute":
       return <ResourceSyncPending id={id} titleOther={Selector} />;
     case "Commit":
       return <ResourceSyncPending id={id} titleOther={Selector} />;
-    default:
-      return <ResourceSyncConfig id={id} titleOther={Selector} />;
   }
 };

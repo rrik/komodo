@@ -48,7 +48,7 @@ export const ServerTabs = ({ id }: { id: string }) => {
 
   const noResources = noDeployments && noRepos && noStacks;
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<ServerTabView>[]>(
     () => [
       {
         value: "Config",
@@ -88,6 +88,8 @@ export const ServerTabs = ({ id }: { id: string }) => {
   );
 
   switch (view) {
+    case "Config":
+      return <ServerConfig id={id} titleOther={Selector} />;
     case "Stats":
       return <ServerStats id={id} titleOther={Selector} />;
     case "Docker":
@@ -96,8 +98,6 @@ export const ServerTabs = ({ id }: { id: string }) => {
       return <ServerTabsResources id={id} Selector={Selector} />;
     case "Terminals":
       return <ServerTabsTerminals id={id} Selector={Selector} />;
-    default:
-      return <ServerConfig id={id} titleOther={Selector} />;
   }
 };
 

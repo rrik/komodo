@@ -9,21 +9,24 @@ import {
 } from "./select";
 import { cn } from "@lib/utils";
 
-export type Tab = {
+export type Tab<Value extends string = string> = {
   label?: string;
   hidden?: boolean;
   disabled?: boolean;
-  value: string;
+  value: Value;
   content: ReactNode;
 };
 
-export type TabNoContent = Omit<Tab, "content">;
+export type TabNoContent<Value extends string = string> = Omit<
+  Tab<Value>,
+  "content"
+>;
 
-export const MobileFriendlyTabs = (props: {
-  tabs: Tab[];
+export const MobileFriendlyTabs = <Value extends string = string>(props: {
+  tabs: Tab<Value>[];
   actions?: ReactNode;
-  value: string;
-  onValueChange: (value: string) => void;
+  value: Value;
+  onValueChange: (value: Value) => void;
 }) => {
   return (
     <MobileFriendlyTabsWrapper
@@ -34,15 +37,15 @@ export const MobileFriendlyTabs = (props: {
   );
 };
 
-export const MobileFriendlyTabsWrapper = ({
+export const MobileFriendlyTabsWrapper = <Value extends string = string>({
   Selector,
   tabs,
   value,
   className,
 }: {
   Selector: ReactNode;
-  tabs: Tab[];
-  value: string;
+  tabs: Tab<Value>[];
+  value: Value;
   className?: string;
 }) => {
   return (
@@ -53,24 +56,24 @@ export const MobileFriendlyTabsWrapper = ({
   );
 };
 
-export const MobileFriendlyTabsSelector = ({
+export const MobileFriendlyTabsSelector = <Value extends string = string>({
   tabs: _tabs,
   actions,
   value,
   onValueChange,
   tabsTriggerClassname,
 }: {
-  tabs: TabNoContent[];
+  tabs: TabNoContent<Value>[];
   actions?: ReactNode;
-  value: string;
-  onValueChange: (value: string) => void;
+  value: Value;
+  onValueChange: (value: Value) => void;
   tabsTriggerClassname?: string;
 }) => {
   const tabs = _tabs.filter((t) => !t.hidden);
   return (
     <>
       <div className="hidden md:flex items-center justify-between">
-        <Tabs value={value} onValueChange={onValueChange}>
+        <Tabs value={value} onValueChange={onValueChange as any}>
           <TabsList className="justify-start w-fit">
             {tabs.map((tab) => (
               <TabsTrigger
@@ -107,12 +110,12 @@ export const MobileFriendlyTabsSelector = ({
   );
 };
 
-export const MobileFriendlyTabsContent = ({
+export const MobileFriendlyTabsContent = <Value extends string = string>({
   tabs,
   value,
 }: {
   tabs: Tab[];
-  value: string;
+  value: Value;
 }) => {
   return tabs.find((tab) => tab.value === value)?.content;
 };

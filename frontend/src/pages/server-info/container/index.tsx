@@ -249,7 +249,7 @@ const ContainerTabs = ({
       ? "Log"
       : _view;
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<ContainerTabsView>[]>(
     () => [
       {
         value: "Log",

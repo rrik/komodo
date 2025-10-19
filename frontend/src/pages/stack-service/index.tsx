@@ -261,7 +261,7 @@ const StackServiceTabs = ({
       ? "Log"
       : _view;
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<StackServiceTabsView>[]>(
     () => [
       {
         value: "Log",

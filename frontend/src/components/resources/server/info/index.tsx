@@ -38,7 +38,7 @@ export const ServerInfo = ({
     );
   }
 
-  const tabsNoContent = useMemo<TabNoContent[]>(
+  const tabsNoContent = useMemo<TabNoContent<ServerInfoView>[]>(
     () => [
       {
         value: "Containers",
