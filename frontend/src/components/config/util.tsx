@@ -264,7 +264,7 @@ export const InputList = <T extends { [key: string]: unknown }>({
               set({ [field]: [...values] } as Partial<T>);
             }}
             disabled={disabled}
-            className={cn("w-[400px] max-w-full", className)}
+            className={cn("w-[230px] md:w-[400px]", className)}
           />
           {!disabled && (
             <Button
