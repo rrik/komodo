@@ -71,6 +71,7 @@ impl super::KomodoResource for Server {
     let (
       version,
       public_key,
+      public_ip,
       terminals_disabled,
       container_terminals_disabled,
     ) = match status.as_ref().and_then(|s| s.periphery_info.as_ref())
@@ -78,10 +79,11 @@ impl super::KomodoResource for Server {
       Some(info) => (
         Some(info.version.clone()),
         Some(info.public_key.clone()),
+        info.public_ip.clone(),
         info.terminals_disabled,
         info.container_terminals_disabled,
       ),
-      None => (None, None, true, true),
+      None => (None, None, None, true, true),
     };
     ServerListItem {
       name: server.name,
@@ -110,6 +112,7 @@ impl super::KomodoResource for Server {
         attempted_public_key: optional_string(
           server.info.attempted_public_key,
         ),
+        public_ip,
         terminals_disabled,
         container_terminals_disabled,
       },

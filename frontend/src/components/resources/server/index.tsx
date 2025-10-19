@@ -19,8 +19,8 @@ import {
   Square,
   AlertCircle,
   CheckCircle2,
-  KeyRound,
   Loader2,
+  Globe,
 } from "lucide-react";
 import { Section } from "@components/layouts";
 import { Prune } from "./actions";
@@ -32,12 +32,7 @@ import { ServerConfig } from "./config";
 import { DeploymentTable } from "../deployment/table";
 import { ServerTable } from "./table";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
-import {
-  ActionWithDialog,
-  ConfirmButton,
-  CopyButton,
-  StatusBadge,
-} from "@components/util";
+import { ActionWithDialog, ConfirmButton, StatusBadge } from "@components/util";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
 import { Card, CardHeader, CardTitle } from "@ui/card";
 import { RepoTable } from "../repo/table";
@@ -51,7 +46,6 @@ import { GroupActions } from "@components/group-actions";
 import { ServerTerminals } from "@components/terminal/server";
 import { usePermissions } from "@lib/hooks";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui/hover-card";
 import {
   Dialog,
   DialogContent,
@@ -489,26 +483,26 @@ export const ServerComponents: RequiredResourceComponents = {
   },
 
   Info: {
-    Pubkey: ({ id }) => {
-      const public_key = useServer(id)?.info.public_key;
+    Version: ServerVersion,
+    PublicIP: ({ id }) => {
+      const { toast } = useToast();
+      const public_ip = useServer(id)?.info.public_ip;
+
       return (
-        <HoverCard>
-          <HoverCardTrigger>
-            <CopyButton
-              label="Periphery Pubkey"
-              icon={<KeyRound className="w-4 h-4" />}
-              content={public_key}
-            />
-          </HoverCardTrigger>
-          <HoverCardContent align="start" sideOffset={10} className="w-fit">
-            <div className="w-fit max-w-[200px] text-sm overflow-hidden overflow-ellipsis">
-              Copy Periphery Pubkey
-            </div>
-          </HoverCardContent>
-        </HoverCard>
+        <div
+          className="flex gap-2 items-center cursor-pointer"
+          onClick={() => {
+            public_ip &&
+              navigator.clipboard
+                .writeText(public_ip)
+                .then(() => toast({ title: "Copied public IP" }));
+          }}
+        >
+          <Globe className="w-4 h-4" />
+          {public_ip ?? "Unknown IP"}
+        </div>
       );
     },
-    Version: ServerVersion,
     Cpu: ({ id }) => {
       const isServerAvailable = useIsServerAvailable(id);
       const core_count =

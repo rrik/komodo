@@ -37,6 +37,7 @@ derive_variants.workspace = true
 resolver_api.workspace = true
 run_command.workspace = true
 # external
+hickory-resolver.workspace = true
 serde_yaml_ng.workspace = true
 tokio-stream.workspace = true
 portable-pty.workspace = true

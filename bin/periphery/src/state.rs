@@ -10,7 +10,7 @@ use cache::CloneCache;
 use komodo_client::entities::docker::container::ContainerStats;
 use noise::key::{RotatableKeyPair, SpkiPublicKey};
 use periphery_client::transport::EncodedTransportMessage;
-use tokio::sync::{Mutex, RwLock, mpsc, oneshot};
+use tokio::sync::{Mutex, OnceCell, RwLock, mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 use transport::channel::BufferedChannel;
 use uuid::Uuid;
@@ -18,6 +18,7 @@ use uuid::Uuid;
 use crate::{
   config::periphery_config,
   docker::DockerClient,
+  helpers::resolve_host_public_ip,
   stats::StatsClient,
   terminal::{StdinMsg, Terminal},
 };
@@ -296,4 +297,19 @@ pub fn container_stats() -> &'static ArcSwap<ContainerStatsMap> {
   static CONTAINER_STATS: OnceLock<ArcSwap<ContainerStatsMap>> =
     OnceLock::new();
   CONTAINER_STATS.get_or_init(Default::default)
+}
+
+pub async fn host_public_ip() -> Option<&'static String> {
+  static PUBLIC_IPS: OnceCell<Option<String>> = OnceCell::const_new();
+  PUBLIC_IPS
+    .get_or_init(|| async {
+      resolve_host_public_ip()
+        .await
+        .inspect_err(|e| {
+          warn!("Failed to resolve host public ip | {e:#}")
+        })
+        .ok()
+    })
+    .await
+    .as_ref()
 }

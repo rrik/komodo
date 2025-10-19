@@ -19,7 +19,9 @@ use uuid::Uuid;
 use crate::{
   api::compose::list_compose_projects,
   config::periphery_config,
-  state::{docker_client, periphery_keys, stats_client},
+  state::{
+    docker_client, host_public_ip, periphery_keys, stats_client,
+  },
 };
 
 pub mod terminal;
@@ -240,6 +242,7 @@ impl Resolve<Args> for PollStatus {
           .disable_container_terminals,
         stats_polling_rate: config.stats_polling_rate,
         docker_connected: docker_client().load().is_some(),
+        public_ip: host_public_ip().await.cloned(),
       },
       system_info: stats_client.info.clone(),
       system_stats,

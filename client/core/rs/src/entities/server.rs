@@ -36,6 +36,8 @@ pub struct ServerListItemInfo {
   /// External address of the server (reachable by users).
   /// Used with links.
   pub external_address: Option<String>,
+  /// Host public ip, if it could be resolved.
+  pub public_ip: Option<String>,
   /// Whether server is configured to send disconnected alerts.
   pub send_unreachable_alerts: bool,
   /// Whether server is configured to send cpu alerts.
@@ -358,6 +360,8 @@ pub struct PeripheryInformation {
   pub stats_polling_rate: Timelength,
   /// Whether Periphery is successfully connected to docker daemon.
   pub docker_connected: bool,
+  /// The host public ip, if it can be resolved.
+  pub public_ip: Option<String>,
 }
 
 /// Info about an active terminal on a server.

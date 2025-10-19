@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::{
+  net::IpAddr, path::PathBuf, str::FromStr as _, sync::OnceLock,
+};
 
 use anyhow::Context;
 use command::run_komodo_command_with_sanitization;
@@ -202,6 +204,57 @@ pub fn registry_token(
       registry.accounts.iter().find(|account| account.username == account_username).map(|account| account.token.as_str())
     })
     .with_context(|| format!("did not find token in config for docker registry account {account_username} | domain {domain}"))
+}
+
+// ====================
+//  Public IP over DNS
+// ====================
+
+type OpenDNSResolver = hickory_resolver::Resolver<
+  hickory_resolver::name_server::TokioConnectionProvider,
+>;
+
+fn opendns_resolver() -> &'static OpenDNSResolver {
+  static OPENDNS_RESOLVER: OnceLock<OpenDNSResolver> =
+    OnceLock::new();
+  OPENDNS_RESOLVER.get_or_init(|| {
+    // OpenDNS resolver ips
+    let ips = [
+      IpAddr::from_str("208.67.222.222").unwrap(),
+      IpAddr::from_str("208.67.220.220").unwrap(),
+      IpAddr::from_str("2620:119:35::35").unwrap(),
+      IpAddr::from_str("2620:119:53::53").unwrap(),
+    ];
+
+    // trust_negative_responses=true means NXDOMAIN/empty NOERROR from an
+    // authoritative upstream won’t be retried on other servers.
+    let ns =
+      hickory_resolver::config::NameServerConfigGroup::from_ips_clear(
+        &ips, 53, true,
+      );
+
+    hickory_resolver::Resolver::builder_with_config(
+      hickory_resolver::config::ResolverConfig::from_parts(
+        None,
+        vec![],
+        ns,
+      ),
+      hickory_resolver::name_server::TokioConnectionProvider::default(
+      ),
+    )
+    .build()
+  })
+}
+
+pub async fn resolve_host_public_ip() -> anyhow::Result<String> {
+  opendns_resolver()
+    .lookup_ip("myip.opendns.com.")
+    .await
+    .context("Failed to query OpenDNS resolvers for host public IP")?
+    .into_iter()
+    .map(|ip| ip.to_string())
+    .next()
+    .context("OpenDNS call for public IP didn't return anything")
 }
 
 // =====
