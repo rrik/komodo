@@ -248,6 +248,7 @@ export const UserDropdown = () => {
             setOpen={setOpen}
             rerender={rerender}
             viewLogout={viewLogout}
+            full
           />
         ))}
 
@@ -290,12 +291,14 @@ const Account = ({
   setOpen,
   rerender,
   viewLogout,
+  full,
 }: {
   login: Types.JwtResponse;
   current_id?: string;
   setOpen: (open: boolean) => void;
   rerender: () => void;
   viewLogout: boolean;
+  full?: boolean;
 }) => {
   const res = useRead("GetUsername", { user_id: login.user_id });
   if (!res.data) return;
@@ -319,6 +322,7 @@ const Account = ({
           <UsernameView
             username={res.data?.username}
             avatar={res.data?.avatar}
+            full={full}
           />
         </div>
         {selected && (
