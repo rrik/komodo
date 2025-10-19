@@ -14,7 +14,7 @@ RUN sh ./debian-deps.sh && rm ./debian-deps.sh
 
 COPY --from=binaries /periphery /usr/local/bin/periphery
 
-COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./bin/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8120

@@ -20,7 +20,7 @@ COPY --from=aarch64 /km /app/arch/linux/arm64
 ARG TARGETPLATFORM
 RUN mv /app/arch/${TARGETPLATFORM} /usr/local/bin/km && rm -r /app/arch
 
-COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./bin/cli/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENV KOMODO_CLI_CONFIG_PATHS="/config"
