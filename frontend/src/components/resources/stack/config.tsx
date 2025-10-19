@@ -844,7 +844,7 @@ const ConfigFiles = ({
                     set({ config_files: [...values] });
                   }}
                   disabled={disabled}
-                  className="w-[400px] max-w-full"
+                  className="max-w-[75%] lg:max-w-[400px]"
                 />
 
                 {!disabled && (
