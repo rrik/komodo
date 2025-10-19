@@ -797,7 +797,7 @@ export const DockerContainersSection = ({
         title={!titleOther ? "Containers" : undefined}
         icon={!titleOther ? <Box className="w-4 h-4" /> : undefined}
         actions={
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             {pruneButton && !allRunning && (
               <Prune server_id={server_id} type="Containers" />
             )}

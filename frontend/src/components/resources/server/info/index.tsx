@@ -65,14 +65,22 @@ export const ServerInfo = ({
     />
   );
 
-  switch (view) {
-    case "Containers":
-      return <Containers id={id} titleOther={Selector} _search={_search} />;
-    case "Networks":
-      return <Networks id={id} titleOther={Selector} _search={_search} />;
-    case "Volumes":
-      return <Volumes id={id} titleOther={Selector} _search={_search} />;
-    case "Images":
-      return <Images id={id} titleOther={Selector} _search={_search} />;
-  }
+  const Component = () => {
+    switch (view) {
+      case "Containers":
+        return <Containers id={id} titleOther={Selector} _search={_search} />;
+      case "Networks":
+        return <Networks id={id} titleOther={Selector} _search={_search} />;
+      case "Volumes":
+        return <Volumes id={id} titleOther={Selector} _search={_search} />;
+      case "Images":
+        return <Images id={id} titleOther={Selector} _search={_search} />;
+    }
+  };
+
+  return (
+    <Section titleOther={titleOther}>
+      <Component />
+    </Section>
+  );
 };

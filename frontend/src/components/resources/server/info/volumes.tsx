@@ -31,7 +31,7 @@ export const Volumes = ({
     <Section
       titleOther={titleOther}
       actions={
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           {!allInUse && <Prune server_id={id} type="Volumes" />}
           <div className="relative">
             <Search className="w-4 absolute top-[50%] left-3 -translate-y-[50%] text-muted-foreground" />
