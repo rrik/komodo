@@ -21,8 +21,8 @@ export const CoreInfo = () => {
         {info?.title}
       </div>
       |
-      <div className="flex gap-3 items-center justify-between">
-        <div className="hidden md:block">Public Key</div>
+      <div className="flex gap-3 items-center flex-wrap">
+        <div className="text-muted-foreground">Public Key</div>
         <Input
           className="w-[150px] md:w-[230px] bg-secondary"
           value={info?.public_key}
@@ -30,7 +30,7 @@ export const CoreInfo = () => {
         />
         <CopyButton content={info?.public_key} />
       </div>
-      <div className="hidden md:flex gap-3 items-center">|</div>
+      <div className="gap-3 items-center">|</div>
       <AllInfo />
     </div>
   );
@@ -45,7 +45,7 @@ const AllInfo = () => {
         <Button
           variant="secondary"
           size="icon"
-          className="hidden md:flex gap-2 items-center"
+          className="gap-2 items-center"
         >
           <Info className="w-4 h-4" />
         </Button>
