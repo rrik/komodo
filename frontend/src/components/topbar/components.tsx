@@ -42,7 +42,7 @@ import { Button } from "@ui/button";
 import { Link } from "react-router-dom";
 import {
   cn,
-  RESOURCE_TARGETS,
+  SIDEBAR_RESOURCES,
   usableResourcePath,
   version_is_none,
 } from "@lib/utils";
@@ -130,7 +130,7 @@ export const MobileDropdown = () => {
 
           <DropdownMenuSeparator />
 
-          {RESOURCE_TARGETS.map((type) => {
+          {SIDEBAR_RESOURCES.map((type) => {
             const RTIcon = ResourceComponents[type].Icon;
             const name = type === "ResourceSync" ? "Sync" : type;
             return (

@@ -17,10 +17,12 @@ export const CoreInfo = () => {
   const info = useRead("GetCoreInfo", {}).data;
   return (
     <div className="flex gap-4 items-center flex-wrap w-fit pb-4 border-b-2">
-      <div className="font-mono bg-secondary px-2 py-1 rounded-md">
+      <div className="font-mono bg-secondary px-2.5 py-1.5 rounded-md">
         {info?.title}
       </div>
-      |
+      <div className="text-muted-foreground">|</div>
+      <AllInfo />
+      <div className="text-muted-foreground">|</div>
       <div className="flex gap-3 items-center flex-wrap">
         <div className="text-muted-foreground">Public Key</div>
         <Input
@@ -30,8 +32,6 @@ export const CoreInfo = () => {
         />
         <CopyButton content={info?.public_key} />
       </div>
-      <div className="gap-3 items-center">|</div>
-      <AllInfo />
     </div>
   );
 };
@@ -42,11 +42,7 @@ const AllInfo = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="gap-2 items-center"
-        >
+        <Button variant="secondary" size="icon" className="gap-2 items-center">
           <Info className="w-4 h-4" />
         </Button>
       </DialogTrigger>

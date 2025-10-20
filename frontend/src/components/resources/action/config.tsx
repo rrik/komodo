@@ -296,7 +296,7 @@ export const ActionConfig = ({ id }: { id: string }) => {
                   <div className="text-nowrap text-muted-foreground text-sm">
                     Listen on branch:
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <Input
                       placeholder="Branch"
                       value={branch}

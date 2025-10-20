@@ -170,83 +170,82 @@ export const ProcedureConfig = ({ id }: { id: string }) => {
             components: {
               stages: (stages, set) => (
                 <div className="flex flex-col gap-4">
-                  {stages &&
-                    stages.map((stage, index) => (
-                      <Stage
-                        key={index}
-                        stage={stage}
-                        setStage={(stage) =>
-                          set({
-                            stages: stages.map((s, i) =>
-                              index === i ? stage : s
-                            ),
-                          })
-                        }
-                        removeStage={() =>
-                          set({
-                            stages: stages.filter((_, i) => index !== i),
-                          })
-                        }
-                        moveUp={
-                          index === 0
-                            ? undefined
-                            : () =>
-                                set({
-                                  stages: stages.map((stage, i) => {
-                                    // Make sure its not the first row
-                                    if (i === index && index !== 0) {
-                                      return stages[index - 1];
-                                    } else if (i === index - 1) {
-                                      // Reverse the entry, moving this row "Up"
-                                      return stages[index];
-                                    } else {
-                                      return stage;
-                                    }
-                                  }),
-                                })
-                        }
-                        moveDown={
-                          index === stages.length - 1
-                            ? undefined
-                            : () =>
-                                set({
-                                  stages: stages.map((stage, i) => {
-                                    // The index also cannot be the last index, which cannot be moved down
-                                    if (
-                                      i === index &&
-                                      index !== stages.length - 1
-                                    ) {
-                                      return stages[index + 1];
-                                    } else if (i === index + 1) {
-                                      // Move the row "Down"
-                                      return stages[index];
-                                    } else {
-                                      return stage;
-                                    }
-                                  }),
-                                })
-                        }
-                        insertAbove={() =>
-                          set({
-                            stages: [
-                              ...stages.slice(0, index),
-                              new_stage(index + 1),
-                              ...stages.slice(index),
-                            ],
-                          })
-                        }
-                        insertBelow={() =>
-                          set({
-                            stages: [
-                              ...stages.slice(0, index + 1),
-                              new_stage(index + 2),
-                              ...stages.slice(index + 1),
-                            ],
-                          })
-                        }
-                        disabled={disabled}
-                      />
-                    ))}
+                  {stages?.map((stage, index) => (
+                    <Stage
+                      key={index}
+                      stage={stage}
+                      setStage={(stage) =>
+                        set({
+                          stages: stages.map((s, i) =>
+                            index === i ? stage : s
+                          ),
+                        })
+                      }
+                      removeStage={() =>
+                        set({
+                          stages: stages.filter((_, i) => index !== i),
+                        })
+                      }
+                      moveUp={
+                        index === 0
+                          ? undefined
+                          : () =>
+                              set({
+                                stages: stages.map((stage, i) => {
+                                  // Make sure its not the first row
+                                  if (i === index && index !== 0) {
+                                    return stages[index - 1];
+                                  } else if (i === index - 1) {
+                                    // Reverse the entry, moving this row "Up"
+                                    return stages[index];
+                                  } else {
+                                    return stage;
+                                  }
+                                }),
+                              })
+                      }
+                      moveDown={
+                        index === stages.length - 1
+                          ? undefined
+                          : () =>
+                              set({
+                                stages: stages.map((stage, i) => {
+                                  // The index also cannot be the last index, which cannot be moved down
+                                  if (
+                                    i === index &&
+                                    index !== stages.length - 1
+                                  ) {
+                                    return stages[index + 1];
+                                  } else if (i === index + 1) {
+                                    // Move the row "Down"
+                                    return stages[index];
+                                  } else {
+                                    return stage;
+                                  }
+                                }),
+                              })
+                      }
+                      insertAbove={() =>
+                        set({
+                          stages: [
+                            ...stages.slice(0, index),
+                            new_stage(index + 1),
+                            ...stages.slice(index),
+                          ],
+                        })
+                      }
+                      insertBelow={() =>
+                        set({
+                          stages: [
+                            ...stages.slice(0, index + 1),
+                            new_stage(index + 2),
+                            ...stages.slice(index + 1),
+                          ],
+                        })
+                      }
+                      disabled={disabled}
+                    />
+                  ))}
                   <Button
                     variant="secondary"
                     onClick={add_stage}
@@ -373,7 +372,7 @@ export const ProcedureConfig = ({ id }: { id: string }) => {
                   <div className="text-nowrap text-muted-foreground text-sm">
                     Listen on branch:
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <Input
                       placeholder="Branch"
                       value={branch}
@@ -442,11 +441,11 @@ const Stage = ({
 }) => {
   return (
     <Card className="p-4 flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-2 flex-wrap">
         <Input
           value={stage.name}
           onChange={(e) => setStage({ ...stage, name: e.target.value })}
-          className="w-[300px] text-md"
+          className="w-[250px] text-md"
         />
         <div className="flex gap-4 items-center">
           <div>Enabled:</div>
