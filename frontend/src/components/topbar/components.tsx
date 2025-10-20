@@ -12,13 +12,11 @@ import {
   ArrowLeftRight,
   Bell,
   Box,
-  Boxes,
   Calendar,
   CalendarDays,
   Check,
   Circle,
   FileQuestion,
-  FolderTree,
   Keyboard,
   KeyRound,
   LayoutDashboard,
@@ -47,9 +45,7 @@ import {
   usableResourcePath,
   version_is_none,
 } from "@lib/utils";
-import { useAtom } from "jotai";
 import { ReactNode, useState } from "react";
-import { HomeView, homeViewAtom } from "@main";
 import {
   Dialog,
   DialogContent,
@@ -72,33 +68,28 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui/hover-card";
 export const MobileDropdown = () => {
   const type = useResourceParamType();
   const Components = type && ResourceComponents[type];
-  const [view, setView] = useAtom<HomeView>(homeViewAtom);
 
   const [icon, title] = Components
     ? [<Components.Icon />, (type === "ResourceSync" ? "Sync" : type) + "s"]
-    : location.pathname === "/" && view === "Dashboard"
+    : location.pathname === "/"
       ? [<LayoutDashboard className="w-4 h-4" />, "Dashboard"]
-      : location.pathname === "/" && view === "Resources"
-        ? [<Boxes className="w-4 h-4" />, "Resources"]
-        : location.pathname === "/" && view === "Tree"
-          ? [<FolderTree className="w-4 h-4" />, "Tree"]
-          : location.pathname === "/containers"
-            ? [<Box className="w-4 h-4" />, "Containers"]
-            : location.pathname === "/settings"
-              ? [<Settings className="w-4 h-4" />, "Settings"]
-              : location.pathname === "/terminals"
-                ? [<Terminal className="w-4 h-4" />, "Terminals"]
-                : location.pathname === "/schedules"
-                  ? [<CalendarDays className="w-4 h-4" />, "Schedules"]
-                  : location.pathname === "/alerts"
-                    ? [<AlertTriangle className="w-4 h-4" />, "Alerts"]
-                    : location.pathname === "/updates"
-                      ? [<Bell className="w-4 h-4" />, "Updates"]
-                      : location.pathname.split("/")[1] === "user-groups"
-                        ? [<Users className="w-4 h-4" />, "User Groups"]
-                        : location.pathname.split("/")[1] === "users"
-                          ? [<User className="w-4 h-4" />, "Users"]
-                          : [<FileQuestion className="w-4 h-4" />, "Unknown"];
+      : location.pathname === "/containers"
+        ? [<Box className="w-4 h-4" />, "Containers"]
+        : location.pathname === "/settings"
+          ? [<Settings className="w-4 h-4" />, "Settings"]
+          : location.pathname === "/terminals"
+            ? [<Terminal className="w-4 h-4" />, "Terminals"]
+            : location.pathname === "/schedules"
+              ? [<CalendarDays className="w-4 h-4" />, "Schedules"]
+              : location.pathname === "/alerts"
+                ? [<AlertTriangle className="w-4 h-4" />, "Alerts"]
+                : location.pathname === "/updates"
+                  ? [<Bell className="w-4 h-4" />, "Updates"]
+                  : location.pathname.split("/")[1] === "user-groups"
+                    ? [<Users className="w-4 h-4" />, "User Groups"]
+                    : location.pathname.split("/")[1] === "users"
+                      ? [<User className="w-4 h-4" />, "Users"]
+                      : [<FileQuestion className="w-4 h-4" />, "Unknown"];
 
   return (
     <DropdownMenu>
@@ -117,18 +108,18 @@ export const MobileDropdown = () => {
             label="Dashboard"
             icon={<LayoutDashboard className="w-4 h-4" />}
             to="/"
-            onClick={() => setView("Dashboard")}
           />
-          <DropdownLinkItem
-            label="Resources"
-            icon={<Boxes className="w-4 h-4" />}
-            to="/"
-            onClick={() => setView("Resources")}
-          />
+
           <DropdownLinkItem
             label="Containers"
             icon={<Box className="w-4 h-4" />}
             to="/containers"
+          />
+
+          <DropdownLinkItem
+            label="Terminals"
+            icon={<Terminal className="w-4 h-4" />}
+            to="/terminals"
           />
 
           <DropdownMenuSeparator />
@@ -161,12 +152,6 @@ export const MobileDropdown = () => {
           />
 
           <DropdownMenuSeparator />
-
-          <DropdownLinkItem
-            label="Terminals"
-            icon={<Terminal className="w-4 h-4" />}
-            to="/terminals"
-          />
 
           <DropdownLinkItem
             label="Schedules"
@@ -599,7 +584,7 @@ export const KeyboardShortcuts = () => {
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3 grid-cols-2 pt-8">
+        <div className="grid gap-3 grid-cols-2 pt-8 max-h-[calc(100vh-100px)] overflow-auto">
           <KeyboardShortcut label="Save" keys={["Ctrl / Cmd", "Enter"]} />
           <KeyboardShortcut label="Go Home" keys={["Shift", "H"]} />
 
@@ -610,6 +595,8 @@ export const KeyboardShortcuts = () => {
           <KeyboardShortcut label="Go to Repos" keys={["Shift", "R"]} />
           <KeyboardShortcut label="Go to Procedures" keys={["Shift", "P"]} />
           <KeyboardShortcut label="Go to Variables" keys={["Shift", "V"]} />
+          <KeyboardShortcut label="Go to Terminals" keys={["Shift", "J"]} />
+          <KeyboardShortcut label="Go to Schedules" keys={["Shift", "C"]} />
 
           <KeyboardShortcut label="Search" keys={["Shift", "S"]} />
           <KeyboardShortcut label="Add Filter Tag" keys={["Shift", "T"]} />

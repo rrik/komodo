@@ -712,15 +712,6 @@ export const useFilterByUpdateAvailable: () => [boolean, () => void] = () => {
   return [filter, () => set(!filter)];
 };
 
-const server_monitoring_table = atomWithStorage<boolean>(
-  "servers-monitoring-toggle-v1",
-  false
-);
-export const useServerMonitoringTable: () => [boolean, () => void] = () => {
-  const [filter, set] = useAtom<boolean>(server_monitoring_table);
-  return [filter, () => set(!filter)];
-};
-
 export const usePermissions = ({ type, id }: Types.ResourceTarget) => {
   const user = useUser().data;
   const perms = useRead("GetPermission", { target: { type, id } }).data as

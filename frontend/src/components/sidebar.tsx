@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Bell,
   Box,
-  Boxes,
   CalendarDays,
   LayoutDashboard,
   Settings,
@@ -14,32 +13,27 @@ import { Link, useLocation } from "react-router-dom";
 import { ResourceComponents } from "./resources";
 import { Separator } from "@ui/separator";
 import { ReactNode } from "react";
-import { useAtom } from "jotai";
-import { homeViewAtom } from "@main";
 
 export const Sidebar = () => {
-  const [view, setView] = useAtom(homeViewAtom);
   return (
     <div className="fixed top-0 pt-[84px] w-[200px] border-r hidden lg:block pr-8 pb-8 h-screen overflow-y-auto">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5">
         <SidebarLink
           label="Dashboard"
           to="/"
           icon={<LayoutDashboard className="w-4 h-4" />}
-          onClick={() => setView("Dashboard")}
-          highlighted={view === "Dashboard"}
         />
-        <SidebarLink
-          label="Resources"
-          to="/"
-          icon={<Boxes className="w-4 h-4" />}
-          onClick={() => setView("Resources")}
-          highlighted={view === "Resources"}
-        />
+        
         <SidebarLink
           label="Containers"
           to="/containers"
           icon={<Box className="w-4 h-4" />}
+        />
+
+        <SidebarLink
+          label="Terminals"
+          to="/terminals"
+          icon={<Terminal className="w-4 h-4" />}
         />
 
         <Separator className="my-3" />
@@ -73,12 +67,6 @@ export const Sidebar = () => {
         />
 
         <Separator className="my-3" />
-
-        <SidebarLink
-          label="Terminals"
-          to="/terminals"
-          icon={<Terminal className="w-4 h-4" />}
-        />
 
         <SidebarLink
           label="Schedules"

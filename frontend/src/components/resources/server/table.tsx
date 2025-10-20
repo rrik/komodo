@@ -2,7 +2,6 @@ import { TableTags } from "@components/tags";
 import {
   useRead,
   useSelectedResources,
-  useServerMonitoringTable,
 } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { ServerComponents, ServerVersion } from ".";
@@ -10,14 +9,15 @@ import { ResourceLink } from "../common";
 import { Types } from "komodo_client";
 import { useCallback } from "react";
 import { ServerMonitoringTable } from "./monitoring-table";
+import { useDashboardPreferences } from "@lib/dashboard-preferences";
 
 export const ServerTable = ({
   servers,
 }: {
   servers: Types.ServerListItem[];
 }) => {
-  const [monitoring] = useServerMonitoringTable();
-  if (monitoring) {
+  const { preferences } = useDashboardPreferences();
+  if (preferences.showServerStats) {
     return <ServerMonitoringTable servers={servers} />;
   } else {
     return <StandardTable servers={servers} />;

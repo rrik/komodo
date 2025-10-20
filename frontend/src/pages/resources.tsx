@@ -18,7 +18,7 @@ import { Search } from "lucide-react";
 import { NotFound, TemplateQueryBehaviorSelector } from "@components/util";
 import { Switch } from "@ui/switch";
 import { UsableResource } from "@types";
-import { ToggleServerMonitoringTableButton } from "@components/resources/server/monitoring-table";
+import { ShowServerStats } from "./dashboard";
 
 export default function Resources({ _type }: { _type?: UsableResource }) {
   const is_admin = useUser().data?.admin ?? false;
@@ -70,7 +70,7 @@ export default function Resources({ _type }: { _type?: UsableResource }) {
       icon={<Components.BigIcon />}
       actions={
         <div className="flex items-center gap-2">
-          {type === "Server" && <ToggleServerMonitoringTableButton />}
+          {type === "Server" && <ShowServerStats />}
           <ExportButton targets={targets} />
         </div>
       }

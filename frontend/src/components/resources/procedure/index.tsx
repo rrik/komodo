@@ -11,7 +11,7 @@ import {
 } from "@lib/color";
 import { cn, updateLogToHtml } from "@lib/utils";
 import { Types } from "komodo_client";
-import { DashboardPieChart } from "@pages/home/dashboard";
+import { DashboardPieChart } from "@pages/dashboard";
 import { GroupActions } from "@components/group-actions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
 import { Card } from "@ui/card";

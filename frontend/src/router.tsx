@@ -14,14 +14,12 @@ import {
 } from "react-router-dom";
 
 // Lazy import pages
+const Dashboard = lazy(() => import("@pages/dashboard"));
 const Resources = lazy(() => import("@pages/resources"));
 const Resource = lazy(() => import("@pages/resource"));
 const Login = lazy(() => import("@pages/login"));
-const Tree = lazy(() => import("@pages/home/tree"));
 const UpdatesPage = lazy(() => import("@pages/updates"));
-const AllResources = lazy(() => import("@pages/home/all_resources"));
 const UserDisabled = lazy(() => import("@pages/user_disabled"));
-const Home = lazy(() => import("@pages/home"));
 const AlertsPage = lazy(() => import("@pages/alerts"));
 const UserPage = lazy(() => import("@pages/user"));
 const UserGroupPage = lazy(() => import("@pages/user-group"));
@@ -94,11 +92,9 @@ export const Router = () => {
           <Route path="login" element={<Login />} />
           <Route element={<RequireAuth />}>
             <Route path="/" element={<Layout />}>
-              <Route path="" element={<Home />} />
+              <Route path="" element={<Dashboard />} />
               <Route path="settings" element={<Settings />} />
-              <Route path="tree" element={<Tree />} />
               <Route path="containers" element={<ContainersPage />} />
-              <Route path="resources" element={<AllResources />} />
               <Route path="schedules" element={<SchedulesPage />} />
               <Route path="terminals" element={<TerminalsPage />} />
               <Route path="alerts" element={<AlertsPage />} />

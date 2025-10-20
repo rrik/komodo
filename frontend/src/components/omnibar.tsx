@@ -1,4 +1,10 @@
-import { useAllResources, useLocalStorage, useRead, useSettingsView, useUser } from "@lib/hooks";
+import {
+  useAllResources,
+  useLocalStorage,
+  useRead,
+  useSettingsView,
+  useUser,
+} from "@lib/hooks";
 import { Button } from "@ui/button";
 import {
   CommandDialog,
@@ -9,7 +15,7 @@ import {
   CommandSeparator,
   CommandItem,
 } from "@ui/command";
-import { Box, Home, Search, User } from "lucide-react";
+import { Box, CalendarDays, Home, Search, Terminal, User } from "lucide-react";
 import { Fragment, ReactNode, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn, RESOURCE_TARGETS, usableResourcePath } from "@lib/utils";
@@ -160,6 +166,22 @@ const useOmniItems = (
           label: "Containers",
           icon: <Box className="w-4 h-4" />,
           onSelect: () => nav("/containers"),
+          template: false,
+        },
+        {
+          key: "Terminals",
+          type: "Server" as UsableResource,
+          label: "Terminals",
+          icon: <Terminal className="w-4 h-4" />,
+          onSelect: () => nav("/terminals"),
+          template: false,
+        },
+        {
+          key: "Schedules",
+          type: "Server" as UsableResource,
+          label: "Schedules",
+          icon: <CalendarDays className="w-4 h-4" />,
+          onSelect: () => nav("/schedules"),
           template: false,
         },
         (user?.admin && {

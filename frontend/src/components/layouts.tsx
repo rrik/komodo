@@ -32,6 +32,8 @@ export const Layout = () => {
   useShiftKeyListener("B", () => nav("/builds"));
   useShiftKeyListener("R", () => nav("/repos"));
   useShiftKeyListener("P", () => nav("/procedures"));
+  useShiftKeyListener("J", () => nav("/terminals"));
+  useShiftKeyListener("C", () => nav("/schedules"));
   useShiftKeyListener("V", () => {
     setSettingsView("Variables");
     nav("/settings");

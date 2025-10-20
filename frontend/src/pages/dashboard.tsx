@@ -3,11 +3,11 @@ import { Page, Section } from "@components/layouts";
 import { ResourceComponents } from "@components/resources";
 import { ResourceLink, ResourceNameSimple } from "@components/resources/common";
 import { ServerStatsMini } from "@components/resources/server";
-import { TagsWithBadge } from "@components/tags";
-import { StatusBadge, TemplateMarker } from "@components/util";
+import { TagsFilter, TagsWithBadge } from "@components/tags";
+import { ShowHideButton, StatusBadge, TemplateMarker } from "@components/util";
 import { useDashboardPreferences } from "@lib/dashboard-preferences";
 import { Button } from "@ui/button";
-import { Eye, EyeOff, Settings } from "lucide-react";
+import { Eye, EyeOff, Settings, Table } from "lucide-react";
 import {
   action_state_intention,
   build_state_intention,
@@ -17,21 +17,26 @@ import {
   repo_state_intention,
   text_color_class_by_intention,
 } from "@lib/color";
-import { useNoResources, useRead, useUser } from "@lib/hooks";
+import {
+  useFilterResources,
+  useNoResources,
+  useRead,
+  useUser,
+} from "@lib/hooks";
 import { cn, usableResourcePath } from "@lib/utils";
 import { Types } from "komodo_client";
-import { UsableResource } from "@types";
+import { RequiredResourceComponents, UsableResource } from "@types";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { AlertTriangle, Box, Circle, History } from "lucide-react";
 import { PieChart } from "react-minimal-pie-chart";
 import { Link } from "react-router-dom";
 import { UpdateAvailable as StackUpdateAvailable } from "@components/resources/stack";
 import { UpdateAvailable as DeploymentUpdateAvailable } from "@components/resources/deployment";
+import { useState } from "react";
+import { Input } from "@ui/input";
 
 export default function Dashboard() {
-  const noResources = useNoResources();
-  const user = useUser().data!;
-
+  const { preferences } = useDashboardPreferences();
   return (
     <>
       <ActiveResources />
@@ -39,37 +44,122 @@ export default function Dashboard() {
         title="Dashboard"
         icon={<Box className="w-8 h-8" />}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <ShowTables />
             <ShowServerStats />
             <ExportButton />
           </div>
         }
       >
-        <div className="flex flex-col gap-6 w-full">
-          {noResources && (
-            <div className="flex items-center gap-4 px-2 text-muted-foreground">
-              <AlertTriangle className="w-4 h-4" />
-              <p className="text-lg">
-                No resources found.{" "}
-                {user.admin
-                  ? "To get started, create a server."
-                  : "Contact an admin for access to resources."}
-              </p>
-            </div>
-          )}
-          <ResourceRow type="Server" />
-          <ResourceRow type="Stack" />
-          <ResourceRow type="Deployment" />
-          <ResourceRow type="Build" />
-          <ResourceRow type="Repo" />
-          <ResourceRow type="Procedure" />
-          <ResourceRow type="Action" />
-          <ResourceRow type="ResourceSync" />
-        </div>
+        {preferences.showTables ? <TablesDashboard /> : <RecentsDashboard />}
       </Page>
     </>
   );
 }
+
+const TablesDashboard = () => {
+  const [search, setSearch] = useState("");
+  const noResources = useNoResources();
+  const user = useUser().data!;
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-end gap-2 flex-wrap">
+        <TagsFilter />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="search..."
+          className="w-[200px] lg:w-[300px]"
+        />
+      </div>
+
+      {noResources && (
+        <div className="flex items-center gap-4 px-2 text-muted-foreground">
+          <AlertTriangle className="w-4 h-4" />
+          <p className="text-lg">
+            No resources found.{" "}
+            {user.admin
+              ? "To get started, create a server."
+              : "Contact an admin for access to resources."}
+          </p>
+        </div>
+      )}
+
+      {Object.entries(ResourceComponents).map(([type, Components]) => (
+        <TableSection
+          key={type}
+          type={type}
+          Components={Components}
+          search={search}
+        />
+      ))}
+    </div>
+  );
+};
+
+const TableSection = ({
+  type,
+  Components,
+  search,
+}: {
+  type: string;
+  Components: RequiredResourceComponents;
+  search?: string;
+}) => {
+  const resources = useRead(`List${type as UsableResource}s`, {}).data;
+
+  const filtered = useFilterResources(
+    resources as Types.ResourceListItem<unknown>[],
+    search
+  );
+
+  let count = filtered.length;
+
+  const [show, setShow] = useState(true);
+
+  if (!count) return;
+
+  return (
+    <Section
+      key={type}
+      title={type + "s"}
+      icon={<Components.Icon />}
+      actions={<ShowHideButton show={show} setShow={setShow} />}
+    >
+      <div className={cn("border-b", show && "pb-8")}>
+        {show && <Components.Table resources={filtered ?? []} />}
+      </div>
+    </Section>
+  );
+};
+
+const RecentsDashboard = () => {
+  const noResources = useNoResources();
+  const user = useUser().data!;
+  return (
+    <div className="flex flex-col gap-6 w-full">
+      {noResources && (
+        <div className="flex items-center gap-4 px-2 text-muted-foreground">
+          <AlertTriangle className="w-4 h-4" />
+          <p className="text-lg">
+            No resources found.{" "}
+            {user.admin
+              ? "To get started, create a server."
+              : "Contact an admin for access to resources."}
+          </p>
+        </div>
+      )}
+      <ResourceRow type="Server" />
+      <ResourceRow type="Stack" />
+      <ResourceRow type="Deployment" />
+      <ResourceRow type="Build" />
+      <ResourceRow type="Repo" />
+      <ResourceRow type="Procedure" />
+      <ResourceRow type="Action" />
+      <ResourceRow type="ResourceSync" />
+    </div>
+  );
+};
 
 const ResourceRow = ({ type }: { type: UsableResource }) => {
   const _recents = useUser().data?.recents?.[type]?.slice(0, 6);
@@ -353,15 +443,13 @@ const ActiveResources = () => {
   );
 };
 
-const ShowServerStats = () => {
-  const { preferences, updatePreference } = useDashboardPreferences();
+export const ShowServerStats = () => {
+  const { preferences, togglePreference } = useDashboardPreferences();
   return (
     <Button
       variant="outline"
-      onClick={() =>
-        updatePreference("showServerStats", !preferences.showServerStats)
-      }
-      className="flex items-center gap-2"
+      onClick={() => togglePreference("showServerStats")}
+      className="flex items-center gap-2 w-[180px]"
     >
       {preferences.showServerStats ? (
         <>
@@ -372,6 +460,29 @@ const ShowServerStats = () => {
         <>
           <Eye className="w-4 h-4" />
           <span>Show Server Stats</span>
+        </>
+      )}
+    </Button>
+  );
+};
+
+const ShowTables = () => {
+  const { preferences, updatePreference } = useDashboardPreferences();
+  return (
+    <Button
+      variant="outline"
+      onClick={() => updatePreference("showTables", !preferences.showTables)}
+      className="flex items-center gap-2 w-[150px]"
+    >
+      {preferences.showTables ? (
+        <>
+          <History className="w-4 h-4" />
+          <span>Show Recents</span>
+        </>
+      ) : (
+        <>
+          <Table className="w-4 h-4" />
+          <span>Show Tables</span>
         </>
       )}
     </Button>

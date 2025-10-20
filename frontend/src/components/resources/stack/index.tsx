@@ -35,7 +35,7 @@ import {
 import { Badge } from "@ui/badge";
 import { Button } from "@ui/button";
 import { useToast } from "@ui/use-toast";
-import { DashboardPieChart } from "@pages/home/dashboard";
+import { DashboardPieChart } from "@pages/dashboard";
 import { StatusBadge } from "@components/util";
 import { GroupActions } from "@components/group-actions";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@ui/tooltip";

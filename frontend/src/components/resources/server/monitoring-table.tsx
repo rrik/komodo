@@ -4,12 +4,9 @@ import { DataTable, SortableHeader } from "@ui/data-table";
 import {
   useRead,
   useSelectedResources,
-  useServerMonitoringTable,
 } from "@lib/hooks";
 import { useIsServerAvailable } from ".";
 import { Types } from "komodo_client";
-import { Button } from "@ui/button";
-import { Eye, EyeOff } from "lucide-react";
 
 export const ServerMonitoringTable = ({
   servers,
@@ -70,29 +67,6 @@ export const ServerMonitoringTable = ({
         },
       ]}
     />
-  );
-};
-
-export const ToggleServerMonitoringTableButton = () => {
-  const [monitoring, toggleMonitoring] = useServerMonitoringTable();
-  return (
-    <Button
-      variant="outline"
-      className="flex items-center gap-2"
-      onClick={toggleMonitoring}
-    >
-      {monitoring ? (
-        <>
-          <EyeOff className="w-4 h-4" />
-          Hide Server Stats
-        </>
-      ) : (
-        <>
-          <Eye className="w-4 h-4" />
-          Show Server Stats
-        </>
-      )}
-    </Button>
   );
 };
 

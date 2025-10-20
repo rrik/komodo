@@ -17,7 +17,7 @@ import {
 } from "@lib/color";
 import { cn } from "@lib/utils";
 import { Types } from "komodo_client";
-import { DashboardPieChart } from "@pages/home/dashboard";
+import { DashboardPieChart } from "@pages/dashboard";
 import { StatusBadge } from "@components/util";
 import { Card } from "@ui/card";
 import { Badge } from "@ui/badge";

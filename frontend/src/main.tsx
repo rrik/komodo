@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router } from "@router";
 import { WebsocketProvider } from "@lib/socket";
 import { Toaster } from "@ui/toaster";
-import { atomWithStorage } from "@lib/hooks";
 // Run monaco setup
 import "./monaco";
 import { init_monaco } from "./monaco/init";
@@ -17,13 +16,6 @@ export const UPDATE_WS_URL =
 const query_client = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
-
-export type HomeView = "Dashboard" | "Tree" | "Resources";
-
-export const homeViewAtom = atomWithStorage<HomeView>(
-  "home-view-v1",
-  "Dashboard"
-);
 
 // Don't need to await this to render.
 init_monaco();
