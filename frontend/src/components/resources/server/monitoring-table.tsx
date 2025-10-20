@@ -1,10 +1,7 @@
 import { ResourceLink } from "@components/resources/common";
-import { ServerComponents } from "@components/resources/server";
+import { ServerVersion } from "@components/resources/server";
 import { DataTable, SortableHeader } from "@ui/data-table";
-import {
-  useRead,
-  useSelectedResources,
-} from "@lib/hooks";
+import { useRead, useSelectedResources } from "@lib/hooks";
 import { useIsServerAvailable } from ".";
 import { Types } from "komodo_client";
 
@@ -61,9 +58,7 @@ export const ServerMonitoringTable = ({
         {
           header: "Version",
           size: 160,
-          cell: ({ row }) => (
-            <ServerComponents.Info.Version id={row.original.id} />
-          ),
+          cell: ({ row }) => <ServerVersion id={row.original.id} />,
         },
       ]}
     />
