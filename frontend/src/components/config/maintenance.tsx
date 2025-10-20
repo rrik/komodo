@@ -23,10 +23,10 @@ import { useState } from "react";
 import {
   PlusCircle,
   Pen,
-  Trash2,
   Clock,
   Calendar,
   CalendarDays,
+  Trash,
 } from "lucide-react";
 import { TimezoneSelector } from "@components/util";
 
@@ -189,7 +189,7 @@ export const MaintenanceWindows = ({
                       onClick={() => deleteWindow(row.index)}
                       className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash className="w-4 h-4" />
                     </Button>
                   </div>
                 ),

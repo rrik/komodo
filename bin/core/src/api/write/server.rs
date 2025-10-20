@@ -1,5 +1,6 @@
 use anyhow::Context;
 use formatting::{bold, format_serror};
+use futures_util::{StreamExt, stream::FuturesUnordered};
 use komodo_client::{
   api::write::*,
   entities::{
@@ -16,6 +17,7 @@ use resolver_api::Resolve;
 use crate::{
   helpers::{
     periphery_client,
+    query::get_all_tags,
     update::{add_update, make_update, update_update},
   },
   permission::get_check_permissions,
@@ -285,6 +287,59 @@ impl Resolve<WriteArgs> for DeleteAllTerminals {
       .request(api::terminal::DeleteAllTerminals {})
       .await
       .context("Failed to delete all terminals on Periphery")?;
+
+    Ok(NoData {})
+  }
+}
+
+//
+
+impl Resolve<WriteArgs> for BatchDeleteAllTerminals {
+  #[instrument(
+    "BatchDeleteAllTerminals",
+    skip_all,
+    fields(
+      operator = user.id,
+      query = format!("{:?}", self.query),
+    )
+  )]
+  async fn resolve(
+    self,
+    WriteArgs { user }: &WriteArgs,
+  ) -> Result<Self::Response, Self::Error> {
+    let all_tags = if self.query.tags.is_empty() {
+      vec![]
+    } else {
+      get_all_tags(None).await?
+    };
+
+    resource::list_full_for_user::<Server>(
+      self.query, user, &all_tags,
+    )
+    .await?
+    .into_iter()
+    .map(|server| async move {
+      let res = async {
+        let periphery = periphery_client(&server).await?;
+
+        periphery
+          .request(api::terminal::DeleteAllTerminals {})
+          .await
+          .context("Failed to delete all terminals on Periphery")?;
+
+        anyhow::Ok(())
+      }
+      .await;
+      if let Err(e) = res {
+        warn!(
+          "Failed to delete all terminals on {} ({}) | {e:#}",
+          server.name, server.id
+        )
+      }
+    })
+    .collect::<FuturesUnordered<_>>()
+    .collect::<Vec<_>>()
+    .await;
 
     Ok(NoData {})
   }

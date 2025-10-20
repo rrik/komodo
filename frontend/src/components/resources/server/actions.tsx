@@ -45,6 +45,7 @@ export const Prune = ({
         icon={<Scissors className="w-4 h-4" />}
         onClick={() => mutate({ server: server_id })}
         loading={pending}
+        className="w-[190px]"
         disabled={!canExecute || pending}
       />
     );
@@ -56,6 +57,7 @@ export const Prune = ({
         icon={<Scissors className="w-4 h-4" />}
         onClick={() => mutate({ server: server_id })}
         loading={pending}
+        targetClassName="w-[190px]"
         disabled={!canExecute || pending}
       />
     );

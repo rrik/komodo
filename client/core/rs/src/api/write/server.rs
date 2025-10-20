@@ -5,7 +5,7 @@ use typeshare::typeshare;
 
 use crate::entities::{
   NoData,
-  server::{_PartialServerConfig, Server},
+  server::{_PartialServerConfig, Server, ServerQuery},
   update::Update,
 };
 
@@ -209,6 +209,23 @@ pub struct DeleteTerminal {
 pub struct DeleteAllTerminals {
   /// Server Id or name
   pub server: String,
+}
+
+//
+
+/// Delete all terminals on many or all Servers.
+/// Response: [NoData]
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoWriteRequest)]
+#[response(NoData)]
+#[error(serror::Error)]
+pub struct BatchDeleteAllTerminals {
+  /// optional structured query to filter servers.
+  #[serde(default)]
+  pub query: ServerQuery,
 }
 
 //

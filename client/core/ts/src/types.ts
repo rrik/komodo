@@ -4372,6 +4372,15 @@ export interface BatchCloneRepo {
 	pattern: string;
 }
 
+/**
+ * Delete all terminals on many or all Servers.
+ * Response: [NoData]
+ */
+export interface BatchDeleteAllTerminals {
+	/** optional structured query to filter servers. */
+	query?: ServerQuery;
+}
+
 /** Deploys multiple Deployments in parallel that match pattern. Response: [BatchExecutionResponse]. */
 export interface BatchDeploy {
 	/**
@@ -8980,6 +8989,7 @@ export type WriteRequest =
 	| { type: "CreateTerminal", params: CreateTerminal }
 	| { type: "DeleteTerminal", params: DeleteTerminal }
 	| { type: "DeleteAllTerminals", params: DeleteAllTerminals }
+	| { type: "BatchDeleteAllTerminals", params: BatchDeleteAllTerminals }
 	| { type: "UpdateServerPublicKey", params: UpdateServerPublicKey }
 	| { type: "RotateServerKeys", params: RotateServerKeys }
 	| { type: "CreateStack", params: CreateStack }

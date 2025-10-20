@@ -1,11 +1,12 @@
 import { Page } from "@components/layouts";
 import { ResourceLink } from "@components/resources/common";
-import { TableTags, TagsFilter } from "@components/tags";
-import { useRead, useSetTitle, useTags } from "@lib/hooks";
+import { TagsFilter } from "@components/tags";
+import { ConfirmButton } from "@components/util";
+import { useRead, useSetTitle, useTags, useWrite } from "@lib/hooks";
 import { filterBySplit } from "@lib/utils";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Input } from "@ui/input";
-import { Search, Terminal } from "lucide-react";
+import { Search, Terminal, Trash } from "lucide-react";
 import { useState } from "react";
 
 export default function TerminalsPage() {
@@ -13,11 +14,12 @@ export default function TerminalsPage() {
   const [search, set] = useState("");
   const { tags } = useTags();
   const servers = useRead("ListServers", { query: { tags } }).data ?? [];
-  const terminals = useRead(
+  const { data, refetch } = useRead(
     "ListAllTerminals",
     { query: { tags } },
     { refetchInterval: 10_000 }
-  ).data?.map((terminal) => {
+  );
+  const terminals = data?.map((terminal) => {
     const server = servers.find((server) => server.id === terminal.server_id);
     return {
       ...terminal,
@@ -37,7 +39,8 @@ export default function TerminalsPage() {
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-4 items-center justify-end">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <BatchDeleteAllTerminals refetch={refetch} />
           <div className="flex items-center gap-4 flex-wrap">
             <TagsFilter />
             <div className="relative">
@@ -101,8 +104,14 @@ export default function TerminalsPage() {
               ),
             },
             {
-              header: "Tags",
-              cell: ({ row }) => <TableTags tag_ids={row.original.tags} />,
+              header: "Delete",
+              cell: ({ row }) => (
+                <DeleteTerminal
+                  server={row.original.server_id}
+                  terminal={row.original.name}
+                  refetch={refetch}
+                />
+              ),
             },
           ]}
         />
@@ -110,3 +119,40 @@ export default function TerminalsPage() {
     </Page>
   );
 }
+
+const DeleteTerminal = ({
+  server,
+  terminal,
+  refetch,
+}: {
+  server: string;
+  terminal: string;
+  refetch: () => void;
+}) => {
+  const { mutate } = useWrite("DeleteTerminal", { onSuccess: refetch });
+  return (
+    <ConfirmButton
+      title="Delete"
+      variant="destructive"
+      icon={<Trash className="w-4 h-4" />}
+      className="w-[120px]"
+      onClick={() => mutate({ server, terminal })}
+    />
+  );
+};
+
+const BatchDeleteAllTerminals = ({ refetch }: { refetch: () => void }) => {
+  const { mutate } = useWrite("BatchDeleteAllTerminals", {
+    onSuccess: refetch,
+  });
+  const { tags } = useTags();
+  return (
+    <ConfirmButton
+      title="Delete All"
+      variant="destructive"
+      icon={<Trash className="w-4 h-4" />}
+      className="w-[180px]"
+      onClick={() => mutate({ query: { tags } })}
+    />
+  );
+};

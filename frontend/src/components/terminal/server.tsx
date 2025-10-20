@@ -70,51 +70,52 @@ export const ServerTerminals = ({
   return (
     <Section titleOther={titleOther}>
       <Card>
-        <CardHeader className="flex flex-row gap-4 items-center flex-wrap">
-          {terminals?.map(({ name: terminal, stored_size_kb }) => (
-            <Badge
-              key={terminal}
-              variant={terminal === selected ? "default" : "secondary"}
-              className="w-fit min-w-[150px] px-2 py-1 cursor-pointer flex gap-4 justify-between"
-              onClick={() => setSelected({ selected: terminal })}
-            >
-              <div className="text-sm w-full flex gap-1 items-center justify-between">
-                {terminal}
-                {/* <div className="min-w-[20px] max-w-[70px] text-xs text-muted-foreground text-nowrap whitespace-nowrap overflow-hidden overflow-ellipsis">
+        <CardHeader>
+          <div className="flex gap-4 items-center flex-wrap">
+            {terminals?.map(({ name: terminal, stored_size_kb }) => (
+              <Badge
+                key={terminal}
+                variant={terminal === selected ? "default" : "secondary"}
+                className="w-fit min-w-[150px] px-2 py-1 cursor-pointer flex gap-4 justify-between"
+                onClick={() => setSelected({ selected: terminal })}
+              >
+                <div className="text-sm w-full flex gap-1 items-center justify-between">
+                  {terminal}
+                  {/* <div className="min-w-[20px] max-w-[70px] text-xs text-muted-foreground text-nowrap whitespace-nowrap overflow-hidden overflow-ellipsis">
                     {command}
                   </div> */}
-                <div className="text-muted-foreground text-xs">
-                  {stored_size_kb.toFixed()} KiB
+                  <div className="text-muted-foreground text-xs">
+                    {stored_size_kb.toFixed()} KiB
+                  </div>
                 </div>
-              </div>
-              <Button
-                className="p-1 h-fit"
-                variant="destructive"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  await delete_terminal({ server: id, terminal });
-                  refetchTerminals();
-                  if (selected === terminal) {
-                    setSelected({ selected: undefined });
-                  }
-                }}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </Badge>
-          ))}
-          {terminals && !terminals_disabled && (
-            <NewTerminal create={create} pending={create_pending} />
-          )}
-          {/* Mobile button */}
-          <Button
-            className="flex items-center gap-2"
-            variant="secondary"
-            onClick={() => triggerReconnect()}
-          >
-            Reconnect
-            <RefreshCcw className="w-4 h-4" />
-          </Button>
+                <Button
+                  className="p-1 h-fit"
+                  variant="destructive"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await delete_terminal({ server: id, terminal });
+                    refetchTerminals();
+                    if (selected === terminal) {
+                      setSelected({ selected: undefined });
+                    }
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </Badge>
+            ))}
+            {terminals && !terminals_disabled && (
+              <NewTerminal create={create} pending={create_pending} />
+            )}
+            <Button
+              className="flex items-center gap-2 m-0"
+              variant="secondary"
+              onClick={() => triggerReconnect()}
+            >
+              Reconnect
+              <RefreshCcw className="w-4 h-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="min-h-[65vh]">
           {terminals?.map(({ name: terminal }) => (
