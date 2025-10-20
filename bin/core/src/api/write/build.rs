@@ -390,23 +390,28 @@ impl Resolve<WriteArgs> for RefreshBuildCache {
       None
     };
 
-    let (
-      remote_path,
-      remote_contents,
-      remote_error,
-      latest_hash,
-      latest_message,
-    ) = if build.config.files_on_host {
+    let RemoteDockerfileContents {
+      path,
+      contents,
+      error,
+      hash,
+      message,
+    } = if build.config.files_on_host {
       // =============
       // FILES ON HOST
       // =============
       match get_on_host_dockerfile(&build).await {
         Ok(FileContents { path, contents }) => {
-          (Some(path), Some(contents), None, None, None)
+          RemoteDockerfileContents {
+            path: Some(path),
+            contents: Some(contents),
+            ..Default::default()
+          }
         }
-        Err(e) => {
-          (None, None, Some(format_serror(&e.into())), None, None)
-        }
+        Err(e) => RemoteDockerfileContents {
+          error: Some(format_serror(&e.into())),
+          ..Default::default()
+        },
       }
     } else if let Some(repo) = &repo {
       let Some(res) = get_git_remote(&build, repo.into()).await?
@@ -426,7 +431,7 @@ impl Resolve<WriteArgs> for RefreshBuildCache {
       // =============
       // UI BASED FILE
       // =============
-      (None, None, None, None, None)
+      RemoteDockerfileContents::default()
     };
 
     let info = BuildInfo {
@@ -434,11 +439,11 @@ impl Resolve<WriteArgs> for RefreshBuildCache {
       built_hash: build.info.built_hash,
       built_message: build.info.built_message,
       built_contents: build.info.built_contents,
-      remote_path,
-      remote_contents,
-      remote_error,
-      latest_hash,
-      latest_message,
+      remote_path: path,
+      remote_contents: contents,
+      remote_error: error,
+      latest_hash: hash,
+      latest_message: message,
     };
 
     let info = to_document(&info)
@@ -530,15 +535,7 @@ async fn get_on_host_dockerfile(
 async fn get_git_remote(
   build: &Build,
   mut clone_args: RepoExecutionArgs,
-) -> anyhow::Result<
-  Option<(
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-  )>,
-> {
+) -> anyhow::Result<Option<RemoteDockerfileContents>> {
   if clone_args.provider.is_empty() {
     // Nothing to do here
     return Ok(None);
@@ -565,7 +562,17 @@ async fn get_git_remote(
     access_token,
   )
   .await
-  .context("failed to clone build repo")?;
+  .context("Failed to clone Build repo")?;
+
+  // Ensure clone / pull successful,
+  // propogate error log -> 'errored' and return.
+  if let Some(failure) = res.logs.iter().find(|log| !log.success) {
+    return Ok(Some(RemoteDockerfileContents {
+      path: Some(format!("Failed at: {}", failure.stage)),
+      error: Some(failure.combined()),
+      ..Default::default()
+    }));
+  }
 
   let relative_path = PathBuf::from(&build.config.build_path)
     .join(&build.config.dockerfile_path);
@@ -578,11 +585,20 @@ async fn get_git_remote(
       Ok(contents) => (Some(contents), None),
       Err(e) => (None, Some(format_serror(&e.into()))),
     };
-  Ok(Some((
-    Some(relative_path.display().to_string()),
+  Ok(Some(RemoteDockerfileContents {
+    path: Some(relative_path.display().to_string()),
     contents,
     error,
-    res.commit_hash,
-    res.commit_message,
-  )))
+    hash: res.commit_hash,
+    message: res.commit_message,
+  }))
+}
+
+#[derive(Default)]
+pub struct RemoteDockerfileContents {
+  pub path: Option<String>,
+  pub contents: Option<String>,
+  pub error: Option<String>,
+  pub hash: Option<String>,
+  pub message: Option<String>,
 }

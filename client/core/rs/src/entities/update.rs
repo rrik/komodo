@@ -192,12 +192,12 @@ impl Log {
   /// Combines stdout / stderr into one log
   pub fn combined(&self) -> String {
     match (self.stdout.is_empty(), self.stderr.is_empty()) {
-      (true, true) => {
+      (false, false) => {
         format!("stdout: {}\n\nstderr: {}", self.stdout, self.stderr)
       }
-      (true, false) => self.stdout.to_string(),
-      (false, true) => self.stderr.to_string(),
-      (false, false) => String::from("No log"),
+      (false, true) => self.stdout.to_string(),
+      (true, false) => self.stderr.to_string(),
+      (true, true) => String::from("No log"),
     }
   }
 }
