@@ -12,19 +12,25 @@ Connecting a server to Komodo has 3 steps:
 
 ## Install Periphery
 
-You can install Periphery as a systemd managed process, run it as a [docker container](https://github.com/moghtech/komodo/pkgs/container/komodo-periphery), or do whatever you want with the binary.
+You can install Periphery as a systemd managed process, run it as a [docker container](https://github.com/moghtech/komodo/pkgs/container/komodo-periphery), or run the binary directly with another process manager.
 
 ### Install the Periphery agent - systemd
 
 As root user:
 ```bash
-curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py | python3
+curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
+  | python3 - \
+  --core-address="https://<core-address>" \
+  --onboarding-key="O-..."
 ```
 
-Periphery can also be installed to run as the calling user, just note this comes with some additional configuration.
+Periphery can also be installed to run as a systemd user service (for the calling user).
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py | python3 - --user
+curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
+  | python3 - --user \
+  --core-address="https://<core-address>" \
+  --onboarding-key="O-..."
 ```
 
 You can find more information (and view the script) in the [readme](https://github.com/moghtech/komodo/tree/main/scripts).
@@ -61,7 +67,10 @@ See the [periphery config docs](https://docs.rs/komodo_client/latest/komodo_clie
 for more information on configuring periphery.
 :::
 
-3.  Ensure that inbound connectivity is allowed on the port specified in periphery.config.toml (default 8120).
+3.  Ensure that connectivity with Komodo Core is possible via the chosen connection method. **So either**:
+
+		- Periphery can reach Komodo Core at the configured `core_address`.
+		- Komodo Core can reach Periphery on the specified port (default `8120`).
 
 4.  Install docker. See the [docker install docs](https://docs.docker.com/engine/install/).
 
@@ -91,7 +100,7 @@ command: periphery --config-path /path/in/container/to/periphery.config.base.tom
 ## Configuration
 
 The configuration can also be passed as **YAML** or **JSON**.
-You can use the it-tools to convert this TOML file to your preferred format:
+You can use it-tools to convert this TOML file to your preferred format:
   - YAML: https://it-tools.tech/toml-to-yaml
   - JSON: https://it-tools.tech/toml-to-json
 
