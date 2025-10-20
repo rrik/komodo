@@ -41,7 +41,7 @@ export const Layout = () => {
     <>
       <Topbar />
       <div className="h-screen overflow-y-scroll">
-        <div className="container">
+        <div className="container px-[1.2rem]">
           <Sidebar />
           <div className="lg:ml-[200px] lg:pl-8 py-[88px]">
             <Outlet />
