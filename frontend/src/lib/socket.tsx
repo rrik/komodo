@@ -1,11 +1,8 @@
 import { useInvalidate, komodo_client, useRead, useUser } from "@lib/hooks";
 import { Types } from "komodo_client";
-import { Button } from "@ui/button";
 import { toast } from "@ui/use-toast";
 import { atom, useAtom } from "jotai";
-import { Circle } from "lucide-react";
 import { ReactNode, useCallback, useEffect, useRef } from "react";
-import { cn } from "@lib/utils";
 import { ResourceComponents } from "@components/resources";
 import { UsableResource } from "@types";
 import { ResourceNameSimple } from "@components/resources/common";
@@ -22,7 +19,7 @@ const ws_atom = atom<{
 
 export const useWebsocketConnected = () => useAtom(ws_atom)[0].connected;
 
-const useWebsocketReconnect = () => {
+export const useWebsocketReconnect = () => {
   const [ws, set] = useAtom(ws_atom);
 
   return () => {
@@ -102,35 +99,6 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
   }, [user, disable_reconnect, ws.ws, ws.count]);
 
   return <>{children}</>;
-};
-
-export const WsStatusIndicator = () => {
-  const [ws] = useAtom(ws_atom);
-  const reconnect = useWebsocketReconnect();
-  const onclick = () => {
-    reconnect();
-    toast({
-      title: ws.connected
-        ? "Triggered websocket reconnect"
-        : "Triggered websocket connect",
-    });
-  };
-
-  return (
-    <Button
-      variant="ghost"
-      onClick={onclick}
-      size="icon"
-      className="hidden lg:inline-flex"
-    >
-      <Circle
-        className={cn(
-          "w-4 h-4 stroke-none transition-colors",
-          ws.connected ? "fill-green-500" : "fill-red-500"
-        )}
-      />
-    </Button>
-  );
 };
 
 const on_update = (

@@ -1,7 +1,6 @@
 import { useShiftKeyListener } from "@lib/hooks";
 import { Link } from "react-router-dom";
 import { OmniSearch, OmniDialog } from "../omnibar";
-import { WsStatusIndicator } from "@lib/socket";
 import { ThemeToggle } from "@ui/theme";
 import { useState } from "react";
 import {
@@ -13,6 +12,7 @@ import {
   TopbarUpdates,
   UserDropdown,
   Version,
+  WsStatusIndicator,
 } from "./components";
 
 export const Topbar = () => {

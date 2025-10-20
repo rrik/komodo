@@ -64,6 +64,8 @@ import { AlertLevel } from "@components/alert";
 import { AlertDetailsDialogContent } from "@components/alert/details";
 import { Separator } from "@ui/separator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui/hover-card";
+import { useWebsocketConnected, useWebsocketReconnect } from "@lib/socket";
+import { useToast } from "@ui/use-toast";
 
 export const MobileDropdown = () => {
   const type = useResourceParamType();
@@ -572,6 +574,61 @@ export const Version = () => {
   );
 };
 
+export const WsStatusIndicator = () => {
+  const { toast } = useToast();
+  const connected = useWebsocketConnected();
+  const reconnect = useWebsocketReconnect();
+  const onclick = () => {
+    reconnect();
+    toast({
+      title: connected
+        ? "Triggered websocket reconnect"
+        : "Triggered websocket connect",
+    });
+  };
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger className="hidden lg:block">
+        <Button variant="ghost" onClick={onclick} size="icon">
+          <Circle
+            className={cn(
+              "w-4 h-4 stroke-none transition-colors",
+              connected ? "fill-green-500" : "fill-red-500"
+            )}
+          />
+        </Button>
+      </HoverCardTrigger>
+      <HoverCardContent sideOffset={4} className="w-fit">
+        <div className="w-fit text-sm">Websocket Status</div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
+export const CopyCorePubkey = () => {
+  const public_key = useRead("GetCoreInfo", {}).data?.public_key;
+
+  // Don't show for non https, copy / clipboard won't work.
+  if (!location.protocol.startsWith("https")) return;
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger className="hidden lg:block">
+        <CopyButton
+          variant="ghost"
+          label="Core Pubkey"
+          icon={<KeyRound className="w-4 h-4" />}
+          content={public_key}
+        />
+      </HoverCardTrigger>
+      <HoverCardContent sideOffset={4} className="w-fit">
+        <div className="w-fit text-sm">Copy Core Pubkey</div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
 export const KeyboardShortcuts = () => {
   return (
     <Dialog>
@@ -635,30 +692,5 @@ const KeyboardShortcut = ({
         <div className="col-span-full bg-gray-600 h-[1px] opacity-40" />
       )}
     </>
-  );
-};
-
-export const CopyCorePubkey = () => {
-  const public_key = useRead("GetCoreInfo", {}).data?.public_key;
-
-  // Don't show for non https, copy / clipboard won't work.
-  if (!location.protocol.startsWith("https")) return;
-
-  return (
-    <HoverCard>
-      <HoverCardTrigger className="hidden lg:block">
-        <CopyButton
-          variant="ghost"
-          label="Core Pubkey"
-          icon={<KeyRound className="w-4 h-4" />}
-          content={public_key}
-        />
-      </HoverCardTrigger>
-      <HoverCardContent sideOffset={4} className="w-fit">
-        <div className="w-fit max-w-[200px] text-sm overflow-hidden overflow-ellipsis">
-          Copy Core Pubkey
-        </div>
-      </HoverCardContent>
-    </HoverCard>
   );
 };
