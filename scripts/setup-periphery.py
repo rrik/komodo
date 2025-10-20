@@ -137,9 +137,6 @@ def map_config_line(args, home_dir, line):
 	## Handle onboarding key
 	if line.startswith("# onboarding_key =") and args.onboarding_key != None:
 		return f'onboarding_key = "{args.onboarding_key}"'
-	## Handle disabling inbound server
-	if line.startswith("server_enabled =") and args.core_address != None:
-		return "server_enabled = false"
 	return line
 
 def write_config(args, home_dir, config_dir):
@@ -147,7 +144,7 @@ def write_config(args, home_dir, config_dir):
 
 	# early return if config file already exists
 	if os.path.isfile(config_file):
-		print("periphery.config.toml already exists, skipping...")
+		print(f'Config at {config_file} already exists, skipping...')
 		return
 
 	print(f'creating config at {config_file}')
@@ -175,7 +172,7 @@ def write_service_file(args, home_dir, bin_dir, config_dir, service_dir):
 			print("deleting existing service file")
 			os.remove(service_file)
 		else:
-			print("service file already exists, skipping...")
+			print(f'service file already exists at {service_file}, skipping...')
 			return
 	
 	print(f'creating service file at {service_file}')
