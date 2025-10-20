@@ -25,7 +25,7 @@ export default function AllResources() {
   return (
     <Page
       titleOther={
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -33,7 +33,7 @@ export default function AllResources() {
             className="w-[200px] lg:w-[300px]"
           />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <TagsFilter />
             <ExportButton tags={tags} />
           </div>

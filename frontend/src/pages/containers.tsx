@@ -77,7 +77,7 @@ export default function ContainersPage() {
       icon={<Box className="w-8 h-8" />}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Server Filter Multi-Select */}
             <div className="w-[280px]">
