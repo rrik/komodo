@@ -921,7 +921,7 @@ async fn list_terminals_inner(
   let cache = terminals_cache().get_or_insert(server.id.clone());
   let mut cache = cache.lock().await;
   if fresh || komodo_timestamp() > cache.ttl {
-    cache.list = periphery_client(&server)
+    cache.list = periphery_client(server)
       .await?
       .request(periphery_client::api::terminal::ListTerminals {
         container: None,
