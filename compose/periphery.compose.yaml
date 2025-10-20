@@ -54,6 +54,8 @@ services:
       - ${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}:${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}
       ## Optionally mount a custom periphery.config.toml
       # - /path/to/periphery.config.toml:/config/config.toml
+      ## Optionally mount custom root CA certificate to trust
+      # - /path/to/root_ca.crt:/usr/local/share/ca-certificates/root_ca.crt
 
 volumes:
   keys:
