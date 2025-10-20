@@ -599,8 +599,8 @@ export const WsStatusIndicator = () => {
           />
         </Button>
       </HoverCardTrigger>
-      <HoverCardContent sideOffset={4} className="w-fit">
-        <div className="w-fit text-sm">Websocket Status</div>
+      <HoverCardContent sideOffset={4} className="w-fit text-sm">
+        Websocket Status
       </HoverCardContent>
     </HoverCard>
   );
@@ -622,8 +622,8 @@ export const CopyCorePubkey = () => {
           content={public_key}
         />
       </HoverCardTrigger>
-      <HoverCardContent sideOffset={4} className="w-fit">
-        <div className="w-fit text-sm">Copy Core Pubkey</div>
+      <HoverCardContent sideOffset={4} className="w-fit text-sm">
+        Copy Core Pubkey
       </HoverCardContent>
     </HoverCard>
   );

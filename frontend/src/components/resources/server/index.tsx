@@ -1,4 +1,4 @@
-import { useExecute, useRead, useUser, useWrite } from "@lib/hooks";
+import { useExecute, useRead, useUser } from "@lib/hooks";
 import { cn } from "@lib/utils";
 import { Types } from "komodo_client";
 import { RequiredResourceComponents } from "@types";
@@ -13,7 +13,6 @@ import {
   Square,
   AlertCircle,
   CheckCircle2,
-  Loader2,
   Globe,
 } from "lucide-react";
 import { Prune } from "./actions";
@@ -24,24 +23,14 @@ import {
 import { ServerTable } from "./table";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
 import { ActionWithDialog, ConfirmButton, StatusBadge } from "@components/util";
-import { Card } from "@ui/card";
 import { DashboardPieChart } from "@pages/dashboard";
 import { ServerStatsMini } from "./stats-mini";
 import { GroupActions } from "@components/group-actions";
-import { usePermissions } from "@lib/hooks";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@ui/dialog";
-import { Button } from "@ui/button";
 import { useToast } from "@ui/use-toast";
-import { useState } from "react";
 import { ServerTabs } from "./tabs";
+import { ConfirmAttemptedPubkey } from "./confirm-pubkey";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui/hover-card";
 
 export const useServer = (id?: string) =>
   useRead("ListServers", {}, { refetchInterval: 10_000 }).data?.find(
@@ -255,96 +244,35 @@ export const ServerComponents: RequiredResourceComponents = {
   },
 
   Status: {
-    AttemptedPubkey: ({ id }) => {
-      const { toast } = useToast();
-      const server = useServer(id);
-      const { canWrite } = usePermissions({ type: "Server", id });
-      const [open, setOpen] = useState(false);
-      const { mutate, isPending } = useWrite("UpdateServerPublicKey", {
-        onSuccess: () => {
-          toast({ title: "Confirmed Server public key" });
-          setOpen(false);
-        },
-        onError: () => {
-          setOpen(false);
-        },
-      });
-
-      if (!server?.info.attempted_public_key) return null;
-
-      return (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger disabled={!canWrite}>
-            <Card
-              className={cn(
-                "px-3 py-2 bg-destructive/75 hover:bg-destructive transition-colors",
-                canWrite && "cursor-pointer"
-              )}
-            >
-              <div className="text-sm text-nowrap overflow-hidden overflow-ellipsis">
-                Invalid Pubkey
-              </div>
-            </Card>
-          </DialogTrigger>
-          <DialogContent className="w-[90vw] max-w-[700px]">
-            <DialogHeader>
-              <DialogTitle>Confirm {server.name} public key?</DialogTitle>
-            </DialogHeader>
-            <div className="text-muted-foreground text-sm">
-              <div>
-                Public Key:{" "}
-                <span className="text-foreground">
-                  {server.info.attempted_public_key}
-                </span>
-              </div>
-              {!server.info.address && (
-                <div>Note. May take a few moments for status to update.</div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button
-                className="w-[200px]"
-                variant="secondary"
-                onClick={() =>
-                  mutate({
-                    server: id,
-                    public_key: server.info.attempted_public_key!,
-                  })
-                }
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Confirm"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      );
-    },
+    ConfirmAttemptedPubkey,
   },
 
   Info: {
-    Version: ServerVersion,
+    ServerVersion,
     PublicIP: ({ id }) => {
       const { toast } = useToast();
       const public_ip = useServer(id)?.info.public_ip;
 
       return (
-        <div
-          className="flex gap-2 items-center cursor-pointer"
-          onClick={() => {
-            public_ip &&
-              navigator.clipboard
-                .writeText(public_ip)
-                .then(() => toast({ title: "Copied public IP" }));
-          }}
-        >
-          <Globe className="w-4 h-4" />
-          {public_ip ?? "Unknown IP"}
-        </div>
+        <HoverCard>
+          <HoverCardTrigger>
+            <div
+              className="flex gap-2 items-center cursor-pointer"
+              onClick={() => {
+                public_ip &&
+                  navigator.clipboard
+                    .writeText(public_ip)
+                    .then(() => toast({ title: "Copied public IP" }));
+              }}
+            >
+              <Globe className="w-4 h-4" />
+              {public_ip ?? "Unknown IP"}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent sideOffset={4} className="w-fit text-sm">
+            Public IP (click to copy)
+          </HoverCardContent>
+        </HoverCard>
       );
     },
     Cpu: ({ id }) => {
@@ -359,12 +287,19 @@ export const ServerComponents: RequiredResourceComponents = {
           }
         ).data?.core_count ?? 0;
       return (
-        <div className="flex gap-2 items-center">
-          <Cpu className="w-4 h-4" />
-          {core_count
-            ? `${core_count} Core${core_count === 1 ? "" : "s"}`
-            : "N/A"}
-        </div>
+        <HoverCard>
+          <HoverCardTrigger>
+            <div className="flex gap-2 items-center">
+              <Cpu className="w-4 h-4" />
+              {core_count
+                ? `${core_count} Core${core_count === 1 ? "" : "s"}`
+                : "N/A"}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent sideOffset={4} className="w-fit text-sm">
+            CPU Core Count
+          </HoverCardContent>
+        </HoverCard>
       );
     },
     LoadAvg: ({ id }) => {
@@ -381,10 +316,17 @@ export const ServerComponents: RequiredResourceComponents = {
       const one = stats?.load_average?.one;
 
       return (
-        <div className="flex gap-2 items-center">
-          <Cpu className="w-4 h-4" />
-          {one?.toFixed(2) ?? "N/A"}
-        </div>
+        <HoverCard>
+          <HoverCardTrigger>
+            <div className="flex gap-2 items-center">
+              <Cpu className="w-4 h-4" />
+              {one?.toFixed(2) ?? "N/A"}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent sideOffset={4} className="w-fit text-sm">
+            1m Load Average
+          </HoverCardContent>
+        </HoverCard>
       );
     },
     Mem: ({ id }) => {
@@ -398,10 +340,17 @@ export const ServerComponents: RequiredResourceComponents = {
         }
       ).data;
       return (
-        <div className="flex gap-2 items-center">
-          <MemoryStick className="w-4 h-4" />
-          {stats?.mem_total_gb.toFixed(2).concat(" GB") ?? "N/A"}
-        </div>
+        <HoverCard>
+          <HoverCardTrigger>
+            <div className="flex gap-2 items-center">
+              <MemoryStick className="w-4 h-4" />
+              {stats?.mem_total_gb.toFixed(2).concat(" GB") ?? "N/A"}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent sideOffset={4} className="w-fit text-sm">
+            Total Memory
+          </HoverCardContent>
+        </HoverCard>
       );
     },
     Disk: ({ id }) => {
@@ -420,10 +369,17 @@ export const ServerComponents: RequiredResourceComponents = {
         0
       );
       return (
-        <div className="flex gap-2 items-center">
-          <Database className="w-4 h-4" />
-          {disk_total_gb?.toFixed(2).concat(" GB") ?? "N/A"}
-        </div>
+        <HoverCard>
+          <HoverCardTrigger>
+            <div className="flex gap-2 items-center">
+              <Database className="w-4 h-4" />
+              {disk_total_gb?.toFixed(2).concat(" GB") ?? "N/A"}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent sideOffset={4} className="w-fit text-sm">
+            Total Disk Capacity
+          </HoverCardContent>
+        </HoverCard>
       );
     },
   },
