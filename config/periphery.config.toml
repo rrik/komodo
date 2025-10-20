@@ -24,9 +24,16 @@
 # GENERAL #
 ###########
 
-## The directory periphery will use as the default base for the directories it uses.
-## The periphery user must have write access to this directory.
-## Each specific directory (like stack_dir) can be overridden below.
+## Specify the root directory used by Periphery agent.
+## All your compose files and repos need to be inside this directory
+## for Periphery to interact with them.
+## - ROOT_DIRECTORY (/etc/komodo)
+## --- ./stacks
+## ------ ./my_stack_1
+## ------ ./my_stack_2
+## --- ./repos
+## ------ ./my_repo_1
+## Each specific sub-directory (like ./stacks) can be overridden below.
 ## Env: PERIPHERY_ROOT_DIRECTORY
 ## Default: /etc/komodo
 root_directory = "/etc/komodo"
