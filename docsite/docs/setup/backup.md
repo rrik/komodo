@@ -57,7 +57,7 @@ in `core.config.toml`, `komodo.cli.toml`, or in the Core container environment.
 ```
 
 :::warning
-Currently no encryption is supported,
+Currently no built-in encryption is supported,
 so you may want to encrypt the files before backing up remotely if your backup solution doesn't support that natively.
 :::
 

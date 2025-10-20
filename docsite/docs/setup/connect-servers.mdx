@@ -6,8 +6,8 @@ import RemoteCodeFile from "@site/src/components/RemoteCodeFile";
 
 Connecting a server to Komodo has 3 steps:
 
-1.  Add the Server to Komodo via the Core API / UI.
-2.  Install and configure the Periphery agent on the server.
+1.  **Create an Onboarding Key** via the Komodo Core API / UI (they can also be reused).
+2.  **Install the Periphery agent** on the server or VM.
 3.  Confirm the connection status is OK.
 
 ## Install Periphery
@@ -16,20 +16,22 @@ You can install Periphery as a systemd managed process, run it as a [docker cont
 
 ### Install the Periphery agent - systemd
 
-As root user:
+**As root user:**
 ```bash
 curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
   | python3 - \
   --core-address="https://<core-address>" \
+  --connect-as="$(hostname)" \
   --onboarding-key="O-..."
 ```
 
-Periphery can also be installed to run as a systemd user service (for the calling user).
+Periphery can also be installed to run as a **systemd user service** (for the calling user).
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
   | python3 - --user \
   --core-address="https://<core-address>" \
+  --connect-as="$(hostname)" \
   --onboarding-key="O-..."
 ```
 

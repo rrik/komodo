@@ -1,5 +1,24 @@
 # Advanced Configuration
 
+### Custom Certificate Authorities
+
+In order to communicate with companion services on private networks,
+such as OIDC and git providers,
+**Komodo Core and Periphery may both need to trust one or more custom CAs**.
+
+**Starting in V2**, Both the Komodo Core and Periphery images will automatically `update-ca-certificates` on startup,
+just mount any required root certificates inside `/usr/local/share/ca-certificates`:
+
+```yaml
+    volumes:
+      ## ... (unchanged)
+      ## Mount custom root CA certificates to trust individually
+      - /path/to/root_ca1.crt:/usr/local/share/ca-certificates/root_ca1.crt
+      - /path/to/root_ca2.crt:/usr/local/share/ca-certificates/root_ca2.crt
+      ## OR the whole folder is fine too.
+      - /path/to/custom-certs:/usr/local/share/ca-certificates
+```
+
 ### OIDC / Oauth2
 
 To enable OAuth2 login, you must create a client on the respective OAuth provider,
@@ -37,7 +56,7 @@ If you prefer to keep sensitive information out of environment variables, you ca
 write a config file on your host, and mount it to `/config/config.toml` in the Komodo core container.
 
 The configuration can also be passed as **YAML** or **JSON**.
-You can use the it-tools to convert this TOML file to your preferred format:
+You can use it-tools to convert this TOML file to your preferred format:
   - YAML: https://it-tools.tech/toml-to-yaml
   - JSON: https://it-tools.tech/toml-to-json
 
