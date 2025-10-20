@@ -1,6 +1,8 @@
 use anyhow::{Context, anyhow};
 use formatting::format_serror;
-use futures::{StreamExt, TryStreamExt, stream::FuturesUnordered};
+use futures_util::{
+  StreamExt, TryStreamExt, stream::FuturesUnordered,
+};
 use komodo_client::{
   api::execute::{SendAlert, TestAlerter},
   entities::{

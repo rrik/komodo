@@ -48,6 +48,7 @@ export type ReadResponses = {
     ListServers: Types.ListServersResponse;
     ListFullServers: Types.ListFullServersResponse;
     ListTerminals: Types.ListTerminalsResponse;
+    ListAllTerminals: Types.ListAllTerminalsResponse;
     GetDockerContainersSummary: Types.GetDockerContainersSummaryResponse;
     ListAllDockerContainers: Types.ListAllDockerContainersResponse;
     ListDockerContainers: Types.ListDockerContainersResponse;

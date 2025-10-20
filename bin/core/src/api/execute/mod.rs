@@ -8,7 +8,7 @@ use axum_extra::{TypedHeader, headers::ContentType};
 use database::mungos::by_id::find_one_by_id;
 use derive_variants::{EnumVariants, ExtractVariant};
 use formatting::format_serror;
-use futures::{
+use futures_util::{
   StreamExt as _, future::join_all, stream::FuturesUnordered,
 };
 use komodo_client::{

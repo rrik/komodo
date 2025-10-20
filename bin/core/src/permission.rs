@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use anyhow::{Context, anyhow};
 use database::mongo_indexed::doc;
 use database::mungos::find::find_collect;
-use futures::{FutureExt, future::BoxFuture};
+use futures_util::{FutureExt, future::BoxFuture};
 use indexmap::IndexSet;
 use komodo_client::{
   api::read::GetPermission,

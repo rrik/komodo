@@ -5,7 +5,7 @@ use database::mungos::{
   find::find_collect,
   mongodb::{Collection, bson::doc, options::FindOneOptions},
 };
-use futures::{TryStreamExt, stream::FuturesUnordered};
+use futures_util::{TryStreamExt, stream::FuturesUnordered};
 use komodo_client::{
   api::execute::Execution,
   entities::{

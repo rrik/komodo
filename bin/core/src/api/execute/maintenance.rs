@@ -7,7 +7,7 @@ use database::{
   mungos::find::find_collect,
 };
 use formatting::{bold, format_serror};
-use futures::{StreamExt, stream::FuturesOrdered};
+use futures_util::{StreamExt, stream::FuturesOrdered};
 use komodo_client::{
   api::execute::{
     BackupCoreDatabase, ClearRepoCache, GlobalAutoUpdate,

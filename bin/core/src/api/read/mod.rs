@@ -114,6 +114,7 @@ enum ReadRequest {
   ListServers(ListServers),
   ListFullServers(ListFullServers),
   ListTerminals(ListTerminals),
+  ListAllTerminals(ListAllTerminals),
 
   // ==== DOCKER ====
   GetDockerContainersSummary(GetDockerContainersSummary),

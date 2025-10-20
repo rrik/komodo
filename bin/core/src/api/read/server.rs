@@ -12,6 +12,7 @@ use database::mungos::{
   find::find_collect,
   mongodb::{bson::doc, options::FindOptions},
 };
+use futures_util::{StreamExt as _, stream::FuturesUnordered};
 use komodo_client::{
   api::read::*,
   entities::{
@@ -29,7 +30,7 @@ use komodo_client::{
     permission::PermissionLevel,
     server::{
       Server, ServerActionState, ServerListItem, ServerState,
-      TerminalInfo,
+      TerminalInfo, TerminalInfoWithServer,
     },
     stack::{Stack, StackServiceNames},
     stats::{SystemInformation, SystemProcess},
@@ -869,20 +870,67 @@ impl Resolve<ReadArgs> for ListTerminals {
       PermissionLevel::Read.terminal(),
     )
     .await?;
-    let cache = terminals_cache().get_or_insert(server.id.clone());
-    let mut cache = cache.lock().await;
-    if self.fresh || komodo_timestamp() > cache.ttl {
-      cache.list = periphery_client(&server)
-        .await?
-        .request(periphery_client::api::terminal::ListTerminals {
-          container: None,
-        })
-        .await
-        .context("Failed to get fresh terminal list")?;
-      cache.ttl = komodo_timestamp() + TERMINAL_CACHE_TIMEOUT;
-      Ok(cache.list.clone())
+    list_terminals_inner(&server, self.fresh)
+      .await
+      .map_err(Into::into)
+  }
+}
+
+impl Resolve<ReadArgs> for ListAllTerminals {
+  async fn resolve(
+    self,
+    args: &ReadArgs,
+  ) -> Result<Self::Response, Self::Error> {
+    let all_tags = if self.query.tags.is_empty() {
+      vec![]
     } else {
-      Ok(cache.list.clone())
-    }
+      get_all_tags(None).await?
+    };
+
+    let terminals = resource::list_full_for_user::<Server>(
+      self.query, &args.user, &all_tags,
+    )
+    .await?
+    .into_iter()
+    .map(|server| async move {
+      (list_terminals_inner(&server, self.fresh).await, server.id)
+    })
+    .collect::<FuturesUnordered<_>>()
+    .collect::<Vec<_>>()
+    .await
+    .into_iter()
+    .flat_map(|(terminals, server_id)| {
+      let terminals = terminals.ok()?;
+      Some((terminals, server_id))
+    })
+    .flat_map(|(terminals, server_id)| {
+      terminals.into_iter().map(move |info| {
+        TerminalInfoWithServer::from_terminal_info(&server_id, info)
+      })
+    })
+    .collect::<Vec<_>>();
+
+    Ok(terminals)
+  }
+}
+
+async fn list_terminals_inner(
+  server: &Server,
+  fresh: bool,
+) -> anyhow::Result<Vec<TerminalInfo>> {
+  let cache = terminals_cache().get_or_insert(server.id.clone());
+  let mut cache = cache.lock().await;
+  if fresh || komodo_timestamp() > cache.ttl {
+    cache.list = periphery_client(&server)
+      .await?
+      .request(periphery_client::api::terminal::ListTerminals {
+        container: None,
+      })
+      .await
+      .context("Failed to get fresh terminal list")?;
+    cache.ttl = komodo_timestamp() + TERMINAL_CACHE_TIMEOUT;
+    Ok(cache.list.clone())
+  } else {
+    Ok(cache.list.clone())
   }
 }

@@ -14,7 +14,7 @@ use database::mungos::{
   },
 };
 use formatting::format_serror;
-use futures::future::join_all;
+use futures_util::future::join_all;
 use interpolate::Interpolator;
 use komodo_client::{
   api::execute::{

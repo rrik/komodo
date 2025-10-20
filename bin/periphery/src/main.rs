@@ -1,4 +1,4 @@
-use futures::{StreamExt, stream::FuturesUnordered};
+use futures_util::{StreamExt, stream::FuturesUnordered};
 use komodo_client::entities::config::periphery::Command;
 use tracing::Instrument;
 

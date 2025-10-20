@@ -7,7 +7,7 @@ use database::mungos::{
     Document, doc, oid::ObjectId, to_bson, to_document,
   },
 };
-use futures::future::join_all;
+use futures_util::future::join_all;
 use komodo_client::{
   api::{
     auth::SignUpLocalUser,

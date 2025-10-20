@@ -25,7 +25,7 @@ export default function SchedulesPage() {
   const filtered = filterBySplit(schedules ?? [], search, (item) => item.name);
   return (
     <Page
-      icon={<CalendarDays className="w-8" />}
+      icon={<CalendarDays className="w-6 h-6" />}
       title="Schedules"
       subtitle={
         <div className="text-muted-foreground">

@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, anyhow};
 use database::mungos::by_id::find_one_by_id;
 use formatting::{Color, bold, colored, format_serror, muted};
-use futures::future::join_all;
+use futures_util::future::join_all;
 use komodo_client::{
   api::execute::*,
   entities::{

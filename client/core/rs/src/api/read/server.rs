@@ -7,7 +7,7 @@ use crate::entities::{
   I64, Timelength,
   server::{
     PeripheryInformation, Server, ServerActionState, ServerListItem,
-    ServerQuery, ServerState, TerminalInfo,
+    ServerQuery, ServerState, TerminalInfo, TerminalInfoWithServer,
   },
   stats::{
     SystemInformation, SystemProcess, SystemStats, SystemStatsRecord,
@@ -289,3 +289,27 @@ pub struct ListTerminals {
 
 #[typeshare]
 pub type ListTerminalsResponse = Vec<TerminalInfo>;
+
+//
+
+/// List the current terminals on specified server.
+/// Response: [ListAllTerminalsResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Default, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListAllTerminalsResponse)]
+#[error(serror::Error)]
+pub struct ListAllTerminals {
+  /// optional structured query to filter servers.
+  #[serde(default)]
+  pub query: ServerQuery,
+  /// Force a fresh call to Periphery for the list.
+  /// Otherwise the response will be cached for 30s
+  #[serde(default)]
+  pub fresh: bool,
+}
+
+#[typeshare]
+pub type ListAllTerminalsResponse = Vec<TerminalInfoWithServer>;

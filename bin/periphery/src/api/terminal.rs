@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::{Context, anyhow};
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures_util::{Stream, StreamExt, TryStreamExt};
 use komodo_client::entities::{
   ContainerTerminalMode, KOMODO_EXIT_CODE, NoData,
   server::TerminalInfo,

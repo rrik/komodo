@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use anyhow::{Context, anyhow};
 use async_timing_util::wait_until_timelength;
 use bollard::{models, query_parameters::StatsOptionsBuilder};
-use futures::StreamExt;
+use futures_util::StreamExt;
 use komodo_client::entities::docker::{
   container::ContainerStats,
   stats::{

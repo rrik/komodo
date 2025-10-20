@@ -1,6 +1,6 @@
 use anyhow::Context;
 use command::run_komodo_command;
-use futures::future::join_all;
+use futures_util::future::join_all;
 use komodo_client::entities::{
   docker::{
     container::{Container, ContainerListItem, ContainerStats},

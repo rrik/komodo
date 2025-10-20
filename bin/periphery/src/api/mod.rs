@@ -1,7 +1,7 @@
 use command::run_komodo_command;
 use derive_variants::EnumVariants;
 use encoding::{EncodedJsonMessage, EncodedResponse};
-use futures::FutureExt;
+use futures_util::FutureExt;
 use komodo_client::entities::{
   config::{DockerRegistry, GitProvider},
   server::PeripheryInformation,

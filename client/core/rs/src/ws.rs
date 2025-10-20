@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use anyhow::Context;
-use futures::{SinkExt, TryStreamExt};
+use futures_util::{SinkExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use serror::serialize_error;
 use thiserror::Error;

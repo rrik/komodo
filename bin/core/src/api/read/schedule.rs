@@ -1,4 +1,4 @@
-use futures::future::join_all;
+use futures_util::future::join_all;
 use komodo_client::{
   api::read::*,
   entities::{

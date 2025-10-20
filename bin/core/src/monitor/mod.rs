@@ -3,7 +3,7 @@ use std::sync::{Arc, OnceLock};
 use async_timing_util::wait_until_timelength;
 use cache::CloneCache;
 use database::mungos::{find::find_collect, mongodb::bson::doc};
-use futures::future::join_all;
+use futures_util::future::join_all;
 use helpers::insert_stacks_status_unknown;
 use komodo_client::entities::{
   build::Build,

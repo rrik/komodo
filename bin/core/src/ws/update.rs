@@ -3,7 +3,7 @@ use axum::{
   extract::{WebSocketUpgrade, ws::Message},
   response::IntoResponse,
 };
-use futures::{SinkExt, StreamExt};
+use futures_util::{SinkExt, StreamExt};
 use komodo_client::entities::{
   ResourceTarget, permission::PermissionLevel, user::User,
 };

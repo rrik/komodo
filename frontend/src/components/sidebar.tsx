@@ -8,6 +8,7 @@ import {
   CalendarDays,
   LayoutDashboard,
   Settings,
+  Terminal,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { ResourceComponents } from "./resources";
@@ -70,8 +71,14 @@ export const Sidebar = () => {
           to="/updates"
           icon={<Bell className="w-4 h-4" />}
         />
-        
+
         <Separator className="my-3" />
+
+        <SidebarLink
+          label="Terminals"
+          to="/terminals"
+          icon={<Terminal className="w-4 h-4" />}
+        />
 
         <SidebarLink
           label="Schedules"

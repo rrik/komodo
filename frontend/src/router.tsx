@@ -1,5 +1,6 @@
 import { Layout } from "@components/layouts";
 import { LOGIN_TOKENS, useAuth, useUser } from "@lib/hooks";
+import TerminalsPage from "@pages/terminals";
 import UpdatePage from "@pages/update";
 import { Loader2 } from "lucide-react";
 import { lazy, Suspense } from "react";
@@ -99,6 +100,7 @@ export const Router = () => {
               <Route path="containers" element={<ContainersPage />} />
               <Route path="resources" element={<AllResources />} />
               <Route path="schedules" element={<SchedulesPage />} />
+              <Route path="terminals" element={<TerminalsPage />} />
               <Route path="alerts" element={<AlertsPage />} />
               <Route path="user-groups/:id" element={<UserGroupPage />} />
               <Route path="users/:id" element={<UserPage />} />

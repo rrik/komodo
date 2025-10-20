@@ -11,7 +11,7 @@ use axum::{
   routing::get,
 };
 use bytes::Bytes;
-use futures::{SinkExt, StreamExt};
+use futures_util::{SinkExt, StreamExt};
 use komodo_client::{
   api::write::TerminalRecreateMode,
   entities::{server::Server, user::User},

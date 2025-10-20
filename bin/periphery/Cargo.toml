@@ -39,6 +39,7 @@ run_command.workspace = true
 # external
 hickory-resolver.workspace = true
 serde_yaml_ng.workspace = true
+futures-util.workspace = true
 tokio-stream.workspace = true
 portable-pty.workspace = true
 shell-escape.workspace = true
@@ -48,7 +49,6 @@ serde_json.workspace = true
 tokio-util.workspace = true
 arc-swap.workspace = true
 colored.workspace = true
-futures.workspace = true
 tracing.workspace = true
 bollard.workspace = true
 sysinfo.workspace = true

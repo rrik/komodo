@@ -7,7 +7,7 @@ use std::{
 use anyhow::Context;
 use bytes::Bytes;
 use cache::CloneCache;
-use futures::Stream;
+use futures_util::Stream;
 use komodo_client::api::write::TerminalRecreateMode;
 use periphery_client::{
   api::terminal::{

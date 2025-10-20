@@ -2,7 +2,7 @@ use axum::{
   extract::{Query, WebSocketUpgrade, ws::Message},
   response::IntoResponse,
 };
-use futures::SinkExt;
+use futures_util::SinkExt;
 use komodo_client::{
   api::terminal::{
     ConnectDeploymentAttachQuery, ConnectDeploymentExecQuery,

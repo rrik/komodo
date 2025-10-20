@@ -1,7 +1,7 @@
 use anyhow::{Context, anyhow};
 use database::mungos::{find::find_collect, mongodb::bson::doc};
 use derive_variants::ExtractVariant;
-use futures::future::join_all;
+use futures_util::future::join_all;
 use interpolate::Interpolator;
 use komodo_client::entities::{
   ResourceTargetVariant,

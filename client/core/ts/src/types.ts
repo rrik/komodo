@@ -3554,6 +3554,23 @@ export interface ContainerListItem {
 
 export type ListAllDockerContainersResponse = ContainerListItem[];
 
+/**
+ * Info about an active terminal on a server.
+ * Retrieve with [ListAllTerminals][crate::api::read::server::ListAllTerminals].
+ */
+export interface TerminalInfoWithServer {
+	/** The server id. */
+	server_id: string;
+	/** The name of the terminal. */
+	name: string;
+	/** The root program / args of the pty */
+	command: string;
+	/** The size of the terminal history in memory. */
+	stored_size_kb: number;
+}
+
+export type ListAllTerminalsResponse = TerminalInfoWithServer[];
+
 /** An api key used to authenticate requests via request headers. */
 export interface ApiKey {
 	/** Unique key associated with secret */
@@ -6698,6 +6715,20 @@ export interface ListAllDockerContainers {
 }
 
 /**
+ * List the current terminals on specified server.
+ * Response: [ListAllTerminalsResponse].
+ */
+export interface ListAllTerminals {
+	/** optional structured query to filter servers. */
+	query?: ServerQuery;
+	/**
+	 * Force a fresh call to Periphery for the list.
+	 * Otherwise the response will be cached for 30s
+	 */
+	fresh?: boolean;
+}
+
+/**
  * Gets list of api keys for the calling user.
  * Response: [ListApiKeysResponse]
  */
@@ -8775,6 +8806,7 @@ export type ReadRequest =
 	| { type: "ListServers", params: ListServers }
 	| { type: "ListFullServers", params: ListFullServers }
 	| { type: "ListTerminals", params: ListTerminals }
+	| { type: "ListAllTerminals", params: ListAllTerminals }
 	| { type: "GetDockerContainersSummary", params: GetDockerContainersSummary }
 	| { type: "ListAllDockerContainers", params: ListAllDockerContainers }
 	| { type: "ListDockerContainers", params: ListDockerContainers }

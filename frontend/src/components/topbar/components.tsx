@@ -26,6 +26,7 @@ import {
   LogOut,
   Plus,
   Settings,
+  Terminal,
   User,
   Users,
   X,
@@ -85,17 +86,19 @@ export const MobileDropdown = () => {
             ? [<Box className="w-4 h-4" />, "Containers"]
             : location.pathname === "/settings"
               ? [<Settings className="w-4 h-4" />, "Settings"]
-              : location.pathname === "/schedules"
-                ? [<CalendarDays className="w-4 h-4" />, "Schedules"]
-                : location.pathname === "/alerts"
-                  ? [<AlertTriangle className="w-4 h-4" />, "Alerts"]
-                  : location.pathname === "/updates"
-                    ? [<Bell className="w-4 h-4" />, "Updates"]
-                    : location.pathname.split("/")[1] === "user-groups"
-                      ? [<Users className="w-4 h-4" />, "User Groups"]
-                      : location.pathname.split("/")[1] === "users"
-                        ? [<User className="w-4 h-4" />, "Users"]
-                        : [<FileQuestion className="w-4 h-4" />, "Unknown"];
+              : location.pathname === "/terminals"
+                ? [<Terminal className="w-4 h-4" />, "Terminals"]
+                : location.pathname === "/schedules"
+                  ? [<CalendarDays className="w-4 h-4" />, "Schedules"]
+                  : location.pathname === "/alerts"
+                    ? [<AlertTriangle className="w-4 h-4" />, "Alerts"]
+                    : location.pathname === "/updates"
+                      ? [<Bell className="w-4 h-4" />, "Updates"]
+                      : location.pathname.split("/")[1] === "user-groups"
+                        ? [<Users className="w-4 h-4" />, "User Groups"]
+                        : location.pathname.split("/")[1] === "users"
+                          ? [<User className="w-4 h-4" />, "Users"]
+                          : [<FileQuestion className="w-4 h-4" />, "Unknown"];
 
   return (
     <DropdownMenu>
@@ -158,6 +161,12 @@ export const MobileDropdown = () => {
           />
 
           <DropdownMenuSeparator />
+
+          <DropdownLinkItem
+            label="Terminals"
+            icon={<Terminal className="w-4 h-4" />}
+            to="/terminals"
+          />
 
           <DropdownLinkItem
             label="Schedules"
