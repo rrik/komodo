@@ -36,10 +36,10 @@ pub async fn handle(
 
   let forward_resize = async {
     while sigwinch.recv().await.is_some() {
-      if let Ok(resize_message) = resize_message() {
-        if write_tx.send(resize_message).await.is_err() {
-          break;
-        };
+      if let Ok(resize_message) = resize_message()
+        && write_tx.send(resize_message).await.is_err()
+      {
+        break;
       }
     }
   };

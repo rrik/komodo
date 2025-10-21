@@ -133,7 +133,7 @@ export const ServerTerminals = ({
   );
 };
 
-const ServerTerminal = ({
+export const ServerTerminal = ({
   server,
   terminal,
   selected,

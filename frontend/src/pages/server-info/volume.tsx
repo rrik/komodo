@@ -41,7 +41,7 @@ const VolumePageInner = ({
 }) => {
   const [showInspect, setShowInspect] = useState(false);
   const server = useServer(id);
-  useSetTitle(`${server?.name} | volume | ${volume_name}`);
+  useSetTitle(`${server?.name} | Volume | ${volume_name}`);
   const nav = useNavigate();
 
   const { canExecute, specific } = usePermissions({ type: "Server", id });

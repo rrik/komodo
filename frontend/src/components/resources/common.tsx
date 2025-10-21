@@ -296,6 +296,7 @@ export const ResourceSelector = ({
   align,
   templates = Types.TemplatesQueryBehavior.Exclude,
   placeholder,
+  targetClassName,
 }: {
   type: UsableResource;
   selected: string | undefined;
@@ -304,6 +305,7 @@ export const ResourceSelector = ({
   disabled?: boolean;
   align?: "start" | "center" | "end";
   placeholder?: string;
+  targetClassName?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -338,7 +340,10 @@ export const ResourceSelector = ({
       <PopoverTrigger asChild>
         <Button
           variant="secondary"
-          className="flex justify-start gap-2 w-fit max-w-[350px]"
+          className={cn(
+            "flex justify-start gap-2 w-fit max-w-[350px]",
+            targetClassName
+          )}
           disabled={disabled}
         >
           {name || (placeholder ?? `Select ${type}`)}
@@ -505,6 +510,8 @@ export const NewResource = ({
   builder_id,
   build_id,
   name: _name = "",
+  selectServer,
+  selectBuilder,
 }: {
   type: UsableResource;
   readable_type?: string;
@@ -512,6 +519,8 @@ export const NewResource = ({
   builder_id?: string;
   build_id?: string;
   name?: string;
+  selectServer?: boolean;
+  selectBuilder?: boolean;
 }) => {
   const nav = useNavigate();
   const { toast } = useToast();
@@ -520,24 +529,29 @@ export const NewResource = ({
     0;
   const { mutateAsync: create } = useWrite(`Create${type}`);
   const { mutateAsync: copy } = useWrite(`Copy${type}`);
-  const [templateId, setTemplateId] = useState<string>("");
+  const [serverId, setServerId] = useState("");
+  const [builderId, setBuilderId] = useState("");
+  const [templateId, setTemplateId] = useState("");
   const [name, setName] = useState(_name);
   const type_display =
     type === "ResourceSync" ? "resource-sync" : type.toLowerCase();
   const config: Types._PartialDeploymentConfig | Types._PartialRepoConfig =
     type === "Deployment"
       ? {
-          server_id,
+          server_id: server_id ?? serverId,
           image: build_id
             ? { type: "Build", params: { build_id } }
             : { type: "Image", params: { image: "" } },
         }
       : type === "Stack"
-        ? { server_id }
+        ? { server_id: server_id ?? serverId }
         : type === "Repo"
-          ? { server_id, builder_id }
+          ? {
+              server_id: server_id ?? serverId,
+              builder_id: builder_id ?? builderId,
+            }
           : type === "Build"
-            ? { builder_id }
+            ? { builder_id: builder_id ?? builderId }
             : {};
   const onConfirm = async () => {
     if (!name) toast({ title: "Name cannot be empty" });
@@ -556,7 +570,7 @@ export const NewResource = ({
       enabled={!!name}
       onOpenChange={() => setName(_name)}
     >
-      <div className="grid md:grid-cols-2 items-center">
+      <div className="grid md:grid-cols-2 gap-6 items-center">
         {readable_type ?? type} Name
         <Input
           placeholder={`${type_display}-name`}
@@ -569,20 +583,45 @@ export const NewResource = ({
             }
           }}
         />
+        {selectServer && (
+          <>
+            Server
+            <ResourceSelector
+              type="Server"
+              selected={serverId}
+              onSelect={setServerId}
+              targetClassName="w-full justify-between"
+              align="end"
+            />
+          </>
+        )}
+        {selectBuilder && (
+          <>
+            Builder
+            <ResourceSelector
+              type="Builder"
+              selected={builderId}
+              onSelect={setBuilderId}
+              targetClassName="w-full justify-between"
+              align="end"
+            />
+          </>
+        )}
+        {showTemplateSelector && (
+          <>
+            Template
+            <ResourceSelector
+              type={type}
+              selected={templateId}
+              onSelect={setTemplateId}
+              templates={Types.TemplatesQueryBehavior.Only}
+              placeholder="Template (Optional)"
+              targetClassName="w-full justify-between"
+              align="end"
+            />
+          </>
+        )}
       </div>
-      {showTemplateSelector && (
-        <div className="flex gap-4 justify-between items-center flex-wrap">
-          Template
-          <ResourceSelector
-            type={type}
-            selected={templateId}
-            onSelect={setTemplateId}
-            templates={Types.TemplatesQueryBehavior.Only}
-            placeholder="Select Template"
-            align="end"
-          />
-        </div>
-      )}
     </NewLayout>
   );
 };

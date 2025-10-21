@@ -1,7 +1,5 @@
 import { Layout } from "@components/layouts";
 import { LOGIN_TOKENS, useAuth, useUser } from "@lib/hooks";
-import TerminalsPage from "@pages/terminals";
-import UpdatePage from "@pages/update";
 import { Loader2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import {
@@ -19,6 +17,7 @@ const Resources = lazy(() => import("@pages/resources"));
 const Resource = lazy(() => import("@pages/resource"));
 const Login = lazy(() => import("@pages/login"));
 const UpdatesPage = lazy(() => import("@pages/updates"));
+const UpdatePage = lazy(() => import("@pages/update"));
 const UserDisabled = lazy(() => import("@pages/user_disabled"));
 const AlertsPage = lazy(() => import("@pages/alerts"));
 const UserPage = lazy(() => import("@pages/user"));
@@ -30,6 +29,8 @@ const ImagePage = lazy(() => import("@pages/server-info/image"));
 const VolumePage = lazy(() => import("@pages/server-info/volume"));
 const ContainerPage = lazy(() => import("@pages/server-info/container"));
 const ContainersPage = lazy(() => import("@pages/containers"));
+const TerminalsPage = lazy(() => import("@pages/terminals"));
+const TerminalPage = lazy(() => import("@pages/terminal"));
 const SchedulesPage = lazy(() => import("@pages/schedules"));
 
 const sanitize_query = (search: URLSearchParams) => {
@@ -118,6 +119,10 @@ export const Router = () => {
                 <Route path=":id/network/:network" element={<NetworkPage />} />
                 <Route path=":id/image/:image" element={<ImagePage />} />
                 <Route path=":id/volume/:volume" element={<VolumePage />} />
+                <Route
+                  path=":id/terminal/:terminal"
+                  element={<TerminalPage />}
+                />
               </Route>
             </Route>
           </Route>

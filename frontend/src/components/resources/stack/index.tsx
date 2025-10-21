@@ -119,7 +119,13 @@ export const StackComponents: RequiredResourceComponents = {
       : servers && servers.length === 1
         ? servers[0].id
         : undefined;
-    return <NewResource type="Stack" server_id={server_id} />;
+    return (
+      <NewResource
+        type="Stack"
+        server_id={server_id}
+        selectServer={!server_id}
+      />
+    );
   },
 
   Table: ({ resources }) => (

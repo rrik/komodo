@@ -15,23 +15,25 @@ use periphery_client::{
   },
   transport::EncodedTransportMessage,
 };
-use transport::channel::{Receiver, Sender, channel};
+use transport::channel::{Receiver, Sender};
 use uuid::Uuid;
 
 use crate::{
   periphery::PeripheryClient, state::periphery_connections,
 };
 
+pub struct ConnectTerminalResponse {
+  pub channel: Uuid,
+  pub sender: Sender<EncodedTransportMessage>,
+  pub receiver: Receiver<anyhow::Result<Vec<u8>>>,
+}
+
 impl PeripheryClient {
   #[instrument("ConnectTerminal", skip(self), fields(server_id = self.id))]
   pub async fn connect_terminal(
     &self,
     terminal: String,
-  ) -> anyhow::Result<(
-    Uuid,
-    Sender<EncodedTransportMessage>,
-    Receiver<anyhow::Result<Vec<u8>>>,
-  )> {
+  ) -> anyhow::Result<ConnectTerminalResponse> {
     tracing::trace!(
       "request | type: ConnectTerminal | terminal name: {terminal}",
     );
@@ -41,23 +43,27 @@ impl PeripheryClient {
         || format!("No connection found for server {}", self.id),
       )?;
 
-    let channel_id = self
+    let channel = self
       .request(ConnectTerminal { terminal })
       .await
       .context("Failed to create terminal connection")?;
 
-    let (sender, receiever) = channel();
-    connection.terminals.insert(channel_id, sender).await;
+    let (sender, receiver) = transport::channel::channel();
+    connection.terminals.insert(channel, sender).await;
 
     connection
       .sender
-      .send_terminal(channel_id, Ok(Vec::with_capacity(17))) // 16 bytes uuid + 1 EncodedResponse
+      .send_terminal(channel, Ok(Vec::with_capacity(17))) // 16 bytes uuid + 1 EncodedResponse
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
       )?;
 
-    Ok((channel_id, connection.sender.clone(), receiever))
+    Ok(ConnectTerminalResponse {
+      channel,
+      sender: connection.sender.clone(),
+      receiver,
+    })
   }
 
   #[instrument("ConnectContainerExec", skip(self), fields(server_id = self.id))]
@@ -66,11 +72,7 @@ impl PeripheryClient {
     container: String,
     shell: String,
     recreate: TerminalRecreateMode,
-  ) -> anyhow::Result<(
-    Uuid,
-    Sender<EncodedTransportMessage>,
-    Receiver<anyhow::Result<Vec<u8>>>,
-  )> {
+  ) -> anyhow::Result<ConnectTerminalResponse> {
     tracing::trace!(
       "request | type: ConnectContainerExec | container name: {container} | shell: {shell}",
     );
@@ -80,7 +82,7 @@ impl PeripheryClient {
         || format!("No connection found for server {}", self.id),
       )?;
 
-    let channel_id = self
+    let channel = self
       .request(ConnectContainerExec {
         container,
         shell,
@@ -89,18 +91,22 @@ impl PeripheryClient {
       .await
       .context("Failed to create container exec connection")?;
 
-    let (sender, receiever) = channel();
-    connection.terminals.insert(channel_id, sender).await;
+    let (sender, receiver) = transport::channel::channel();
+    connection.terminals.insert(channel, sender).await;
 
     connection
       .sender
-      .send_terminal(channel_id, Ok(Vec::with_capacity(17)))
+      .send_terminal(channel, Ok(Vec::with_capacity(17)))
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
       )?;
 
-    Ok((channel_id, connection.sender.clone(), receiever))
+    Ok(ConnectTerminalResponse {
+      channel,
+      sender: connection.sender.clone(),
+      receiver,
+    })
   }
 
   #[instrument("ConnectContainerAttach", skip(self), fields(server_id = self.id))]
@@ -108,11 +114,7 @@ impl PeripheryClient {
     &self,
     container: String,
     recreate: TerminalRecreateMode,
-  ) -> anyhow::Result<(
-    Uuid,
-    Sender<EncodedTransportMessage>,
-    Receiver<anyhow::Result<Vec<u8>>>,
-  )> {
+  ) -> anyhow::Result<ConnectTerminalResponse> {
     tracing::trace!(
       "request | type: ConnectContainerAttach | container name: {container}",
     );
@@ -130,7 +132,7 @@ impl PeripheryClient {
       .await
       .context("Failed to create container attach connection")?;
 
-    let (sender, receiever) = transport::channel::channel();
+    let (sender, receiver) = transport::channel::channel();
     connection.terminals.insert(channel, sender).await;
 
     connection
@@ -141,7 +143,11 @@ impl PeripheryClient {
         "Failed to send TerminalTrigger to begin forwarding.",
       )?;
 
-    Ok((channel, connection.sender.clone(), receiever))
+    Ok(ConnectTerminalResponse {
+      channel,
+      sender: connection.sender.clone(),
+      receiver,
+    })
   }
 
   /// Executes command on specified terminal,
@@ -174,27 +180,25 @@ impl PeripheryClient {
         || format!("No connection found for server {}", self.id),
       )?;
 
-    let channel_id = self
+    let channel = self
       .request(ExecuteTerminal { terminal, command })
       .await
       .context("Failed to create execute terminal connection")?;
 
-    let (terminal_sender, terminal_receiver) = channel();
-    connection
-      .terminals
-      .insert(channel_id, terminal_sender)
-      .await;
+    let (terminal_sender, terminal_receiver) =
+      transport::channel::channel();
+    connection.terminals.insert(channel, terminal_sender).await;
 
     connection
       .sender
-      .send_terminal(channel_id, Ok(Vec::with_capacity(17)))
+      .send_terminal(channel, Ok(Vec::with_capacity(17)))
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
       )?;
 
     Ok(ReceiverStream {
-      channel_id,
+      channel,
       receiver: terminal_receiver,
       channels: connection.terminals.clone(),
     })
@@ -230,7 +234,7 @@ impl PeripheryClient {
         || format!("No connection found for server {}", self.id),
       )?;
 
-    let channel_id = self
+    let channel = self
       .request(ExecuteContainerExec {
         container,
         shell,
@@ -240,21 +244,19 @@ impl PeripheryClient {
       .await
       .context("Failed to create execute terminal connection")?;
 
-    let (terminal_sender, terminal_receiver) = channel();
-    connection
-      .terminals
-      .insert(channel_id, terminal_sender)
-      .await;
+    let (terminal_sender, terminal_receiver) =
+      transport::channel::channel();
+    connection.terminals.insert(channel, terminal_sender).await;
 
     // Trigger forwarding to begin now that forwarding channel is ready.
     // This is required to not miss messages.
     connection
       .sender
-      .send_terminal(channel_id, Ok(Vec::with_capacity(17)))
+      .send_terminal(channel, Ok(Vec::with_capacity(17)))
       .await?;
 
     Ok(ReceiverStream {
-      channel_id,
+      channel,
       receiver: terminal_receiver,
       channels: connection.terminals.clone(),
     })
@@ -262,7 +264,7 @@ impl PeripheryClient {
 }
 
 pub struct ReceiverStream {
-  channel_id: Uuid,
+  channel: Uuid,
   channels: Arc<CloneCache<Uuid, Sender<anyhow::Result<Vec<u8>>>>>,
   receiver: Receiver<anyhow::Result<Vec<u8>>>,
 }
@@ -295,9 +297,9 @@ impl ReceiverStream {
   fn cleanup(&self) {
     // Not the prettiest but it should be fine
     let channels = self.channels.clone();
-    let id = self.channel_id;
+    let channel = self.channel;
     tokio::spawn(async move {
-      channels.remove(&id).await;
+      channels.remove(&channel).await;
     });
   }
 }

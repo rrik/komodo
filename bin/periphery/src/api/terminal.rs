@@ -258,14 +258,15 @@ impl Resolve<super::Args> for DisconnectTerminal {
     fields(
       id = args.id.to_string(),
       core = args.core,
-      channel_id = self.id.to_string(),
+      channel_id = self.channel.to_string(),
     )
   )]
   async fn resolve(
     self,
     args: &super::Args,
   ) -> anyhow::Result<NoData> {
-    if let Some(channel) = terminal_channels().remove(&self.id).await
+    if let Some(channel) =
+      terminal_channels().remove(&self.channel).await
     {
       channel.cancel.cancel();
     }

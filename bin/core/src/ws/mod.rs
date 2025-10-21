@@ -1,7 +1,7 @@
 use crate::{
   auth::{auth_api_key_check_enabled, auth_jwt_check_enabled},
   helpers::query::get_user,
-  periphery::PeripheryClient,
+  periphery::{PeripheryClient, terminal::ConnectTerminalResponse},
   state::periphery_connections,
 };
 use anyhow::anyhow;
@@ -17,13 +17,8 @@ use komodo_client::{
   entities::{server::Server, user::User},
   ws::WsLoginMessage,
 };
-use periphery_client::{
-  api::terminal::DisconnectTerminal,
-  transport::EncodedTransportMessage,
-};
+use periphery_client::api::terminal::DisconnectTerminal;
 use tokio_util::sync::CancellationToken;
-use transport::channel::{Receiver, Sender};
-use uuid::Uuid;
 
 mod container;
 mod deployment;
@@ -157,34 +152,26 @@ async fn handle_container_exec_terminal(
 
   trace!("connecting to periphery container exec websocket");
 
-  let (periphery_connection_id, periphery_sender, periphery_receiver) =
-    match periphery
-      .connect_container_exec(container, shell, recreate)
-      .await
-    {
-      Ok(ws) => ws,
-      Err(e) => {
-        debug!(
-          "Failed connect to periphery container exec websocket | {e:#}"
-        );
-        let _ = client_socket
-          .send(ws::Message::text(format!("ERROR: {e:#}")))
-          .await;
-        let _ = client_socket.close().await;
-        return;
-      }
-    };
+  let response = match periphery
+    .connect_container_exec(container, shell, recreate)
+    .await
+  {
+    Ok(ws) => ws,
+    Err(e) => {
+      debug!(
+        "Failed connect to periphery container exec websocket | {e:#}"
+      );
+      let _ = client_socket
+        .send(ws::Message::text(format!("ERROR: {e:#}")))
+        .await;
+      let _ = client_socket.close().await;
+      return;
+    }
+  };
 
   trace!("connected to periphery container exec websocket");
 
-  forward_ws_channel(
-    periphery,
-    client_socket,
-    periphery_connection_id,
-    periphery_sender,
-    periphery_receiver,
-  )
-  .await
+  forward_ws_channel(periphery, client_socket, response).await
 }
 
 async fn handle_container_attach_terminal(
@@ -208,42 +195,36 @@ async fn handle_container_attach_terminal(
 
   trace!("connecting to periphery container exec websocket");
 
-  let (periphery_connection_id, periphery_sender, periphery_receiver) =
-    match periphery
-      .connect_container_attach(container, recreate)
-      .await
-    {
-      Ok(ws) => ws,
-      Err(e) => {
-        debug!(
-          "Failed connect to periphery container attach websocket | {e:#}"
-        );
-        let _ = client_socket
-          .send(ws::Message::text(format!("ERROR: {e:#}")))
-          .await;
-        let _ = client_socket.close().await;
-        return;
-      }
-    };
+  let response = match periphery
+    .connect_container_attach(container, recreate)
+    .await
+  {
+    Ok(ws) => ws,
+    Err(e) => {
+      debug!(
+        "Failed connect to periphery container attach websocket | {e:#}"
+      );
+      let _ = client_socket
+        .send(ws::Message::text(format!("ERROR: {e:#}")))
+        .await;
+      let _ = client_socket.close().await;
+      return;
+    }
+  };
 
   trace!("connected to periphery container attach websocket");
 
-  forward_ws_channel(
-    periphery,
-    client_socket,
-    periphery_connection_id,
-    periphery_sender,
-    periphery_receiver,
-  )
-  .await
+  forward_ws_channel(periphery, client_socket, response).await
 }
 
 async fn forward_ws_channel(
   periphery: PeripheryClient,
   client_socket: axum::extract::ws::WebSocket,
-  periphery_connection_id: Uuid,
-  periphery_sender: Sender<EncodedTransportMessage>,
-  mut periphery_receiver: Receiver<anyhow::Result<Vec<u8>>>,
+  ConnectTerminalResponse {
+    channel,
+    sender: periphery_sender,
+    receiver: mut periphery_receiver,
+  }: ConnectTerminalResponse,
 ) {
   let (mut client_send, mut client_receive) = client_socket.split();
   let cancel = CancellationToken::new();
@@ -264,7 +245,7 @@ async fn forward_ws_channel(
       match client_recv_res {
         Some(Ok(ws::Message::Binary(bytes))) => {
           if let Err(e) = periphery_sender
-            .send_terminal(periphery_connection_id, Ok(bytes.into()))
+            .send_terminal(channel, Ok(bytes.into()))
             .await
           {
             debug!("Failed to send terminal message | {e:?}",);
@@ -275,7 +256,7 @@ async fn forward_ws_channel(
         Some(Ok(ws::Message::Text(text))) => {
           let bytes: Bytes = text.into();
           if let Err(e) = periphery_sender
-            .send_terminal(periphery_connection_id, Ok(bytes.into()))
+            .send_terminal(channel, Ok(bytes.into()))
             .await
           {
             debug!("Failed to send terminal message | {e:?}",);
@@ -286,7 +267,7 @@ async fn forward_ws_channel(
         Some(Ok(ws::Message::Close(_frame))) => {
           let _ = periphery_sender
             .send_terminal(
-              periphery_connection_id,
+              channel,
               Err(anyhow!("Client disconnected")),
             )
             .await;
@@ -296,7 +277,7 @@ async fn forward_ws_channel(
         Some(Err(_e)) => {
           let _ = periphery_sender
             .send_terminal(
-              periphery_connection_id,
+              channel,
               Err(anyhow!("Client disconnected")),
             )
             .await;
@@ -306,7 +287,7 @@ async fn forward_ws_channel(
         None => {
           let _ = periphery_sender
             .send_terminal(
-              periphery_connection_id,
+              channel,
               Err(anyhow!("Client disconnected")),
             )
             .await;
@@ -353,11 +334,8 @@ async fn forward_ws_channel(
   tokio::join!(core_to_periphery, periphery_to_core);
 
   // Cleanup
-  if let Err(e) = periphery
-    .request(DisconnectTerminal {
-      id: periphery_connection_id,
-    })
-    .await
+  if let Err(e) =
+    periphery.request(DisconnectTerminal { channel }).await
   {
     warn!(
       "Failed to disconnect Periphery terminal forwarding | {e:#}",
@@ -366,6 +344,6 @@ async fn forward_ws_channel(
   if let Some(connection) =
     periphery_connections().get(&periphery.id).await
   {
-    connection.terminals.remove(&periphery_connection_id).await;
+    connection.terminals.remove(&channel).await;
   }
 }

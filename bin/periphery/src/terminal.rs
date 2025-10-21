@@ -5,7 +5,9 @@ use bytes::Bytes;
 use encoding::{Decode as _, WithChannel};
 use komodo_client::{
   api::write::TerminalRecreateMode,
-  entities::{ContainerTerminalMode, server::TerminalInfo},
+  entities::{
+    ContainerTerminalMode, komodo_timestamp, server::TerminalInfo,
+  },
 };
 use periphery_client::transport::EncodedTerminalMessage;
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
@@ -138,6 +140,7 @@ pub async fn list_terminals(
       name: name.to_string(),
       command: terminal.command.clone(),
       stored_size_kb: terminal.history.size_kb(),
+      created_at: terminal.created_at,
     })
     .collect::<Vec<_>>();
   terminals.sort_by(|a, b| a.name.cmp(&b.name));
@@ -191,6 +194,8 @@ pub type StdoutReceiver = broadcast::Receiver<Bytes>;
 pub struct Terminal {
   /// The command that was used as the root command, eg `shell`
   command: String,
+  /// Created timestamp milliseconds
+  created_at: i64,
 
   pub cancel: CancellationToken,
 
@@ -374,6 +379,7 @@ impl Terminal {
       stdout,
       history,
       container,
+      created_at: komodo_timestamp(),
     })
   }
 

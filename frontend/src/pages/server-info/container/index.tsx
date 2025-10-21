@@ -63,7 +63,7 @@ const ContainerPageInner = ({
   container: string;
 }) => {
   const server = useServer(id);
-  useSetTitle(`${server?.name} | container | ${container_name}`);
+  useSetTitle(`${server?.name} | Container | ${container_name}`);
   const { canExecute } = usePermissions({ type: "Server", id });
   const list_container = useRead(
     "ListDockerContainers",

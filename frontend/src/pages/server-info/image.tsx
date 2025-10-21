@@ -48,7 +48,7 @@ const ImagePageInner = ({
 }) => {
   const [showInspect, setShowInspect] = useState(false);
   const server = useServer(id);
-  useSetTitle(`${server?.name} | image | ${image_name}`);
+  useSetTitle(`${server?.name} | Image | ${image_name}`);
   const nav = useNavigate();
 
   const { canExecute, specific } = usePermissions({ type: "Server", id });

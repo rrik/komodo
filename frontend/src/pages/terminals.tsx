@@ -1,13 +1,32 @@
 import { Page } from "@components/layouts";
-import { ResourceLink } from "@components/resources/common";
+import { ResourceLink, ResourceSelector } from "@components/resources/common";
 import { TagsFilter } from "@components/tags";
 import { ConfirmButton } from "@components/util";
-import { useRead, useSetTitle, useTags, useWrite } from "@lib/hooks";
+import { fmt_date_with_minutes } from "@lib/formatting";
+import {
+  usePermissions,
+  useRead,
+  useSetTitle,
+  useTags,
+  useWrite,
+} from "@lib/hooks";
 import { filterBySplit } from "@lib/utils";
+import { Button } from "@ui/button";
 import { DataTable, SortableHeader } from "@ui/data-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@ui/dialog";
 import { Input } from "@ui/input";
-import { Search, Terminal, Trash } from "lucide-react";
-import { useState } from "react";
+import { Types } from "komodo_client";
+import { Loader2, PlusCircle, Search, Terminal, Trash } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function TerminalsPage() {
   useSetTitle("Terminals");
@@ -16,7 +35,7 @@ export default function TerminalsPage() {
   const servers = useRead("ListServers", { query: { tags } }).data ?? [];
   const { data, refetch } = useRead(
     "ListAllTerminals",
-    { query: { tags } },
+    { query: { tags }, fresh: true },
     { refetchInterval: 10_000 }
   );
   const terminals = data?.map((terminal) => {
@@ -40,7 +59,10 @@ export default function TerminalsPage() {
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4 items-center justify-between">
-          <BatchDeleteAllTerminals refetch={refetch} />
+          <div className="flex flex-wrap gap-4 items-center">
+            <CreateTerminal refetch={refetch} />
+            <BatchDeleteAllTerminals refetch={refetch} />
+          </div>
           <div className="flex items-center gap-4 flex-wrap">
             <TagsFilter />
             <div className="relative">
@@ -59,10 +81,21 @@ export default function TerminalsPage() {
           data={filtered}
           columns={[
             {
-              size: 200,
               accessorKey: "name",
               header: ({ column }) => (
                 <SortableHeader column={column} title="Name" />
+              ),
+              cell: ({ row }) => (
+                <Link
+                  to={`/servers/${row.original.server_id}/terminal/${row.original.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="flex items-center gap-2 text-sm hover:underline"
+                >
+                  <Terminal className="w-4 h-4" />
+                  {row.original.name}
+                </Link>
               ),
             },
             {
@@ -76,7 +109,6 @@ export default function TerminalsPage() {
               ),
             },
             {
-              size: 200,
               accessorKey: "command",
               header: ({ column }) => (
                 <SortableHeader column={column} title="Command" />
@@ -104,6 +136,17 @@ export default function TerminalsPage() {
               ),
             },
             {
+              accessorKey: "created_at",
+              header: ({ column }) => (
+                <SortableHeader column={column} title="Created" />
+              ),
+              cell: ({
+                row: {
+                  original: { created_at },
+                },
+              }) => fmt_date_with_minutes(new Date(created_at)),
+            },
+            {
               header: "Delete",
               cell: ({ row }) => (
                 <DeleteTerminal
@@ -120,6 +163,120 @@ export default function TerminalsPage() {
   );
 }
 
+const default_create_terminal = (first_server: string) => {
+  return {
+    server: first_server,
+    name: "term-1",
+    command: undefined,
+  } as Types.CreateTerminal;
+};
+
+const CreateTerminal = ({ refetch }: { refetch: () => void }) => {
+  const [open, set] = useState(false);
+  const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
+  const [request, setRequest] = useState<Types.CreateTerminal>(
+    default_create_terminal(first_server)
+  );
+  useEffect(() => {
+    if (open) return;
+    setRequest(default_create_terminal(first_server));
+  }, [first_server]);
+  const { mutate, isPending } = useWrite("CreateTerminal", {
+    onSuccess: () => {
+      set(false);
+      setRequest(default_create_terminal(first_server));
+      refetch();
+    },
+  });
+  const onConfirm = () => {
+    if (!request.server || !request.name) return;
+    mutate(request);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={set}>
+      <DialogTrigger asChild>
+        <Button className="items-center gap-2" variant="secondary">
+          New Terminal <PlusCircle className="w-4 h-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Terminal</DialogTitle>
+          <DialogDescription>
+            Choose the Server and Command for the new Terminal.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          Server
+          <ResourceSelector
+            targetClassName="w-full justify-between"
+            type="Server"
+            selected={request.server}
+            onSelect={(server) => setRequest((req) => ({ ...req, server }))}
+            align="end"
+          />
+          Terminal Name
+          <Input
+            autoFocus
+            placeholder="terminal-name"
+            value={request.name}
+            onChange={(e) =>
+              setRequest((req) => ({ ...req, name: e.target.value }))
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onConfirm();
+              }
+            }}
+          />
+          Command
+          <Input
+            placeholder="bash (Optional)"
+            value={request.command}
+            onChange={(e) =>
+              setRequest((req) => ({ ...req, command: e.target.value }))
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onConfirm();
+              }
+            }}
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="secondary" onClick={onConfirm}>
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "Create"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const BatchDeleteAllTerminals = ({ refetch }: { refetch: () => void }) => {
+  const { mutate, isPending } = useWrite("BatchDeleteAllTerminals", {
+    onSuccess: refetch,
+  });
+  const { tags } = useTags();
+  return (
+    <ConfirmButton
+      title="Delete All"
+      variant="destructive"
+      icon={<Trash className="w-4 h-4" />}
+      className="w-[160px]"
+      onClick={() => mutate({ query: { tags } })}
+      loading={isPending}
+    />
+  );
+};
+
 const DeleteTerminal = ({
   server,
   terminal,
@@ -129,7 +286,10 @@ const DeleteTerminal = ({
   terminal: string;
   refetch: () => void;
 }) => {
-  const { mutate } = useWrite("DeleteTerminal", { onSuccess: refetch });
+  const { canWrite } = usePermissions({ type: "Server", id: server });
+  const { mutate, isPending } = useWrite("DeleteTerminal", {
+    onSuccess: refetch,
+  });
   return (
     <ConfirmButton
       title="Delete"
@@ -137,22 +297,8 @@ const DeleteTerminal = ({
       icon={<Trash className="w-4 h-4" />}
       className="w-[120px]"
       onClick={() => mutate({ server, terminal })}
-    />
-  );
-};
-
-const BatchDeleteAllTerminals = ({ refetch }: { refetch: () => void }) => {
-  const { mutate } = useWrite("BatchDeleteAllTerminals", {
-    onSuccess: refetch,
-  });
-  const { tags } = useTags();
-  return (
-    <ConfirmButton
-      title="Delete All"
-      variant="destructive"
-      icon={<Trash className="w-4 h-4" />}
-      className="w-[180px]"
-      onClick={() => mutate({ query: { tags } })}
+      disabled={!canWrite}
+      loading={isPending}
     />
   );
 };

@@ -86,8 +86,8 @@ pub struct ConnectContainerAttach {
 #[response(NoData)]
 #[error(anyhow::Error)]
 pub struct DisconnectTerminal {
-  /// The connection id of the terminal to disconnect from
-  pub id: Uuid,
+  /// The channel id of the terminal to disconnect from
+  pub channel: Uuid,
 }
 
 //

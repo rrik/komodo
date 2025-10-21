@@ -10,7 +10,7 @@ use crate::{
   deserializers::{
     option_string_list_deserializer, string_list_deserializer,
   },
-  entities::{MaintenanceWindow, Timelength},
+  entities::{MaintenanceWindow, Timelength, I64},
 };
 
 use super::{
@@ -375,6 +375,8 @@ pub struct TerminalInfo {
   pub command: String,
   /// The size of the terminal history in memory.
   pub stored_size_kb: f64,
+  /// When the Terminal was created.
+  pub created_at: I64,
 }
 
 /// Info about an active terminal on a server.
@@ -390,6 +392,8 @@ pub struct TerminalInfoWithServer {
   pub command: String,
   /// The size of the terminal history in memory.
   pub stored_size_kb: f64,
+  /// When the Terminal was created in unix milliseconds.
+  pub created_at: I64,
 }
 
 impl TerminalInfoWithServer {
@@ -399,6 +403,7 @@ impl TerminalInfoWithServer {
       name,
       command,
       stored_size_kb,
+      created_at,
     }: TerminalInfo,
   ) -> Self {
     Self {
@@ -406,6 +411,7 @@ impl TerminalInfoWithServer {
       name,
       command,
       stored_size_kb,
+      created_at
     }
   }
 }

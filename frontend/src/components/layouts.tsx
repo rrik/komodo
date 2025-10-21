@@ -63,6 +63,7 @@ interface PageProps {
   subtitle?: ReactNode;
   actions?: ReactNode;
   superHeader?: ReactNode;
+  className?: string;
 }
 
 export const Page = ({
@@ -74,33 +75,15 @@ export const Page = ({
   subtitle,
   actions,
   children,
-}: PageProps) => (
-  <div className="w-full flex flex-col gap-12">
-    {superHeader ? (
-      <div className="flex flex-col gap-4">
-        {superHeader}
-        {(title || icon || subtitle || actions) && (
-          <div
-            className={`flex flex-col gap-6 md:flex-row md:gap-0 md:justify-between`}
-          >
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-4 items-center">
-                {icon}
-                <h1 className="text-4xl">{title}</h1>
-                {titleRight}
-              </div>
-              <div className="flex flex-col">{subtitle}</div>
-            </div>
-            {actions}
-          </div>
-        )}
-      </div>
-    ) : (
-      (title || icon || subtitle || actions) && (
+  className,
+}: PageProps) => {
+  const Header = (
+    <>
+      {(title || icon || subtitle || actions) && (
         <div
           className={`flex flex-col gap-6 md:flex-row md:gap-0 md:justify-between`}
         >
-          <div>
+          <div className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-4 items-center">
               {icon}
               <h1 className="text-4xl">{title}</h1>
@@ -110,12 +93,24 @@ export const Page = ({
           </div>
           {actions}
         </div>
-      )
-    )}
-    {titleOther}
-    {children}
-  </div>
-);
+      )}
+    </>
+  );
+  return (
+    <div className={cn("w-full flex flex-col gap-12", className)}>
+      {superHeader ? (
+        <div className="flex flex-col gap-4">
+          {superHeader}
+          {Header}
+        </div>
+      ) : (
+        Header
+      )}
+      {titleOther}
+      {children}
+    </div>
+  );
+};
 
 export const PageXlRow = ({
   superHeader,
@@ -253,7 +248,9 @@ export const NewLayout = ({
             Enter {configureLabel} for the new {entityType}.
           </DialogDescription>
         </DialogHeader>
+
         <div className="flex flex-col gap-6 py-8">{children}</div>
+
         <DialogFooter>
           <Button
             variant="secondary"

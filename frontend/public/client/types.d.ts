@@ -3606,6 +3606,8 @@ export interface TerminalInfoWithServer {
     command: string;
     /** The size of the terminal history in memory. */
     stored_size_kb: number;
+    /** When the Terminal was created in unix milliseconds. */
+    created_at: I64;
 }
 export type ListAllTerminalsResponse = TerminalInfoWithServer[];
 /** An api key used to authenticate requests via request headers. */
@@ -4087,6 +4089,8 @@ export interface TerminalInfo {
     command: string;
     /** The size of the terminal history in memory. */
     stored_size_kb: number;
+    /** When the Terminal was created. */
+    created_at: I64;
 }
 export type ListTerminalsResponse = TerminalInfo[];
 export type ListUserGroupsResponse = UserGroup[];
@@ -5182,9 +5186,9 @@ export interface CreateTerminal {
      * This can also include args:
      * `docker exec -it container sh`
      *
-     * Default: `bash`
+     * Default: Configured on each Periphery
      */
-    command: string;
+    command?: string;
     /** Default: `Never` */
     recreate?: TerminalRecreateMode;
 }

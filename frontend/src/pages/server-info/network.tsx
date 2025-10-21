@@ -49,7 +49,7 @@ const NetworkPageInner = ({
 }) => {
   const [showInspect, setShowInspect] = useState(false);
   const server = useServer(id);
-  useSetTitle(`${server?.name} | network | ${network_name}`);
+  useSetTitle(`${server?.name} | Network | ${network_name}`);
   const nav = useNavigate();
 
   const { canExecute, specific } = usePermissions({ type: "Server", id });

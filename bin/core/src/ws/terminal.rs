@@ -59,11 +59,7 @@ pub async fn handler(
 
     trace!("connecting to periphery terminal websocket");
 
-    let (
-      periphery_connection_id,
-      periphery_sender,
-      periphery_receiver,
-    ) = match periphery.connect_terminal(terminal).await {
+    let response = match periphery.connect_terminal(terminal).await {
       Ok(ws) => ws,
       Err(e) => {
         debug!("Failed connect to periphery terminal | {e:#}");
@@ -77,13 +73,6 @@ pub async fn handler(
 
     trace!("connected to periphery terminal websocket");
 
-    forward_ws_channel(
-      periphery,
-      client_socket,
-      periphery_connection_id,
-      periphery_sender,
-      periphery_receiver,
-    )
-    .await
+    forward_ws_channel(periphery, client_socket, response).await
   })
 }

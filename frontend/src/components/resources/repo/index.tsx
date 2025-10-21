@@ -73,7 +73,17 @@ export const RepoComponents: RequiredResourceComponents = {
     );
   },
 
-  New: ({ server_id }) => <NewResource type="Repo" server_id={server_id} />,
+  New: ({ server_id, builder_id }) => {
+    return (
+      <NewResource
+        type="Repo"
+        server_id={server_id}
+        selectServer={!server_id}
+        builder_id={builder_id}
+        selectBuilder={!builder_id}
+      />
+    );
+  },
 
   GroupActions: () => (
     <GroupActions

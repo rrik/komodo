@@ -79,12 +79,15 @@ export const BuildComponents: RequiredResourceComponents = {
     const builders = useRead("ListBuilders", {}).data;
     if (!user) return null;
     if (!user.admin && !user.create_build_permissions) return null;
+    const builder_id =
+      builders && builders.length === 1 ? builders[0].id : undefined;
     return (
       <NewResource
         type="Build"
         builder_id={
           builders && builders.length === 1 ? builders[0].id : undefined
         }
+        selectBuilder={!builder_id}
       />
     );
   },

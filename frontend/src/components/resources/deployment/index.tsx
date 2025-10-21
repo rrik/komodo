@@ -109,6 +109,7 @@ export const DeploymentComponents: RequiredResourceComponents = {
       <NewResource
         type="Deployment"
         server_id={server_id}
+        selectServer={!server_id}
         build_id={build_id}
       />
     );
