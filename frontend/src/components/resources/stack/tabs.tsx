@@ -15,7 +15,7 @@ type StackTabsView = "Config" | "Info" | "Services" | "Log";
 
 export const StackTabs = ({ id }: { id: string }) => {
   const [_view, setView] = useLocalStorage<StackTabsView>(
-    "stack-tabs-v1",
+    "stack-tabs-v2",
     "Config"
   );
   const info = useStack(id)?.info;
