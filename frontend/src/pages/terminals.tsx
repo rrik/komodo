@@ -26,7 +26,7 @@ import { Input } from "@ui/input";
 import { Types } from "komodo_client";
 import { Loader2, PlusCircle, Search, Terminal, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function TerminalsPage() {
   useSetTitle("Terminals");
@@ -60,8 +60,11 @@ export default function TerminalsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex flex-wrap gap-4 items-center">
-            <CreateTerminal refetch={refetch} />
-            <BatchDeleteAllTerminals refetch={refetch} />
+            <CreateTerminal />
+            <BatchDeleteAllTerminals
+              refetch={refetch}
+              noTerminals={!terminals?.length}
+            />
           </div>
           <div className="flex items-center gap-4 flex-wrap">
             <TagsFilter />
@@ -171,8 +174,9 @@ const default_create_terminal = (first_server: string) => {
   } as Types.CreateTerminal;
 };
 
-const CreateTerminal = ({ refetch }: { refetch: () => void }) => {
+const CreateTerminal = () => {
   const [open, set] = useState(false);
+  const nav = useNavigate();
   const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
   const [request, setRequest] = useState<Types.CreateTerminal>(
     default_create_terminal(first_server)
@@ -183,9 +187,9 @@ const CreateTerminal = ({ refetch }: { refetch: () => void }) => {
   }, [first_server]);
   const { mutate, isPending } = useWrite("CreateTerminal", {
     onSuccess: () => {
+      nav(`/servers/${request.server}/terminal/${request.name}`);
       set(false);
       setRequest(default_create_terminal(first_server));
-      refetch();
     },
   });
   const onConfirm = () => {
@@ -260,7 +264,13 @@ const CreateTerminal = ({ refetch }: { refetch: () => void }) => {
   );
 };
 
-const BatchDeleteAllTerminals = ({ refetch }: { refetch: () => void }) => {
+const BatchDeleteAllTerminals = ({
+  refetch,
+  noTerminals,
+}: {
+  refetch: () => void;
+  noTerminals: boolean;
+}) => {
   const { mutate, isPending } = useWrite("BatchDeleteAllTerminals", {
     onSuccess: refetch,
   });
@@ -272,6 +282,7 @@ const BatchDeleteAllTerminals = ({ refetch }: { refetch: () => void }) => {
       icon={<Trash className="w-4 h-4" />}
       className="w-[160px]"
       onClick={() => mutate({ query: { tags } })}
+      disabled={noTerminals}
       loading={isPending}
     />
   );
