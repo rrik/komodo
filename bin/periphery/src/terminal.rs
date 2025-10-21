@@ -31,8 +31,7 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
 
   let mut data = match data {
     Ok(data) => data,
-    Err(e) => {
-      warn!("Recieved Terminal error from Core | {e:#}");
+    Err(_) => {
       // This means Core should disconnect.
       terminal_channels().remove(&channel_id).await;
       return;
