@@ -10,6 +10,7 @@ import {
   useInvalidate,
   usePermissions,
   useRead,
+  useShiftKeyListener,
   useWrite,
   WebhookIntegration,
 } from "@lib/hooks";
@@ -563,12 +564,16 @@ export const NewResource = ({
       nav(`/${usableResourcePath(type)}/${resourceId}`);
     }
   };
+  const [open, setOpen] = useState(false);
+  useShiftKeyListener("N", () => !open && setOpen(true));
   return (
     <NewLayout
       entityType={readable_type ?? type}
       onConfirm={onConfirm}
       enabled={!!name}
       onOpenChange={() => setName(_name)}
+      open={open}
+      setOpen={setOpen}
     >
       <div className="grid md:grid-cols-2 gap-6 items-center">
         {readable_type ?? type} Name

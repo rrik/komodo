@@ -652,7 +652,7 @@ export const KeyboardShortcuts = () => {
           <KeyboardShortcut label="Go to Repos" keys={["Shift", "R"]} />
           <KeyboardShortcut label="Go to Procedures" keys={["Shift", "P"]} />
           <KeyboardShortcut label="Go to Variables" keys={["Shift", "V"]} />
-          <KeyboardShortcut label="Go to Terminals" keys={["Shift", "J"]} />
+          <KeyboardShortcut label="Go to Terminals" keys={["Shift", "X"]} />
           <KeyboardShortcut label="Go to Schedules" keys={["Shift", "C"]} />
 
           <KeyboardShortcut label="Search" keys={["Shift", "S"]} />

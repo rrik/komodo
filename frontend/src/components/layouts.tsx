@@ -32,7 +32,7 @@ export const Layout = () => {
   useShiftKeyListener("B", () => nav("/builds"));
   useShiftKeyListener("R", () => nav("/repos"));
   useShiftKeyListener("P", () => nav("/procedures"));
-  useShiftKeyListener("J", () => nav("/terminals"));
+  useShiftKeyListener("X", () => nav("/terminals"));
   useShiftKeyListener("C", () => nav("/schedules"));
   useShiftKeyListener("V", () => {
     setSettingsView("Variables");
@@ -217,6 +217,8 @@ export const NewLayout = ({
   onConfirm,
   onOpenChange,
   configureLabel = "a unique name",
+  open: _open,
+  setOpen: _setOpen,
 }: {
   entityType: string;
   children: ReactNode;
@@ -224,15 +226,19 @@ export const NewLayout = ({
   onConfirm: () => Promise<unknown>;
   onOpenChange?: (open: boolean) => void;
   configureLabel?: string;
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
 }) => {
-  const [open, set] = useState(false);
+  const [__open, __setOpen] = useState(false);
+  const open = _open ? _open : __open;
+  const setOpen = _setOpen ? _setOpen : __setOpen;
   const [loading, setLoading] = useState(false);
 
   return (
     <Dialog
       open={open}
       onOpenChange={(open) => {
-        set(open);
+        setOpen(open);
         onOpenChange && onOpenChange(open);
       }}
     >
@@ -258,11 +264,11 @@ export const NewLayout = ({
               setLoading(true);
               try {
                 await onConfirm();
-                set(false);
+                setOpen(false);
               } catch (error: any) {
                 const status = error?.status || error?.response?.status;
                 if (status !== 409 && status !== 400) {
-                  set(false);
+                  setOpen(false);
                 }
               } finally {
                 setLoading(false);

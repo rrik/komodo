@@ -7,6 +7,7 @@ import {
   usePermissions,
   useRead,
   useSetTitle,
+  useShiftKeyListener,
   useTags,
   useWrite,
 } from "@lib/hooks";
@@ -175,7 +176,7 @@ const default_create_terminal = (first_server: string) => {
 };
 
 const CreateTerminal = () => {
-  const [open, set] = useState(false);
+  const [open, setOpen] = useState(false);
   const nav = useNavigate();
   const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
   const [request, setRequest] = useState<Types.CreateTerminal>(
@@ -188,7 +189,7 @@ const CreateTerminal = () => {
   const { mutate, isPending } = useWrite("CreateTerminal", {
     onSuccess: () => {
       nav(`/servers/${request.server}/terminal/${request.name}`);
-      set(false);
+      setOpen(false);
       setRequest(default_create_terminal(first_server));
     },
   });
@@ -196,9 +197,10 @@ const CreateTerminal = () => {
     if (!request.server || !request.name) return;
     mutate(request);
   };
+  useShiftKeyListener("N", () => !open && setOpen(true));
 
   return (
-    <Dialog open={open} onOpenChange={set}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="items-center gap-2" variant="secondary">
           New Terminal <PlusCircle className="w-4 h-4" />
