@@ -173,6 +173,8 @@ pub struct Env {
   pub periphery_stack_dir: Option<PathBuf>,
   /// Override `build_dir`
   pub periphery_build_dir: Option<PathBuf>,
+  /// Override `default_terminal_command`
+  pub periphery_default_terminal_command: Option<String>,
   /// Override `disable_terminals`
   pub periphery_disable_terminals: Option<bool>,
   /// Override `disable_container_terminals`
@@ -356,6 +358,12 @@ pub struct PeripheryConfig {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub build_dir: Option<PathBuf>,
 
+  /// Configure the default terminal command
+  /// when one isn't provided.
+  /// Default: `bash`
+  #[serde(default = "default_default_terminal_command")]
+  pub default_terminal_command: String,
+
   /// Whether to disable the create terminal
   /// and disallow direct remote shell access.
   /// Default: false
@@ -431,6 +439,10 @@ fn default_root_directory() -> PathBuf {
   "/etc/komodo".parse().unwrap()
 }
 
+fn default_default_terminal_command() -> String {
+  String::from("bash")
+}
+
 fn default_stats_polling_rate() -> Timelength {
   Timelength::FiveSeconds
 }
@@ -460,6 +472,7 @@ impl Default for PeripheryConfig {
       repo_dir: None,
       stack_dir: None,
       build_dir: None,
+      default_terminal_command: default_default_terminal_command(),
       disable_terminals: Default::default(),
       disable_container_terminals: Default::default(),
       stats_polling_rate: default_stats_polling_rate(),
@@ -510,6 +523,7 @@ impl PeripheryConfig {
       repo_dir: self.repo_dir.clone(),
       stack_dir: self.stack_dir.clone(),
       build_dir: self.build_dir.clone(),
+      default_terminal_command: self.default_terminal_command.clone(),
       disable_terminals: self.disable_terminals,
       disable_container_terminals: self.disable_container_terminals,
       stats_polling_rate: self.stats_polling_rate,

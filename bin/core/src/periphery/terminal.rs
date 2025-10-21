@@ -5,7 +5,6 @@ use std::{
 };
 
 use anyhow::Context;
-use bytes::Bytes;
 use cache::CloneCache;
 use futures_util::Stream;
 use komodo_client::api::write::TerminalRecreateMode;
@@ -31,7 +30,7 @@ impl PeripheryClient {
   ) -> anyhow::Result<(
     Uuid,
     Sender<EncodedTransportMessage>,
-    Receiver<Vec<u8>>,
+    Receiver<anyhow::Result<Vec<u8>>>,
   )> {
     tracing::trace!(
       "request | type: ConnectTerminal | terminal name: {terminal}",
@@ -52,7 +51,7 @@ impl PeripheryClient {
 
     connection
       .sender
-      .send_terminal(channel_id, Bytes::new())
+      .send_terminal(channel_id, Ok(Vec::with_capacity(17))) // 16 bytes uuid + 1 EncodedResponse
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
@@ -70,7 +69,7 @@ impl PeripheryClient {
   ) -> anyhow::Result<(
     Uuid,
     Sender<EncodedTransportMessage>,
-    Receiver<Vec<u8>>,
+    Receiver<anyhow::Result<Vec<u8>>>,
   )> {
     tracing::trace!(
       "request | type: ConnectContainerExec | container name: {container} | shell: {shell}",
@@ -95,7 +94,7 @@ impl PeripheryClient {
 
     connection
       .sender
-      .send_terminal(channel_id, Bytes::new())
+      .send_terminal(channel_id, Ok(Vec::with_capacity(17)))
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
@@ -112,7 +111,7 @@ impl PeripheryClient {
   ) -> anyhow::Result<(
     Uuid,
     Sender<EncodedTransportMessage>,
-    Receiver<Vec<u8>>,
+    Receiver<anyhow::Result<Vec<u8>>>,
   )> {
     tracing::trace!(
       "request | type: ConnectContainerAttach | container name: {container}",
@@ -136,7 +135,7 @@ impl PeripheryClient {
 
     connection
       .sender
-      .send_terminal(channel, Bytes::new())
+      .send_terminal(channel, Ok(Vec::with_capacity(17)))
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
@@ -188,7 +187,7 @@ impl PeripheryClient {
 
     connection
       .sender
-      .send_terminal(channel_id, Bytes::new())
+      .send_terminal(channel_id, Ok(Vec::with_capacity(17)))
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",
@@ -251,7 +250,7 @@ impl PeripheryClient {
     // This is required to not miss messages.
     connection
       .sender
-      .send_terminal(channel_id, Bytes::new())
+      .send_terminal(channel_id, Ok(Vec::with_capacity(17)))
       .await?;
 
     Ok(ReceiverStream {
@@ -264,8 +263,8 @@ impl PeripheryClient {
 
 pub struct ReceiverStream {
   channel_id: Uuid,
-  channels: Arc<CloneCache<Uuid, Sender<Vec<u8>>>>,
-  receiver: Receiver<Vec<u8>>,
+  channels: Arc<CloneCache<Uuid, Sender<anyhow::Result<Vec<u8>>>>>,
+  receiver: Receiver<anyhow::Result<Vec<u8>>>,
 }
 
 impl Stream for ReceiverStream {
@@ -275,14 +274,14 @@ impl Stream for ReceiverStream {
     cx: &mut task::Context<'_>,
   ) -> Poll<Option<Self::Item>> {
     match self.receiver.poll_recv(cx) {
-      Poll::Ready(Some(bytes))
+      Poll::Ready(Some(Ok(bytes)))
         if bytes == END_OF_OUTPUT.as_bytes() =>
       {
         self.cleanup();
         Poll::Ready(None)
       }
-      Poll::Ready(Some(bytes)) => Poll::Ready(Some(Ok(bytes))),
-      // Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(e))),
+      Poll::Ready(Some(Ok(bytes))) => Poll::Ready(Some(Ok(bytes))),
+      Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(e))),
       Poll::Ready(None) => {
         self.cleanup();
         Poll::Ready(None)

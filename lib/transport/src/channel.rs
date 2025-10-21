@@ -62,8 +62,14 @@ pub fn buffered_channel<T: Send + Clone>()
   (sender, BufferedReceiver::new(receiver))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Sender<T>(mpsc::Sender<T>);
+
+impl<T> Clone for Sender<T> {
+  fn clone(&self) -> Self {
+    Self(self.0.clone())
+  }
+}
 
 impl<T> Sender<T> {
   pub async fn send(&self, data: T) -> anyhow::Result<()> {
@@ -116,11 +122,9 @@ impl Sender<EncodedTransportMessage> {
   pub async fn send_terminal(
     &self,
     channel: Uuid,
-    data: impl Into<Vec<u8>>,
+    data: anyhow::Result<Vec<u8>>,
   ) -> anyhow::Result<()> {
-    self
-      .send_message(TerminalMessage::new(channel, data.into()))
-      .await
+    self.send_message(TerminalMessage::new(channel, data)).await
   }
 }
 

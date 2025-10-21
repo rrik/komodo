@@ -257,7 +257,8 @@ impl<'a> From<&'a OwnedPeripheryConnectionArgs>
 pub type ResponseChannels =
   CloneCache<Uuid, Sender<EncodedResponse<EncodedJsonMessage>>>;
 
-pub type TerminalChannels = CloneCache<Uuid, Sender<Vec<u8>>>;
+pub type TerminalChannels =
+  CloneCache<Uuid, Sender<anyhow::Result<Vec<u8>>>>;
 
 #[derive(Debug)]
 pub struct PeripheryConnection {

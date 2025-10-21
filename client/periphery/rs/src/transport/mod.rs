@@ -202,10 +202,12 @@ impl Decode<ResponseMessage> for EncodedResponseMessage {
 // ==================
 
 #[derive(Debug)]
-pub struct EncodedTerminalMessage(EncodedChannel<Vec<u8>>);
+pub struct EncodedTerminalMessage(
+  EncodedChannel<EncodedResponse<Vec<u8>>>,
+);
 
 impl TerminalMessage {
-  pub fn new(channel: Uuid, bytes: Vec<u8>) -> Self {
+  pub fn new(channel: Uuid, bytes: anyhow::Result<Vec<u8>>) -> Self {
     Self(WithChannel {
       channel,
       data: bytes,
@@ -215,19 +217,27 @@ impl TerminalMessage {
 
 impl_cast_bytes_vec!(EncodedTerminalMessage, EncodedChannel);
 
-pub struct TerminalMessage(WithChannel<Vec<u8>>);
+pub struct TerminalMessage(WithChannel<anyhow::Result<Vec<u8>>>);
 
 impl Encode<EncodedTransportMessage> for TerminalMessage {
   fn encode(self) -> EncodedTransportMessage {
     TransportMessage::Terminal(EncodedTerminalMessage(
-      self.0.encode(),
+      self.0.map_encode(),
     ))
     .encode()
   }
 }
 
-impl Decode<WithChannel<Vec<u8>>> for EncodedTerminalMessage {
-  fn decode(self) -> anyhow::Result<WithChannel<Vec<u8>>> {
-    self.0.decode_map()
+impl Decode<WithChannel<anyhow::Result<Vec<u8>>>>
+  for EncodedTerminalMessage
+{
+  fn decode(
+    self,
+  ) -> anyhow::Result<WithChannel<anyhow::Result<Vec<u8>>>> {
+    Ok(self.0.decode()?.map(|data| {
+      data.decode().and_then(|r| {
+        r.context("Terminal should not recieve Pending byte")
+      })
+    }))
   }
 }

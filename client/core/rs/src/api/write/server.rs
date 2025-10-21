@@ -165,16 +165,11 @@ pub struct CreateTerminal {
   /// This can also include args:
   /// `docker exec -it container sh`
   ///
-  /// Default: `bash`
-  #[serde(default = "default_command")]
-  pub command: String,
+  /// Default: Configured on each Periphery
+  pub command: Option<String>,
   /// Default: `Never`
   #[serde(default)]
   pub recreate: TerminalRecreateMode,
-}
-
-fn default_command() -> String {
-  String::from("bash")
 }
 
 //

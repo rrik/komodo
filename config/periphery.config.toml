@@ -56,6 +56,12 @@ root_directory = "/etc/komodo"
 ## Default: ${root_directory}/builds
 # build_dir = "/etc/komodo/builds"
 
+## Set the default terminal command used to init the shell.
+## For example, `bash` or `zsh`.
+## Env: PERIPHERY_DEFAULT_TERMINAL_COMMAND
+## Default: bash
+default_terminal_command = "bash"
+
 ## Disable the terminal APIs and disallow remote shell access through Periphery.
 ## Env: PERIPHERY_DISABLE_TERMINALS
 ## Default: false

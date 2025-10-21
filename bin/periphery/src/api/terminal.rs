@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::{Context, anyhow};
+use colored::Colorize;
 use futures_util::{Stream, StreamExt, TryStreamExt};
 use komodo_client::entities::{
   ContainerTerminalMode, KOMODO_EXIT_CODE, NoData,
@@ -181,7 +182,7 @@ impl Resolve<super::Args> for ConnectContainerExec {
     // Create (recreate if shell changed)
     let terminal = create_terminal(
       container.clone(),
-      format!("docker exec -it {container} {shell}"),
+      Some(format!("docker exec -it {container} {shell}")),
       recreate,
       Some((container, ContainerTerminalMode::Exec)),
     )
@@ -234,7 +235,7 @@ impl Resolve<super::Args> for ConnectContainerAttach {
     // Create (recreate if shell changed)
     let terminal = create_terminal(
       container.clone(),
-      format!("docker attach {container} --sig-proxy=false"),
+      Some(format!("docker attach {container} --sig-proxy=false")),
       recreate,
       Some((container, ContainerTerminalMode::Attach)),
     )
@@ -363,7 +364,7 @@ impl Resolve<super::Args> for ExecuteContainerExec {
 
     let terminal = create_terminal(
       container.clone(),
-      format!("docker exec -it {container} {shell}"),
+      Some(format!("docker exec -it {container} {shell}")),
       recreate,
       Some((container, ContainerTerminalMode::Exec)),
     )
@@ -445,13 +446,13 @@ async fn handle_terminal_forwarding(
     let (a, b) = terminal.history.bytes_parts();
     if !a.is_empty() {
       sender
-        .send_terminal(channel, a)
+        .send_terminal(channel, Ok(a.into()))
         .await
         .context("Failed to send history part a")?;
     }
     if !b.is_empty() {
       sender
-        .send_terminal(channel, b)
+        .send_terminal(channel, Ok(b.into()))
         .await
         .context("Failed to send history part b")?;
     }
@@ -472,32 +473,44 @@ async fn handle_terminal_forwarding(
     let res = tokio::select! {
       res = stdout.recv() => res,
       _ = terminal.cancel.cancelled() => {
-        trace!("ws write: cancelled from outside");
-        // let _ = ws_sender.send("PTY KILLED")).await;
-        // if let Err(e) = ws_write.close().await {
-        //   debug!("Failed to close ws: {e:?}");
-        // };
+        let _ = sender.send_terminal(channel, Err(anyhow!(
+          "\n{} {}",
+          "pty".bold(),
+          "exited".red().bold()
+        ))).await;
         break
       },
       _ = cancel.cancelled() => {
-        // let _ = ws_write.send(Message::Text(Utf8Bytes::from_static("WS KILLED"))).await;
-        // if let Err(e) = ws_write.close().await {
-        //   debug!("Failed to close ws: {e:?}");
-        // };
+        let _ = sender.send_terminal(channel, Err(anyhow!(
+          "\n{} {}",
+          "websocket".bold(),
+          "disconnected".red().bold()
+        ))).await;
         break
       }
     };
 
     let bytes = match res {
       Ok(bytes) => bytes,
-      Err(e) => {
-        debug!("Terminal receiver failed | {e:?}");
+      Err(_e) => {
         terminal.cancel();
+        let _ = sender
+          .send_terminal(
+            channel,
+            Err(anyhow!(
+              "\n{} {}",
+              "pty".bold(),
+              "exited".red().bold()
+            )),
+          )
+          .await;
         break;
       }
     };
 
-    if let Err(e) = sender.send_terminal(channel, bytes).await {
+    if let Err(e) =
+      sender.send_terminal(channel, Ok(bytes.into())).await
+    {
       debug!("Failed to send to WS: {e:?}");
       cancel.cancel();
       break;
@@ -583,14 +596,17 @@ async fn forward_execute_command_on_terminal_response(
   loop {
     match stdout.next().await {
       Some(Ok(line)) if line.as_str() == END_OF_OUTPUT => {
-        if let Err(e) = sender.send_terminal(channel, line).await {
+        if let Err(e) =
+          sender.send_terminal(channel, Ok(line.into())).await
+        {
           warn!("Got ws_sender send error on END_OF_OUTPUT | {e:?}");
         }
         break;
       }
       Some(Ok(line)) => {
-        if let Err(e) =
-          sender.send_terminal(channel, line + "\n").await
+        if let Err(e) = sender
+          .send_terminal(channel, Ok((line + "\n").into()))
+          .await
         {
           warn!("Got ws_sender send error | {e:?}");
           break;

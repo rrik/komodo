@@ -119,7 +119,10 @@ spki = "0.7.3"
 der = "0.7.10"
 
 # SYSTEM
+hickory-resolver = "0.25.2"
 portable-pty = "0.9.0"
+shell-escape = "0.1.5"
+crossterm = "0.29.0"
 bollard = "0.19.3"
 sysinfo = "0.37.1"
 
@@ -136,9 +139,7 @@ croner = "3.0.0"
 
 # MISC
 async-compression = { version = "0.4.32", features = ["tokio", "gzip"] }
-hickory-resolver = "0.25.2"
 derive_builder = "0.20.2"
-shell-escape = "0.1.5"
 comfy-table = "7.2.1"
 typeshare = "1.0.4"
 dashmap = "6.1.0"

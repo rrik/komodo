@@ -18,6 +18,7 @@ pub mod container;
 pub mod database;
 pub mod execute;
 pub mod list;
+pub mod ssh;
 pub mod update;
 
 async fn komodo_client() -> anyhow::Result<&'static KomodoClient> {

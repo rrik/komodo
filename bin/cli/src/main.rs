@@ -41,12 +41,6 @@ async fn app() -> anyhow::Result<()> {
       }
       Ok(())
     }
-    args::Command::Key { command } => {
-      noise::key::command::handle(command).await
-    }
-    args::Command::Database { command } => {
-      command::database::handle(command).await
-    }
     args::Command::Container(container) => {
       command::container::handle(container).await
     }
@@ -59,6 +53,13 @@ async fn app() -> anyhow::Result<()> {
     }
     args::Command::Update { command } => {
       command::update::handle(command).await
+    }
+    args::Command::Ssh(ssh) => command::ssh::handle(ssh).await,
+    args::Command::Key { command } => {
+      noise::key::command::handle(command).await
+    }
+    args::Command::Database { command } => {
+      command::database::handle(command).await
     }
   }
 }

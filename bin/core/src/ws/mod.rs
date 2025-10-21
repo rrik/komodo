@@ -243,7 +243,7 @@ async fn forward_ws_channel(
   client_socket: axum::extract::ws::WebSocket,
   periphery_connection_id: Uuid,
   periphery_sender: Sender<EncodedTransportMessage>,
-  mut periphery_receiver: Receiver<Vec<u8>>,
+  mut periphery_receiver: Receiver<anyhow::Result<Vec<u8>>>,
 ) {
   let (mut client_send, mut client_receive) = client_socket.split();
   let cancel = CancellationToken::new();
@@ -264,7 +264,7 @@ async fn forward_ws_channel(
       match client_recv_res {
         Some(Ok(ws::Message::Binary(bytes))) => {
           if let Err(e) = periphery_sender
-            .send_terminal(periphery_connection_id, bytes)
+            .send_terminal(periphery_connection_id, Ok(bytes.into()))
             .await
           {
             debug!("Failed to send terminal message | {e:?}",);
@@ -275,7 +275,7 @@ async fn forward_ws_channel(
         Some(Ok(ws::Message::Text(text))) => {
           let bytes: Bytes = text.into();
           if let Err(e) = periphery_sender
-            .send_terminal(periphery_connection_id, bytes)
+            .send_terminal(periphery_connection_id, Ok(bytes.into()))
             .await
           {
             debug!("Failed to send terminal message | {e:?}",);
@@ -283,21 +283,38 @@ async fn forward_ws_channel(
             break;
           };
         }
-        // TODO: Disconnect from periphery when client disconnects
         Some(Ok(ws::Message::Close(_frame))) => {
+          let _ = periphery_sender
+            .send_terminal(
+              periphery_connection_id,
+              Err(anyhow!("Client disconnected")),
+            )
+            .await;
+          cancel.cancel();
+          break;
+        }
+        Some(Err(_e)) => {
+          let _ = periphery_sender
+            .send_terminal(
+              periphery_connection_id,
+              Err(anyhow!("Client disconnected")),
+            )
+            .await;
+          cancel.cancel();
+          break;
+        }
+        None => {
+          let _ = periphery_sender
+            .send_terminal(
+              periphery_connection_id,
+              Err(anyhow!("Client disconnected")),
+            )
+            .await;
           cancel.cancel();
           break;
         }
         // Ignore
         Some(Ok(_)) => {}
-        Some(Err(_e)) => {
-          cancel.cancel();
-          break;
-        }
-        None => {
-          cancel.cancel();
-          break;
-        }
       }
     }
   };
@@ -306,7 +323,7 @@ async fn forward_ws_channel(
     loop {
       // Already adheres to cancellation token
       match periphery_receiver.recv().await {
-        Ok(bytes) => {
+        Ok(Ok(bytes)) => {
           if let Err(e) =
             client_send.send(ws::Message::Binary(bytes.into())).await
           {
@@ -314,6 +331,14 @@ async fn forward_ws_channel(
             cancel.cancel();
             break;
           };
+        }
+        Ok(Err(e)) => {
+          let _ = client_send
+            .send(ws::Message::Text(format!("{e:#}").into()))
+            .await;
+          let _ = client_send.close().await;
+          cancel.cancel();
+          break;
         }
         Err(_) => {
           let _ =

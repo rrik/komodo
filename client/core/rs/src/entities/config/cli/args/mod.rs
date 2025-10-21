@@ -7,6 +7,7 @@ use crate::api::execute::Execution;
 pub mod container;
 pub mod database;
 pub mod list;
+pub mod ssh;
 pub mod update;
 
 #[derive(Debug, clap::Parser)]
@@ -51,20 +52,6 @@ pub enum Command {
     unsanitized: bool,
   },
 
-  /// Private-Public key utilities. (alias: `k`)
-  #[clap(alias = "k")]
-  Key {
-    #[command(subcommand)]
-    command: crate::entities::config::KeyCommand,
-  },
-
-  /// Database utilities. (alias: `db`)
-  #[clap(alias = "db")]
-  Database {
-    #[command(subcommand)]
-    command: database::DatabaseCommand,
-  },
-
   /// Container info (aliases: `ps`, `cn`, `containers`)
   #[clap(alias = "ps", alias = "cn", alias = "containers")]
   Container(container::Container),
@@ -92,6 +79,22 @@ pub enum Command {
   Update {
     #[command(subcommand)]
     command: update::UpdateCommand,
+  },
+
+  Ssh(ssh::Ssh),
+
+  /// Private-Public key utilities. (alias: `k`)
+  #[clap(alias = "k")]
+  Key {
+    #[command(subcommand)]
+    command: crate::entities::config::KeyCommand,
+  },
+
+  /// Database utilities. (alias: `db`)
+  #[clap(alias = "db")]
+  Database {
+    #[command(subcommand)]
+    command: database::DatabaseCommand,
   },
 }
 

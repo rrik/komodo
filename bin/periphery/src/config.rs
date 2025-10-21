@@ -108,6 +108,9 @@ pub fn periphery_config() -> &'static PeripheryConfig {
       repo_dir: env.periphery_repo_dir.or(config.repo_dir),
       stack_dir: env.periphery_stack_dir.or(config.stack_dir),
       build_dir: env.periphery_build_dir.or(config.build_dir),
+      default_terminal_command: env
+        .periphery_default_terminal_command
+        .unwrap_or(config.default_terminal_command),
       disable_terminals: env
         .periphery_disable_terminals
         .unwrap_or(config.disable_terminals),

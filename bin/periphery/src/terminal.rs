@@ -12,12 +12,15 @@ use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use tokio::sync::{broadcast, mpsc};
 use tokio_util::sync::CancellationToken;
 
-use crate::state::{terminal_channels, terminal_triggers, terminals};
+use crate::{
+  config::periphery_config,
+  state::{terminal_channels, terminal_triggers, terminals},
+};
 
 pub async fn handle_message(message: EncodedTerminalMessage) {
   let WithChannel {
     channel: channel_id,
-    mut data,
+    data,
   } = match message.decode() {
     Ok(res) => res,
     Err(e) => {
@@ -25,6 +28,17 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
       return;
     }
   };
+
+  let mut data = match data {
+    Ok(data) => data,
+    Err(e) => {
+      warn!("Recieved Terminal error from Core | {e:#}");
+      // This means Core should disconnect.
+      terminal_channels().remove(&channel_id).await;
+      return;
+    }
+  };
+
   let msg = match data.first() {
     Some(&0x00) => StdinMsg::Bytes(data.drain(1..).collect()),
     Some(&0xFF) => {
@@ -45,11 +59,13 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
       return;
     }
   };
+
   let Some(channel) = terminal_channels().get(&channel_id).await
   else {
     warn!("No terminal channel for {channel_id}");
     return;
   };
+
   if let Err(e) = channel.sender.send(msg).await {
     warn!("No receiver for {channel_id} | {e:?}");
   };
@@ -58,10 +74,13 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
 #[instrument("CreateTerminalInner", skip_all, fields(name))]
 pub async fn create_terminal(
   name: String,
-  command: String,
+  command: Option<String>,
   recreate: TerminalRecreateMode,
   container: Option<(String, ContainerTerminalMode)>,
 ) -> anyhow::Result<Arc<Terminal>> {
+  let command = command.unwrap_or_else(|| {
+    periphery_config().default_terminal_command.clone()
+  });
   trace!(
     "CreateTerminal: {name} | command: {command} | recreate: {recreate:?}"
   );
