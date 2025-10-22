@@ -58,7 +58,7 @@ export const AlertDetailsDialogContent = ({
   return (
     <DialogContent className="w-[90vw] max-w-[900px]">
       <DialogHeader>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <ResourceLink
             type={alert.target.type as UsableResource}
             id={alert.target.id}
@@ -71,7 +71,7 @@ export const AlertDetailsDialogContent = ({
       </DialogHeader>
       <DialogDescription>
         <div className="flex flex-col gap-4">
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center flex-wrap">
             {/** Alert type */}
             <div className="flex gap-2">
               <div className="text-muted-foreground">type:</div>{" "}

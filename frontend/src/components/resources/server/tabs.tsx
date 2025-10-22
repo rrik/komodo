@@ -15,6 +15,7 @@ import { StackTable } from "../stack/table";
 import { RepoTable } from "../repo/table";
 import { ServerTerminals } from "@components/terminal/server";
 import { Card, CardHeader, CardTitle } from "@ui/card";
+import { Types } from "komodo_client";
 
 type ServerTabView = "Config" | "Stats" | "Docker" | "Resources" | "Terminals";
 
@@ -65,7 +66,7 @@ export const ServerTabs = ({ id }: { id: string }) => {
       },
       {
         value: "Terminals",
-        hidden:
+        disabled:
           !specificTerminal ||
           (terminals_disabled && container_terminals_disabled),
       },
@@ -170,36 +171,48 @@ const ServerTabsTerminals = ({
 }) => {
   const { specificTerminal } = usePermissions({ type: "Server", id });
   const server_info = useServer(id)?.info;
+  const state = server_info?.state ?? Types.ServerState.NotOk;
   const terminals_disabled = server_info?.terminals_disabled ?? true;
   const container_terminals_disabled =
     server_info?.container_terminals_disabled ?? true;
 
-  return (
-    <>
-      {(!terminals_disabled || !container_terminals_disabled) &&
-        specificTerminal && <ServerTerminals id={id} titleOther={Selector} />}
-      {terminals_disabled &&
-        container_terminals_disabled &&
-        specificTerminal && (
-          <Section titleOther={Selector}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Terminals are disabled on this Server.</CardTitle>
-              </CardHeader>
-            </Card>
-          </Section>
-        )}
-      {!specificTerminal && (
-        <Section titleOther={Selector}>
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                User does not have permission to use Terminals.
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Section>
-      )}
-    </>
-  );
+  if (!specificTerminal) {
+    return (
+      <Section titleOther={Selector}>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              User does not have permission to use Terminals on this Server.
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </Section>
+    );
+  }
+
+  if (state !== Types.ServerState.Ok) {
+    return (
+      <Section titleOther={Selector}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Server is not connected</CardTitle>
+          </CardHeader>
+        </Card>
+      </Section>
+    );
+  }
+
+  if (terminals_disabled && container_terminals_disabled) {
+    return (
+      <Section titleOther={Selector}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Terminals are disabled on this Server.</CardTitle>
+          </CardHeader>
+        </Card>
+      </Section>
+    );
+  }
+
+  return <ServerTerminals id={id} titleOther={Selector} />;
 };
