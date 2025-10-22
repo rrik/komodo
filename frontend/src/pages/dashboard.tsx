@@ -88,7 +88,7 @@ const TablesDashboard = () => {
       {Object.entries(ResourceComponents).map(([type, Components]) => (
         <TableSection
           key={type}
-          type={type}
+          type={type as UsableResource}
           Components={Components}
           search={search}
         />
@@ -102,11 +102,11 @@ const TableSection = ({
   Components,
   search,
 }: {
-  type: string;
+  type: UsableResource;
   Components: RequiredResourceComponents;
   search?: string;
 }) => {
-  const resources = useRead(`List${type as UsableResource}s`, {}).data;
+  const resources = useRead(`List${type}s`, {}).data;
 
   const filtered = useFilterResources(
     resources as Types.ResourceListItem<unknown>[],
@@ -122,7 +122,7 @@ const TableSection = ({
   return (
     <Section
       key={type}
-      title={type + "s"}
+      title={<Link to={`/${usableResourcePath(type)}`}>{type + "s"}</Link>}
       icon={<Components.Icon />}
       actions={<ShowHideButton show={show} setShow={setShow} />}
     >
