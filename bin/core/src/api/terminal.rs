@@ -59,15 +59,10 @@ async fn execute_terminal(
   let periphery = periphery_client(&server).await?;
 
   // Maybe init terminal.
-  if let Some(InitTerminal {
-    name,
-    command,
-    recreate,
-  }) = init
-  {
+  if let Some(InitTerminal { command, recreate }) = init {
     periphery
       .request(CreateTerminal {
-        name,
+        name: terminal.clone(),
         command,
         recreate,
       })

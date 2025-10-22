@@ -35,8 +35,6 @@ pub struct ExecuteTerminalBody {
 #[typeshare]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InitTerminal {
-  /// The name of the terminal on the server to create.
-  pub name: String,
   /// The shell command (eg `bash`) to init the shell.
   ///
   /// This can also include args:

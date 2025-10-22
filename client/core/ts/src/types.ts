@@ -5772,8 +5772,6 @@ export interface ExecuteStackExecBody {
 
 /** Init a terminal on the server. */
 export interface InitTerminal {
-	/** The name of the terminal on the server to create. */
-	name: string;
 	/**
 	 * The shell command (eg `bash`) to init the shell.
 	 * 
