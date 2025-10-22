@@ -12,7 +12,7 @@ use tokio_tungstenite::tungstenite;
 pub async fn handle(
   Ssh {
     server,
-    terminal,
+    name,
     command,
     recreate,
   }: &Ssh,
@@ -76,7 +76,7 @@ pub async fn handle(
   client
     .write(CreateTerminal {
       server: server.to_string(),
-      name: terminal.to_string(),
+      name: name.to_string(),
       command: command.clone(),
       recreate: if *recreate {
         TerminalRecreateMode::Always
@@ -87,7 +87,7 @@ pub async fn handle(
     .await?;
 
   let (mut ws_write, mut ws_read) = client
-    .connect_terminal_websocket(server, terminal)
+    .connect_terminal_websocket(server, name)
     .await?
     .split();
 

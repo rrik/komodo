@@ -7,9 +7,9 @@ pub struct Ssh {
   /// Defaults to Periphery default.
   pub command: Option<String>,
 
-  /// The terminal (name) to connect to. Default: `ssh`
-  #[arg(long, short = 't', default_value_t = String::from("ssh"))]
-  pub terminal: String,
+  /// The terminal name to connect to. Default: `ssh`
+  #[arg(long, short = 'n', default_value_t = String::from("ssh"))]
+  pub name: String,
 
   /// Force fresh terminal to replace existing one.
   #[arg(long, short = 'r', default_value_t = false)]
