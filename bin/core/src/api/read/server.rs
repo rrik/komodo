@@ -887,28 +887,39 @@ impl Resolve<ReadArgs> for ListAllTerminals {
       get_all_tags(None).await?
     };
 
-    let terminals = resource::list_full_for_user::<Server>(
+    let mut terminals = resource::list_full_for_user::<Server>(
       self.query, &args.user, &all_tags,
     )
     .await?
     .into_iter()
     .map(|server| async move {
-      (list_terminals_inner(&server, self.fresh).await, server.id)
+      (
+        list_terminals_inner(&server, self.fresh).await,
+        (server.id, server.name),
+      )
     })
     .collect::<FuturesUnordered<_>>()
     .collect::<Vec<_>>()
     .await
     .into_iter()
-    .flat_map(|(terminals, server_id)| {
+    .flat_map(|(terminals, server)| {
       let terminals = terminals.ok()?;
-      Some((terminals, server_id))
+      Some((terminals, server))
     })
-    .flat_map(|(terminals, server_id)| {
+    .flat_map(|(terminals, (server_id, server_name))| {
       terminals.into_iter().map(move |info| {
-        TerminalInfoWithServer::from_terminal_info(&server_id, info)
+        TerminalInfoWithServer::from_terminal_info(
+          &server_id,
+          &server_name,
+          info,
+        )
       })
     })
     .collect::<Vec<_>>();
+
+    terminals.sort_by(|a, b| {
+      a.server_name.cmp(&b.server_name).then(a.name.cmp(&b.name))
+    });
 
     Ok(terminals)
   }

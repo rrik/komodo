@@ -10,7 +10,7 @@ use crate::{
   deserializers::{
     option_string_list_deserializer, string_list_deserializer,
   },
-  entities::{MaintenanceWindow, Timelength, I64},
+  entities::{I64, MaintenanceWindow, Timelength},
 };
 
 use super::{
@@ -386,6 +386,8 @@ pub struct TerminalInfo {
 pub struct TerminalInfoWithServer {
   /// The server id.
   pub server_id: String,
+  /// The server name.
+  pub server_name: String,
   /// The name of the terminal.
   pub name: String,
   /// The root program / args of the pty
@@ -399,6 +401,7 @@ pub struct TerminalInfoWithServer {
 impl TerminalInfoWithServer {
   pub fn from_terminal_info(
     server_id: impl Into<String>,
+    server_name: impl Into<String>,
     TerminalInfo {
       name,
       command,
@@ -408,10 +411,11 @@ impl TerminalInfoWithServer {
   ) -> Self {
     Self {
       server_id: server_id.into(),
+      server_name: server_name.into(),
       name,
       command,
       stored_size_kb,
-      created_at
+      created_at,
     }
   }
 }
