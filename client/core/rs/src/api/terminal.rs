@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::api::write::{CreateTerminal, TerminalRecreateMode};
+use crate::api::write::TerminalRecreateMode;
 
 /// Query to connect to a terminal (interactive shell over websocket) on the given server.
 #[typeshare]
@@ -28,7 +28,25 @@ pub struct ExecuteTerminalBody {
   pub command: String,
   /// Pass to init the terminal session
   /// for when the terminal doesn't already exist.
-  pub init: Option<CreateTerminal>,
+  pub init: Option<InitTerminal>,
+}
+
+/// Init a terminal on the server.
+#[typeshare]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct InitTerminal {
+  /// The name of the terminal on the server to create.
+  pub name: String,
+  /// The shell command (eg `bash`) to init the shell.
+  ///
+  /// This can also include args:
+  /// `docker exec -it container sh`
+  ///
+  /// Default: Configured on each Periphery
+  pub command: Option<String>,
+  /// Default: `Never`
+  #[serde(default)]
+  pub recreate: TerminalRecreateMode,
 }
 
 /// Query to connect to a container exec session (interactive shell over websocket) on the given server.

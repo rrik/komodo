@@ -5574,6 +5574,22 @@ export interface ExecuteStackExecBody {
      */
     recreate?: TerminalRecreateMode;
 }
+/** Init a terminal on the server. */
+export interface InitTerminal {
+    /** The name of the terminal on the server to create. */
+    name: string;
+    /**
+     * The shell command (eg `bash`) to init the shell.
+     *
+     * This can also include args:
+     * `docker exec -it container sh`
+     *
+     * Default: Configured on each Periphery
+     */
+    command?: string;
+    /** Default: `Never` */
+    recreate?: TerminalRecreateMode;
+}
 /** Execute a terminal command on the given server. */
 export interface ExecuteTerminalBody {
     /** Server Id or name */
@@ -5586,7 +5602,7 @@ export interface ExecuteTerminalBody {
      * Pass to init the terminal session
      * for when the terminal doesn't already exist.
      */
-    init?: CreateTerminal;
+    init?: InitTerminal;
 }
 /**
  * Get pretty formatted monrun sync toml for all resources

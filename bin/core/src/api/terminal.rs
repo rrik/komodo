@@ -7,6 +7,7 @@ use komodo_client::{
     server::Server, stack::Stack, user::User,
   },
 };
+use periphery_client::api::terminal::CreateTerminal;
 use serror::Json;
 
 use crate::{
@@ -58,8 +59,19 @@ async fn execute_terminal(
   let periphery = periphery_client(&server).await?;
 
   // Maybe init terminal.
-  if let Some(request) = init {
-    periphery.request(request).await?;
+  if let Some(InitTerminal {
+    name,
+    command,
+    recreate,
+  }) = init
+  {
+    periphery
+      .request(CreateTerminal {
+        name,
+        command,
+        recreate,
+      })
+      .await?;
   }
 
   let stream = periphery
