@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::{Extension, Router, middleware, routing::post};
 use komodo_client::{
-  api::terminal::*,
+  api::{terminal::*, write::TerminalRecreateMode},
   entities::{
     deployment::Deployment, permission::PermissionLevel,
     server::Server, stack::Stack, user::User,
@@ -43,6 +43,7 @@ async fn execute_terminal(
     server,
     terminal,
     command,
+    init,
   }): Json<ExecuteTerminalBody>,
 ) -> serror::Result<axum::body::Body> {
   info!("/terminal/execute request | user: {}", user.username);
@@ -54,8 +55,14 @@ async fn execute_terminal(
   )
   .await?;
 
-  let stream = periphery_client(&server)
-    .await?
+  let periphery = periphery_client(&server).await?;
+
+  // Maybe init terminal.
+  if let Some(request) = init {
+    periphery.request(request).await?;
+  }
+
+  let stream = periphery
     .execute_terminal(terminal, command)
     .await
     .context("Failed to execute command on periphery")?;
@@ -100,7 +107,12 @@ async fn execute_container_exec(
   let periphery = periphery_client(&server).await?;
 
   let stream = periphery
-    .execute_container_exec(container, shell, command, recreate)
+    .execute_container_exec(
+      container,
+      shell,
+      command,
+      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
+    )
     .await
     .context(
       "Failed to execute container exec command on periphery",
@@ -146,7 +158,12 @@ async fn execute_deployment_exec(
   let periphery = periphery_client(&server).await?;
 
   let stream = periphery
-    .execute_container_exec(deployment.name, shell, command, recreate)
+    .execute_container_exec(
+      deployment.name,
+      shell,
+      command,
+      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
+    )
     .await
     .context(
       "Failed to execute container exec command on periphery",
@@ -209,7 +226,12 @@ async fn execute_stack_exec(
   let periphery = periphery_client(&server).await?;
 
   let stream = periphery
-    .execute_container_exec(container, shell, command, recreate)
+    .execute_container_exec(
+      container,
+      shell,
+      command,
+      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
+    )
     .await
     .context(
       "Failed to execute container exec command on periphery",

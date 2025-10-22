@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::api::write::TerminalRecreateMode;
+use crate::api::write::{CreateTerminal, TerminalRecreateMode};
 
 /// Query to connect to a terminal (interactive shell over websocket) on the given server.
 #[typeshare]
@@ -26,6 +26,9 @@ pub struct ExecuteTerminalBody {
   pub terminal: String,
   /// The command to execute.
   pub command: String,
+  /// Pass to init the terminal session
+  /// for when the terminal doesn't already exist.
+  pub init: Option<CreateTerminal>,
 }
 
 /// Query to connect to a container exec session (interactive shell over websocket) on the given server.
@@ -40,8 +43,7 @@ pub struct ConnectContainerExecQuery {
   pub shell: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Query to connect to a container attach session (interactive shell over websocket) on the given server.
@@ -54,8 +56,7 @@ pub struct ConnectContainerAttachQuery {
   pub container: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Execute a command in the given containers shell.
@@ -72,8 +73,7 @@ pub struct ExecuteContainerExecBody {
   pub command: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Query to connect to a container exec session (interactive shell over websocket) on the given Deployment.
@@ -87,8 +87,7 @@ pub struct ConnectDeploymentExecQuery {
   pub shell: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Query to connect to a container attach session (interactive shell over websocket) on the given Deployment.
@@ -100,8 +99,7 @@ pub struct ConnectDeploymentAttachQuery {
   pub deployment: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Execute a command in the given containers shell.
@@ -116,8 +114,7 @@ pub struct ExecuteDeploymentExecBody {
   pub command: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Query to connect to a container exec session (interactive shell over websocket) on the given Stack / service.
@@ -133,8 +130,7 @@ pub struct ConnectStackExecQuery {
   pub shell: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Query to connect to a container attach session (interactive shell over websocket) on the given Stack / service.
@@ -148,8 +144,7 @@ pub struct ConnectStackAttachQuery {
   pub service: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  pub recreate: Option<TerminalRecreateMode>,
 }
 
 /// Execute a command in the given containers shell.
@@ -166,10 +161,5 @@ pub struct ExecuteStackExecBody {
   pub command: String,
   /// Specify the recreate behavior.
   /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
-}
-
-fn default_container_recreate_mode() -> TerminalRecreateMode {
-  TerminalRecreateMode::DifferentCommand
+  pub recreate: Option<TerminalRecreateMode>,
 }

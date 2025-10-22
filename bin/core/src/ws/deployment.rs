@@ -4,8 +4,11 @@ use axum::{
 };
 use futures_util::SinkExt;
 use komodo_client::{
-  api::terminal::{
-    ConnectDeploymentAttachQuery, ConnectDeploymentExecQuery,
+  api::{
+    terminal::{
+      ConnectDeploymentAttachQuery, ConnectDeploymentExecQuery,
+    },
+    write::TerminalRecreateMode,
   },
   entities::{
     deployment::Deployment, permission::PermissionLevel,
@@ -67,7 +70,7 @@ pub async fn exec(
       &server,
       deployment.name,
       shell,
-      recreate,
+      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
     )
     .await
   })
@@ -123,7 +126,7 @@ pub async fn attach(
       client_socket,
       &server,
       deployment.name,
-      recreate,
+      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
     )
     .await
   })

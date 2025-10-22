@@ -3561,6 +3561,8 @@ export type ListAllDockerContainersResponse = ContainerListItem[];
 export interface TerminalInfoWithServer {
 	/** The server id. */
 	server_id: string;
+	/** The server name. */
+	server_name: string;
 	/** The name of the terminal. */
 	name: string;
 	/** The root program / args of the pty */
@@ -4672,7 +4674,7 @@ export interface ConnectContainerAttachQuery {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /** Query to connect to a container exec session (interactive shell over websocket) on the given server. */
@@ -4687,7 +4689,7 @@ export interface ConnectContainerExecQuery {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /**
@@ -4701,7 +4703,7 @@ export interface ConnectDeploymentAttachQuery {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /**
@@ -4717,7 +4719,7 @@ export interface ConnectDeploymentExecQuery {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /**
@@ -4733,7 +4735,7 @@ export interface ConnectStackAttachQuery {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /**
@@ -4751,7 +4753,7 @@ export interface ConnectStackExecQuery {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /** Query to connect to a terminal (interactive shell over websocket) on the given server. */
@@ -5733,7 +5735,7 @@ export interface ExecuteContainerExecBody {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /** Execute a command in the given containers shell. */
@@ -5748,7 +5750,7 @@ export interface ExecuteDeploymentExecBody {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /** Execute a command in the given containers shell. */
@@ -5765,7 +5767,7 @@ export interface ExecuteStackExecBody {
 	 * Specify the recreate behavior.
 	 * Default is 'DifferentCommand'
 	 */
-	recreate: TerminalRecreateMode;
+	recreate?: TerminalRecreateMode;
 }
 
 /** Execute a terminal command on the given server. */
@@ -5776,6 +5778,11 @@ export interface ExecuteTerminalBody {
 	terminal: string;
 	/** The command to execute. */
 	command: string;
+	/**
+	 * Pass to init the terminal session
+	 * for when the terminal doesn't already exist.
+	 */
+	init?: CreateTerminal;
 }
 
 /**
