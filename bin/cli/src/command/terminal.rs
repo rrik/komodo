@@ -8,7 +8,7 @@ use komodo_client::{
     write::{CreateTerminal, TerminalRecreateMode},
   },
   entities::{
-    config::cli::args::terminal::{Connect, Exec},
+    config::cli::args::terminal::{Attach, Connect, Exec},
     server::ServerQuery,
   },
 };
@@ -57,47 +57,11 @@ pub async fn handle_exec(
     recreate,
   }: &Exec,
 ) -> anyhow::Result<()> {
-  let client = super::komodo_client().await?;
-  let server = if let Some(server) = server {
-    server.to_string()
-  } else {
-    let mut containers = client
-      .read(ListAllDockerContainers {
-        servers: Default::default(),
-        containers: vec![container.to_string()],
-      })
-      .await?;
-    if containers.is_empty() {
-      return Err(anyhow!(
-        "Did not find any container matching {container}"
-      ));
-    } else if containers.len() == 1 {
-      let container = containers.pop().context("Shouldn't happen")?;
-      container
-        .server_id
-        .context("Container doesn't have server_id")?
-    } else {
-      let servers = containers
-        .into_iter()
-        .flat_map(|container| container.server_id)
-        .collect::<Vec<_>>();
-      let servers = client
-        .read(ListServers {
-          query: ServerQuery::builder().names(servers).build(),
-        })
-        .await?
-        .into_iter()
-        .map(|server| format!("\t{}", server.name))
-        .collect::<Vec<_>>()
-        .join("\n");
-      return Err(anyhow!(
-        "Multiple containers matching '{container}':\n{servers}"
-      ));
-    }
-  };
+  let server = get_server(server.clone(), container).await?;
   handle_terminal_forwarding(async {
-    client
-      .connect_container_websocket(
+    super::komodo_client()
+      .await?
+      .connect_container_exec_websocket(
         &server,
         container,
         shell,
@@ -106,6 +70,79 @@ pub async fn handle_exec(
       .await
   })
   .await
+}
+
+pub async fn handle_attach(
+  Attach {
+    server,
+    container,
+    recreate,
+  }: &Attach,
+) -> anyhow::Result<()> {
+  let server = get_server(server.clone(), container).await?;
+  handle_terminal_forwarding(async {
+    super::komodo_client()
+      .await?
+      .connect_container_attach_websocket(
+        &server,
+        container,
+        recreate.then_some(TerminalRecreateMode::Always),
+      )
+      .await
+  })
+  .await
+}
+
+async fn get_server(
+  server: Option<String>,
+  container: &str,
+) -> anyhow::Result<String> {
+  if let Some(server) = server {
+    return Ok(server);
+  }
+
+  let client = super::komodo_client().await?;
+
+  let mut containers = client
+    .read(ListAllDockerContainers {
+      servers: Default::default(),
+      containers: vec![container.to_string()],
+    })
+    .await?;
+
+  if containers.is_empty() {
+    return Err(anyhow!(
+      "Did not find any container matching {container}"
+    ));
+  }
+
+  if containers.len() == 1 {
+    return containers
+      .pop()
+      .context("Shouldn't happen")?
+      .server_id
+      .context("Container doesn't have server_id");
+  }
+
+  let servers = containers
+    .into_iter()
+    .flat_map(|container| container.server_id)
+    .collect::<Vec<_>>();
+
+  let servers = client
+    .read(ListServers {
+      query: ServerQuery::builder().names(servers).build(),
+    })
+    .await?
+    .into_iter()
+    .map(|server| format!("\t- {}", server.name.bold()))
+    .collect::<Vec<_>>()
+    .join("\n");
+
+  Err(anyhow!(
+    "Multiple containers matching '{}' on Servers:\n{servers}",
+    container.bold(),
+  ))
 }
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;

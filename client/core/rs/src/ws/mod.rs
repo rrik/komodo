@@ -47,7 +47,7 @@ impl KomodoClient {
       .await
   }
 
-  pub async fn connect_container_websocket(
+  pub async fn connect_container_exec_websocket(
     &self,
     server: &str,
     container: &str,
@@ -62,6 +62,24 @@ impl KomodoClient {
     self
       .connect_login_user_websocket(
         "/container/terminal",
+        Some(&query),
+      )
+      .await
+  }
+
+  pub async fn connect_container_attach_websocket(
+    &self,
+    server: &str,
+    container: &str,
+    recreate: Option<TerminalRecreateMode>,
+  ) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
+    let mut query = format!("server={server}&container={container}");
+    if let Some(recreate) = recreate {
+      let _ = write!(&mut query, "&recreate={}", recreate.as_ref());
+    }
+    self
+      .connect_login_user_websocket(
+        "/container/terminal/attach",
         Some(&query),
       )
       .await

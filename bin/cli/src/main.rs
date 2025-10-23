@@ -2,6 +2,7 @@
 extern crate tracing;
 
 use anyhow::Context;
+use colored::Colorize;
 use komodo_client::entities::config::cli::args;
 
 use crate::config::cli_config;
@@ -60,6 +61,9 @@ async fn app() -> anyhow::Result<()> {
     args::Command::Exec(exec) => {
       command::terminal::handle_exec(exec).await
     }
+    args::Command::Attach(attach) => {
+      command::terminal::handle_attach(attach).await
+    }
     args::Command::Key { command } => {
       noise::key::command::handle(command).await
     }
@@ -75,7 +79,18 @@ async fn main() -> anyhow::Result<()> {
     tokio::signal::unix::SignalKind::terminate(),
   )?;
   tokio::select! {
-    res = tokio::spawn(app()) => res?,
-    _ = term_signal.recv() => Ok(()),
+    res = tokio::spawn(app()) => match res {
+      Ok(Err(e)) => {
+        eprintln!("{}: {e}", "ERROR".red());
+        std::process::exit(1)
+      }
+      Err(e) => {
+        eprintln!("{}: {e}", "ERROR".red());
+        std::process::exit(1)
+      },
+      Ok(_) => {}
+    },
+    _ = term_signal.recv() => {},
   }
+  Ok(())
 }

@@ -32,3 +32,18 @@ pub struct Exec {
   #[arg(long, short = 'r', default_value_t = false)]
   pub recreate: bool,
 }
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct Attach {
+  /// The container (name) to attach to.
+  /// Will error if matches multiple containers but no Server is defined.
+  pub container: String,
+  /// Specify Server.
+  /// Required if multiple servers have same container name.
+  /// (alias: `s`)
+  #[arg(long, short = 's')]
+  pub server: Option<String>,
+  /// Force fresh terminal to replace existing one.
+  #[arg(long, short = 'r', default_value_t = false)]
+  pub recreate: bool,
+}

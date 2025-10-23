@@ -85,8 +85,11 @@ pub enum Command {
   #[clap(alias = "ssh")]
   Connect(terminal::Connect),
 
-  /// Connect to Container Terminals.
+  /// Connect to Container Terminals. `docker exec` analogue.
   Exec(terminal::Exec),
+
+  /// Attach to Container Terminals. `docker attach` analogue.
+  Attach(terminal::Attach),
 
   /// Private-Public key utilities. (alias: `k`)
   #[clap(alias = "k")]
