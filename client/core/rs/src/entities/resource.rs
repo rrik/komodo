@@ -1,4 +1,6 @@
-use bson::{Document, doc};
+use std::str::FromStr;
+
+use bson::{Document, doc, oid::ObjectId};
 use clap::ValueEnum;
 use derive_builder::Builder;
 use derive_default_builder::DefaultBuilder;
@@ -166,8 +168,12 @@ impl AddFilters for () {}
 
 impl<T: AddFilters + Default> AddFilters for ResourceQuery<T> {
   fn add_filters(&self, filters: &mut Document) {
-    if !self.names.is_empty() {
-      filters.insert("name", doc! { "$in": &self.names });
+    let (ids, names) = split_names(&self.names);
+    if !ids.is_empty() {
+      filters.insert("_id", doc! { "$in": ids });
+    }
+    if !names.is_empty() {
+      filters.insert("name", doc! { "$in": names });
     }
     match self.templates {
       TemplatesQueryBehavior::Exclude => {
@@ -197,4 +203,19 @@ impl<T: AddFilters + Default> AddFilters for ResourceQuery<T> {
     }
     self.specific.add_filters(filters);
   }
+}
+
+/// Returns (ids, names)
+fn split_names(
+  names_or_ids: &[String],
+) -> (Vec<ObjectId>, Vec<&String>) {
+  let mut ids = Vec::new();
+  let mut names = Vec::new();
+  for name in names_or_ids {
+    match ObjectId::from_str(name) {
+      Ok(id) => ids.push(id),
+      Err(_) => names.push(name),
+    }
+  }
+  (ids, names)
 }
