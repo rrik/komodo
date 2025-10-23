@@ -81,11 +81,21 @@ async fn handle_socket<W: Websocket>(
 
   let forward_writes = async {
     loop {
-      let message = match receiver.recv().await {
-        Ok(message) => message,
-        Err(e) => {
-          warn!("{e:#}");
-          break;
+      let message = match tokio::time::timeout(
+        Duration::from_secs(5),
+        receiver.recv(),
+      )
+      .await
+      {
+        Ok(Ok(message)) => message,
+        Ok(Err(_)) => break,
+        // Handle sending Ping
+        Err(_) => {
+          if let Err(e) = ws_write.ping().await {
+            warn!("Failed to send ping | {e:?}");
+            break;
+          }
+          continue;
         }
       };
       match ws_write.send(message.into_bytes()).await {
@@ -93,11 +103,11 @@ async fn handle_socket<W: Websocket>(
         Ok(_) => receiver.clear_buffer(),
         Err(e) => {
           warn!("Failed to send response | {e:?}");
-          let _ = ws_write.close().await;
           break;
         }
       }
     }
+    let _ = ws_write.close().await;
   };
 
   let handle_reads = async {

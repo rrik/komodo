@@ -18,8 +18,6 @@ use super::{
 pub struct AxumWebsocket(pub axum::extract::ws::WebSocket);
 
 impl Websocket for AxumWebsocket {
-  type CloseFrame = CloseFrame;
-
   fn split(self) -> (impl WebsocketSender, impl WebsocketReceiver) {
     let (tx, rx) = self.0.split();
     (AxumWebsocketSender(tx), AxumWebsocketReceiver::new(rx))
@@ -44,9 +42,7 @@ impl Websocket for AxumWebsocket {
   fn recv_inner(
     &mut self,
   ) -> MaybeWithTimeout<
-    impl Future<
-      Output = anyhow::Result<WebsocketMessage<Self::CloseFrame>>,
-    >,
+    impl Future<Output = anyhow::Result<WebsocketMessage>>,
   > {
     MaybeWithTimeout::new(try_next(&mut self.0))
   }
@@ -58,6 +54,14 @@ pub type InnerWebsocketSender =
 pub struct AxumWebsocketSender(pub InnerWebsocketSender);
 
 impl WebsocketSender for AxumWebsocketSender {
+  async fn ping(&mut self) -> anyhow::Result<()> {
+    self
+      .0
+      .send(axum::extract::ws::Message::Ping(Bytes::new()))
+      .await
+      .context("Failed to send ping over websocket")
+  }
+
   async fn send(&mut self, bytes: Bytes) -> anyhow::Result<()> {
     self
       .0
@@ -77,7 +81,7 @@ impl WebsocketSender for AxumWebsocketSender {
 
 async fn try_next<S>(
   stream: &mut S,
-) -> anyhow::Result<WebsocketMessage<CloseFrame>>
+) -> anyhow::Result<WebsocketMessage>
 where
   S: Stream<Item = Result<axum::extract::ws::Message, axum::Error>>
     + Unpin,
@@ -95,13 +99,15 @@ where
           EncodedTransportMessage::from_vec(bytes.into()),
         ));
       }
-      Some(axum::extract::ws::Message::Close(frame)) => {
-        return Ok(WebsocketMessage::Close(frame));
+      Some(axum::extract::ws::Message::Ping(_)) => {
+        return Ok(WebsocketMessage::Ping);
+      }
+      Some(axum::extract::ws::Message::Close(_)) => {
+        return Ok(WebsocketMessage::Close);
       }
       None => return Ok(WebsocketMessage::Closed),
-      // Ignored messages
-      Some(axum::extract::ws::Message::Ping(_))
-      | Some(axum::extract::ws::Message::Pong(_)) => continue,
+      // Ignored
+      Some(axum::extract::ws::Message::Pong(_)) => continue,
     }
   }
 }
@@ -130,9 +136,7 @@ impl WebsocketReceiver for AxumWebsocketReceiver {
     self.cancel = Some(cancel);
   }
 
-  async fn recv(
-    &mut self,
-  ) -> anyhow::Result<WebsocketMessage<Self::CloseFrame>> {
+  async fn recv(&mut self) -> anyhow::Result<WebsocketMessage> {
     let fut = try_next(&mut self.receiver);
     if let Some(cancel) = &self.cancel {
       tokio::select! {

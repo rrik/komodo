@@ -31,8 +31,6 @@ pub type InnerWebsocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 pub struct TungsteniteWebsocket(pub InnerWebsocket);
 
 impl Websocket for TungsteniteWebsocket {
-  type CloseFrame = CloseFrame;
-
   fn split(self) -> (impl WebsocketSender, impl WebsocketReceiver) {
     let (tx, rx) = self.0.split();
     (
@@ -44,9 +42,7 @@ impl Websocket for TungsteniteWebsocket {
   fn recv_inner(
     &mut self,
   ) -> MaybeWithTimeout<
-    impl Future<
-      Output = anyhow::Result<WebsocketMessage<Self::CloseFrame>>,
-    >,
+    impl Future<Output = anyhow::Result<WebsocketMessage>>,
   > {
     MaybeWithTimeout::new(try_next(&mut self.0))
   }
@@ -76,6 +72,14 @@ pub type InnerWebsocketSender = SplitSink<
 pub struct TungsteniteWebsocketSender(pub InnerWebsocketSender);
 
 impl WebsocketSender for TungsteniteWebsocketSender {
+  async fn ping(&mut self) -> anyhow::Result<()> {
+    self
+      .0
+      .send(tungstenite::Message::Ping(Bytes::new()))
+      .await
+      .context("Failed to send ping over websocket")
+  }
+
   async fn send(&mut self, bytes: Bytes) -> anyhow::Result<()> {
     self
       .0
@@ -95,7 +99,7 @@ impl WebsocketSender for TungsteniteWebsocketSender {
 
 async fn try_next<S>(
   stream: &mut S,
-) -> anyhow::Result<WebsocketMessage<CloseFrame>>
+) -> anyhow::Result<WebsocketMessage>
 where
   S: Stream<Item = Result<tungstenite::Message, tungstenite::Error>>
     + Unpin,
@@ -113,13 +117,15 @@ where
           EncodedTransportMessage::from_vec(bytes.into()),
         ));
       }
-      Some(tungstenite::Message::Close(frame)) => {
-        return Ok(WebsocketMessage::Close(frame));
+      Some(tungstenite::Message::Ping(_)) => {
+        return Ok(WebsocketMessage::Ping);
+      }
+      Some(tungstenite::Message::Close(_)) => {
+        return Ok(WebsocketMessage::Close);
       }
       None => return Ok(WebsocketMessage::Closed),
       // Ignored messages
-      Some(tungstenite::Message::Ping(_))
-      | Some(tungstenite::Message::Pong(_))
+      Some(tungstenite::Message::Pong(_))
       | Some(tungstenite::Message::Frame(_)) => continue,
     }
   }
@@ -149,9 +155,7 @@ impl WebsocketReceiver for TungsteniteWebsocketReceiver {
     self.cancel = Some(cancel);
   }
 
-  async fn recv(
-    &mut self,
-  ) -> anyhow::Result<WebsocketMessage<Self::CloseFrame>> {
+  async fn recv(&mut self) -> anyhow::Result<WebsocketMessage> {
     let fut = try_next(&mut self.receiver);
     if let Some(cancel) = &self.cancel {
       tokio::select! {

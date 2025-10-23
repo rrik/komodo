@@ -31,7 +31,7 @@ use transport::{
   },
   channel::{BufferedReceiver, Sender, buffered_channel},
   websocket::{
-    Websocket, WebsocketMessage, WebsocketReceiver as _,
+    Websocket, WebsocketReceiver as _, WebsocketReceiverExt,
     WebsocketSender as _,
   },
 };
@@ -367,8 +367,22 @@ impl PeripheryConnection {
 
     let forward_writes = async {
       loop {
-        let Ok(message) = receiver.recv().await else {
-          break;
+        let message = match tokio::time::timeout(
+          Duration::from_secs(5),
+          receiver.recv(),
+        )
+        .await
+        {
+          Ok(Ok(message)) => message,
+          Ok(Err(_)) => break,
+          // Handle sending Ping
+          Err(_) => {
+            if let Err(e) = ws_write.ping().await {
+              self.set_error(e).await;
+              break;
+            }
+            continue;
+          }
         };
         match ws_write.send(message.into_bytes()).await {
           Ok(_) => receiver.clear_buffer(),
@@ -385,19 +399,13 @@ impl PeripheryConnection {
 
     let handle_reads = async {
       loop {
-        match ws_read.recv().await {
-          Ok(WebsocketMessage::Message(message)) => {
-            self.handle_incoming_message(message).await
-          }
-          Ok(WebsocketMessage::Close(_))
-          | Ok(WebsocketMessage::Closed) => {
-            self.set_error(anyhow!("Connection closed")).await;
-            break;
-          }
+        match ws_read.recv_message().await {
+          Ok(message) => self.handle_incoming_message(message).await,
           Err(e) => {
             self.set_error(e).await;
+            break;
           }
-        };
+        }
       }
       // Cancel again if not already
       cancel.cancel();
@@ -410,15 +418,8 @@ impl PeripheryConnection {
 
   pub async fn handle_incoming_message(
     &self,
-    message: EncodedTransportMessage,
+    message: TransportMessage,
   ) {
-    let message: TransportMessage = match message.decode() {
-      Ok(res) => res,
-      Err(e) => {
-        warn!("Failed to parse Message bytes | {e:#}");
-        return;
-      }
-    };
     match message {
       TransportMessage::Response(data) => {
         match data.decode().map(ResponseMessage::into_inner) {

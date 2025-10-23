@@ -1,5 +1,7 @@
 //! Wrappers to normalize behavior of websockets between Tungstenite and Axum
 
+use std::time::Duration;
+
 use anyhow::{Context, anyhow};
 use bytes::Bytes;
 use encoding::{
@@ -22,19 +24,20 @@ pub mod tungstenite;
 
 /// Flattened websocket message possibilites
 /// for easier handling.
-pub enum WebsocketMessage<CloseFrame> {
+pub enum WebsocketMessage {
   /// Standard message
   Message(EncodedTransportMessage),
+  /// Core / Periphery must receive every 10s
+  /// or reconnect triggered.
+  Ping,
   /// Graceful close message
-  Close(Option<CloseFrame>),
+  Close,
   /// Stream closed
   Closed,
 }
 
 /// Standard traits for websocket
 pub trait Websocket: Send {
-  type CloseFrame: std::fmt::Debug + Send + Sync + 'static;
-
   /// Abstraction over websocket splitting
   fn split(self) -> (impl WebsocketSender, impl WebsocketReceiver);
 
@@ -53,9 +56,7 @@ pub trait Websocket: Send {
   fn recv_inner(
     &mut self,
   ) -> MaybeWithTimeout<
-    impl Future<
-      Output = anyhow::Result<WebsocketMessage<Self::CloseFrame>>,
-    > + Send,
+    impl Future<Output = anyhow::Result<WebsocketMessage>> + Send,
   >;
 }
 
@@ -68,19 +69,31 @@ pub trait WebsocketExt: Websocket {
   }
 
   /// Looping receiver for websocket messages which only returns on TransportMessage.
+  /// Also ensures either Messages or Pings are received at least every 10s.
   fn recv_message(
     &mut self,
   ) -> MaybeWithTimeout<
     impl Future<Output = anyhow::Result<TransportMessage>> + Send,
   > {
     MaybeWithTimeout::new(async {
-      match self.recv_inner().await? {
-        WebsocketMessage::Message(message) => message.decode(),
-        WebsocketMessage::Close(frame) => {
-          Err(anyhow!("Connection closed with framed: {frame:?}"))
-        }
-        WebsocketMessage::Closed => {
-          Err(anyhow!("Connection already closed"))
+      loop {
+        match tokio::time::timeout(
+          Duration::from_secs(10),
+          self.recv_inner(),
+        )
+        .await
+        .context("Timed out waiting for Ping")??
+        {
+          WebsocketMessage::Message(message) => {
+            return message.decode();
+          }
+          WebsocketMessage::Ping => continue,
+          WebsocketMessage::Close => {
+            return Err(anyhow!("Connection closed"));
+          }
+          WebsocketMessage::Closed => {
+            return Err(anyhow!("Connection already closed"));
+          }
         }
       }
     })
@@ -91,6 +104,11 @@ impl<W: Websocket> WebsocketExt for W {}
 
 /// Traits for split websocket receiver
 pub trait WebsocketSender {
+  /// Streamlined pinging
+  fn ping(
+    &mut self,
+  ) -> impl Future<Output = anyhow::Result<()>> + Send;
+
   /// Streamlined sending on bytes
   fn send(
     &mut self,
@@ -165,30 +183,36 @@ pub trait WebsocketReceiver: Send {
   /// on significant messages. Must implement cancel support.
   fn recv(
     &mut self,
-  ) -> impl Future<
-    Output = anyhow::Result<WebsocketMessage<Self::CloseFrame>>,
-  > + Send;
+  ) -> impl Future<Output = anyhow::Result<WebsocketMessage>> + Send;
 }
 
 pub trait WebsocketReceiverExt: WebsocketReceiver {
   /// Looping receiver for websocket messages which only returns on TransportMessage.
+  /// Also ensures either Messages or Pings are received at least every 10s.
   fn recv_message(
     &mut self,
   ) -> MaybeWithTimeout<
     impl Future<Output = anyhow::Result<TransportMessage>> + Send,
   > {
     MaybeWithTimeout::new(async {
-      match self
-        .recv()
+      loop {
+        match tokio::time::timeout(
+          Duration::from_secs(10),
+          self.recv(),
+        )
         .await
-        .context("Failed to read websocket message")?
-      {
-        WebsocketMessage::Message(message) => message.decode(),
-        WebsocketMessage::Close(frame) => {
-          Err(anyhow!("Connection closed with framed: {frame:?}"))
-        }
-        WebsocketMessage::Closed => {
-          Err(anyhow!("Connection already closed"))
+        .context("Timed out waiting for Ping")??
+        {
+          WebsocketMessage::Message(message) => {
+            return message.decode();
+          }
+          WebsocketMessage::Ping => continue,
+          WebsocketMessage::Close => {
+            return Err(anyhow!("Connection closed"));
+          }
+          WebsocketMessage::Closed => {
+            return Err(anyhow!("Connection already closed"));
+          }
         }
       }
     })
