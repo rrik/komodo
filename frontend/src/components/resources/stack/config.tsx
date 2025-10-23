@@ -835,19 +835,19 @@ const ConfigFiles = ({
         <div className="flex w-full">
           <div className="flex flex-col gap-4 w-fit">
             {values.map(({ path, services, requires }, i) => (
-              <div className="w-full flex flex-wrap gap-4" key={i}>
-                <Input
-                  placeholder="configs/config.yaml"
-                  value={path}
-                  onChange={(e) => {
-                    values[i] = { ...values[i], path: e.target.value };
-                    set({ config_files: [...values] });
-                  }}
-                  disabled={disabled}
-                  className="max-w-[75%] lg:max-w-[400px]"
-                />
+              <div key={i} className="w-full md:w-fit flex flex-wrap gap-4 pb-4 border-b-2">
+                <div className="w-full md:w-fit flex gap-4">
+                  <Input
+                    placeholder="configs/config.yaml"
+                    value={path}
+                    onChange={(e) => {
+                      values[i] = { ...values[i], path: e.target.value };
+                      set({ config_files: [...values] });
+                    }}
+                    disabled={disabled}
+                    className="w-full md:w-[330px]"
+                  />
 
-                {!disabled && (
                   <Button
                     variant="secondary"
                     onClick={() =>
@@ -855,29 +855,32 @@ const ConfigFiles = ({
                         config_files: [...values.filter((_, idx) => idx !== i)],
                       })
                     }
+                    disabled={disabled}
                   >
                     <MinusCircle className="w-4 h-4" />
                   </Button>
-                )}
+                </div>
 
-                <ServicesSelector
-                  id={id}
-                  selected_services={services ?? []}
-                  set={(services) => {
-                    values[i] = { ...values[i], services };
-                    set({ config_files: [...values] });
-                  }}
-                  disabled={disabled}
-                />
+                <div className="flex flex-wrap gap-4 items-center w-full md:w-fit">
+                  <ServicesSelector
+                    id={id}
+                    selected_services={services ?? []}
+                    set={(services) => {
+                      values[i] = { ...values[i], services };
+                      set({ config_files: [...values] });
+                    }}
+                    disabled={disabled}
+                  />
 
-                <RequiresSelector
-                  requires={requires ?? Types.StackFileRequires.None}
-                  set={(requires) => {
-                    values[i] = { ...values[i], requires };
-                    set({ config_files: [...values] });
-                  }}
-                  disabled={disabled}
-                />
+                  <RequiresSelector
+                    requires={requires ?? Types.StackFileRequires.None}
+                    set={(requires) => {
+                      values[i] = { ...values[i], requires };
+                      set({ config_files: [...values] });
+                    }}
+                    disabled={disabled}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -909,7 +912,7 @@ const ServicesSelector = ({
       <PopoverTrigger asChild>
         <Button
           variant="secondary"
-          className="flex justify-between gap-2 w-fit max-w-[350px]"
+          className="flex justify-between gap-2 w-full md:w-fit"
           disabled={disabled}
         >
           <div className="flex gap-2 items-center">
@@ -997,12 +1000,11 @@ const RequiresSelector = ({
       }}
       disabled={disabled}
     >
-      <SelectTrigger
-        className="w-[180px] flex gap-2 items-center"
-        disabled={disabled}
-      >
-        <div className="text-xs text-muted-foreground">Requires:</div>
-        <SelectValue />
+      <SelectTrigger className="w-full md:w-[180px]" disabled={disabled}>
+        <div className="flex gap-2 items-center">
+          <div className="text-xs text-muted-foreground">Requires:</div>
+          <SelectValue />
+        </div>
       </SelectTrigger>
       <SelectContent>
         {Object.values(Types.StackFileRequires).map((requires) => (
