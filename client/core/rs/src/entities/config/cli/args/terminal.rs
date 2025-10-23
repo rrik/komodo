@@ -18,13 +18,16 @@ pub struct Connect {
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct Exec {
-  /// Specify Server
-  pub server: String,
   /// The container (name) to connect to.
   /// Will error if matches multiple containers but no Server is defined.
   pub container: String,
   /// The shell, eg `bash`.
   pub shell: String,
+  /// Specify Server.
+  /// Required if multiple servers have same container name.
+  /// (alias: `s`)
+  #[arg(long, short = 's')]
+  pub server: Option<String>,
   /// Force fresh terminal to replace existing one.
   #[arg(long, short = 'r', default_value_t = false)]
   pub recreate: bool,

@@ -1,10 +1,16 @@
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use bytes::Bytes;
 use colored::Colorize;
 use futures_util::{SinkExt, StreamExt};
 use komodo_client::{
-  api::write::{CreateTerminal, TerminalRecreateMode},
-  entities::config::cli::args::terminal::{Connect, Exec},
+  api::{
+    read::{ListAllDockerContainers, ListServers},
+    write::{CreateTerminal, TerminalRecreateMode},
+  },
+  entities::{
+    config::cli::args::terminal::{Connect, Exec},
+    server::ServerQuery,
+  },
 };
 use tokio::{
   io::{AsyncReadExt as _, AsyncWriteExt as _},
@@ -51,11 +57,48 @@ pub async fn handle_exec(
     recreate,
   }: &Exec,
 ) -> anyhow::Result<()> {
+  let client = super::komodo_client().await?;
+  let server = if let Some(server) = server {
+    server.to_string()
+  } else {
+    let mut containers = client
+      .read(ListAllDockerContainers {
+        servers: Default::default(),
+        containers: vec![container.to_string()],
+      })
+      .await?;
+    if containers.is_empty() {
+      return Err(anyhow!(
+        "Did not find any container matching {container}"
+      ));
+    } else if containers.len() == 1 {
+      let container = containers.pop().context("Shouldn't happen")?;
+      container
+        .server_id
+        .context("Container doesn't have server_id")?
+    } else {
+      let servers = containers
+        .into_iter()
+        .flat_map(|container| container.server_id)
+        .collect::<Vec<_>>();
+      let servers = client
+        .read(ListServers {
+          query: ServerQuery::builder().names(servers).build(),
+        })
+        .await?
+        .into_iter()
+        .map(|server| format!("\t{}", server.name))
+        .collect::<Vec<_>>()
+        .join("\n");
+      return Err(anyhow!(
+        "Multiple containers matching '{container}':\n{servers}"
+      ));
+    }
+  };
   handle_terminal_forwarding(async {
-    super::komodo_client()
-      .await?
+    client
       .connect_container_websocket(
-        server,
+        &server,
         container,
         shell,
         recreate.then_some(TerminalRecreateMode::Always),

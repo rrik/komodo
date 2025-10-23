@@ -29,8 +29,8 @@ use komodo_client::{
     komodo_timestamp,
     permission::PermissionLevel,
     server::{
-      Server, ServerActionState, ServerListItem, ServerState,
-      TerminalInfo, TerminalInfoWithServer,
+      Server, ServerActionState, ServerListItem, ServerQuery,
+      ServerState, TerminalInfo, TerminalInfoWithServer,
     },
     stack::{Stack, StackServiceNames},
     stats::{SystemInformation, SystemProcess},
@@ -390,17 +390,11 @@ impl Resolve<ReadArgs> for ListAllDockerContainers {
     ReadArgs { user }: &ReadArgs,
   ) -> serror::Result<ListAllDockerContainersResponse> {
     let servers = resource::list_for_user::<Server>(
-      Default::default(),
+      ServerQuery::builder().names(self.servers.clone()).build(),
       user,
       &[],
     )
-    .await?
-    .into_iter()
-    .filter(|server| {
-      self.servers.is_empty()
-        || self.servers.contains(&server.id)
-        || self.servers.contains(&server.name)
-    });
+    .await?;
 
     let mut containers = Vec::<ContainerListItem>::new();
 
@@ -408,9 +402,17 @@ impl Resolve<ReadArgs> for ListAllDockerContainers {
       let cache = server_status_cache()
         .get_or_insert_default(&server.id)
         .await;
-      if let Some(more_containers) = &cache.containers {
-        containers.extend(more_containers.clone());
-      }
+      let Some(more) = &cache.containers else {
+        continue;
+      };
+      let more = more
+        .iter()
+        .filter(|container| {
+          self.containers.is_empty()
+            || self.containers.contains(&container.name)
+        })
+        .cloned();
+      containers.extend(more);
     }
 
     Ok(containers)
