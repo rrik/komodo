@@ -4,19 +4,73 @@ use colored::Colorize;
 use futures_util::{SinkExt, StreamExt};
 use komodo_client::{
   api::write::{CreateTerminal, TerminalRecreateMode},
-  entities::config::cli::args::ssh::Ssh,
+  entities::config::cli::args::terminal::{Connect, Exec},
 };
-use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-use tokio_tungstenite::tungstenite;
+use tokio::{
+  io::{AsyncReadExt as _, AsyncWriteExt as _},
+  net::TcpStream,
+};
+use tokio_tungstenite::{
+  MaybeTlsStream, WebSocketStream, tungstenite,
+};
 use tokio_util::sync::CancellationToken;
 
-pub async fn handle(
-  Ssh {
+pub async fn handle_connect(
+  Connect {
     server,
     name,
     command,
     recreate,
-  }: &Ssh,
+  }: &Connect,
+) -> anyhow::Result<()> {
+  handle_terminal_forwarding(async {
+    let client = super::komodo_client().await?;
+    // Init the terminal if it doesn't exist already.
+    client
+      .write(CreateTerminal {
+        server: server.to_string(),
+        name: name.to_string(),
+        command: command.clone(),
+        recreate: if *recreate {
+          TerminalRecreateMode::Always
+        } else {
+          TerminalRecreateMode::DifferentCommand
+        },
+      })
+      .await?;
+    client.connect_terminal_websocket(server, name).await
+  })
+  .await
+}
+
+pub async fn handle_exec(
+  Exec {
+    server,
+    container,
+    shell,
+    recreate,
+  }: &Exec,
+) -> anyhow::Result<()> {
+  handle_terminal_forwarding(async {
+    super::komodo_client()
+      .await?
+      .connect_container_websocket(
+        server,
+        container,
+        shell,
+        recreate.then_some(TerminalRecreateMode::Always),
+      )
+      .await
+  })
+  .await
+}
+
+type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
+
+async fn handle_terminal_forwarding<
+  C: Future<Output = anyhow::Result<WsStream>>,
+>(
+  connect: C,
 ) -> anyhow::Result<()> {
   // Need to forward multiple sources into ws write
   let (write_tx, mut write_rx) =
@@ -84,26 +138,7 @@ pub async fn handle(
   //  CONNECT AND FORWARD
   // =====================
 
-  let client = super::komodo_client().await?;
-
-  // Init the terminal if it doesn't exist already.
-  client
-    .write(CreateTerminal {
-      server: server.to_string(),
-      name: name.to_string(),
-      command: command.clone(),
-      recreate: if *recreate {
-        TerminalRecreateMode::Always
-      } else {
-        TerminalRecreateMode::DifferentCommand
-      },
-    })
-    .await?;
-
-  let (mut ws_write, mut ws_read) = client
-    .connect_terminal_websocket(server, name)
-    .await?
-    .split();
+  let (mut ws_write, mut ws_read) = connect.await?.split();
 
   let forward_write = async {
     while let Some(bytes) =

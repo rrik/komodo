@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, clap::Parser)]
-pub struct Ssh {
+pub struct Connect {
   /// The server to connect to.
   pub server: String,
 
@@ -11,6 +11,20 @@ pub struct Ssh {
   #[arg(long, short = 'n', default_value_t = String::from("ssh"))]
   pub name: String,
 
+  /// Force fresh terminal to replace existing one.
+  #[arg(long, short = 'r', default_value_t = false)]
+  pub recreate: bool,
+}
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct Exec {
+  /// Specify Server
+  pub server: String,
+  /// The container (name) to connect to.
+  /// Will error if matches multiple containers but no Server is defined.
+  pub container: String,
+  /// The shell, eg `bash`.
+  pub shell: String,
   /// Force fresh terminal to replace existing one.
   #[arg(long, short = 'r', default_value_t = false)]
   pub recreate: bool,

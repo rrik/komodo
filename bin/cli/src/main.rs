@@ -54,7 +54,12 @@ async fn app() -> anyhow::Result<()> {
     args::Command::Update { command } => {
       command::update::handle(command).await
     }
-    args::Command::Ssh(ssh) => command::ssh::handle(ssh).await,
+    args::Command::Connect(connect) => {
+      command::terminal::handle_connect(connect).await
+    }
+    args::Command::Exec(exec) => {
+      command::terminal::handle_exec(exec).await
+    }
     args::Command::Key { command } => {
       noise::key::command::handle(command).await
     }

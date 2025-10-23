@@ -1,6 +1,7 @@
 use derive_empty_traits::EmptyTraits;
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
+use strum::AsRefStr;
 use typeshare::typeshare;
 
 use crate::entities::{
@@ -134,7 +135,9 @@ pub struct CreateNetwork {
 /// Configures the behavior of [CreateTerminal] if the
 /// specified terminal name already exists.
 #[typeshare]
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(
+  Debug, Clone, Copy, Default, Serialize, Deserialize, AsRefStr,
+)]
 pub enum TerminalRecreateMode {
   /// Never kill the old terminal if it already exists.
   /// If the command is different, returns error.

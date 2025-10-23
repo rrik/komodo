@@ -7,7 +7,7 @@ use crate::api::execute::Execution;
 pub mod container;
 pub mod database;
 pub mod list;
-pub mod ssh;
+pub mod terminal;
 pub mod update;
 
 #[derive(Debug, clap::Parser)]
@@ -81,7 +81,12 @@ pub enum Command {
     command: update::UpdateCommand,
   },
 
-  Ssh(ssh::Ssh),
+  /// Connect to Server Terminals. (alias: `ssh`)
+  #[clap(alias = "ssh")]
+  Connect(terminal::Connect),
+
+  /// Connect to Container Terminals.
+  Exec(terminal::Exec),
 
   /// Private-Public key utilities. (alias: `k`)
   #[clap(alias = "k")]

@@ -9,7 +9,7 @@ use tokio_tungstenite::{
 };
 use typeshare::typeshare;
 
-use crate::KomodoClient;
+use crate::{KomodoClient, api::write::TerminalRecreateMode};
 
 pub mod update;
 
@@ -43,6 +43,26 @@ impl KomodoClient {
       .connect_login_user_websocket(
         "/terminal",
         Some(&format!("server={server}&terminal={terminal}")),
+      )
+      .await
+  }
+
+  pub async fn connect_container_websocket(
+    &self,
+    server: &str,
+    container: &str,
+    shell: &str,
+    recreate: Option<TerminalRecreateMode>,
+  ) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
+    let mut query =
+      format!("server={server}&container={container}&shell={shell}");
+    if let Some(recreate) = recreate {
+      let _ = write!(&mut query, "&recreate={}", recreate.as_ref());
+    }
+    self
+      .connect_login_user_websocket(
+        "/container/terminal",
+        Some(&query),
       )
       .await
   }
