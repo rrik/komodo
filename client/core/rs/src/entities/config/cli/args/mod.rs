@@ -52,14 +52,6 @@ pub enum Command {
     unsanitized: bool,
   },
 
-  /// Container info (aliases: `ps`, `cn`, `containers`)
-  #[clap(alias = "ps", alias = "cn", alias = "containers")]
-  Container(container::Container),
-
-  /// Inspect containers (alias: `i`)
-  #[clap(alias = "i")]
-  Inspect(container::InspectContainer),
-
   /// List Komodo resources (aliases: `ls`, `resources`)
   #[clap(alias = "ls", alias = "resources")]
   List(list::List),
@@ -80,6 +72,14 @@ pub enum Command {
     #[command(subcommand)]
     command: update::UpdateCommand,
   },
+
+  /// Container info (aliases: `ps`, `cn`, `containers`)
+  #[clap(alias = "ps", alias = "cn", alias = "containers")]
+  Container(container::Container),
+
+  /// Inspect containers (alias: `i`)
+  #[clap(alias = "i")]
+  Inspect(container::InspectContainer),
 
   /// Connect to Server Terminals. (alias: `ssh`)
   #[clap(alias = "ssh")]
