@@ -643,6 +643,7 @@ export const KeyboardShortcuts = () => {
         </DialogHeader>
         <div className="grid gap-3 grid-cols-2 pt-8 max-h-[calc(100vh-100px)] overflow-auto">
           <KeyboardShortcut label="Save" keys={["Ctrl / Cmd", "Enter"]} />
+          <KeyboardShortcut label="New" keys={["Shift", "N"]} />
           <KeyboardShortcut label="Go Home" keys={["Shift", "H"]} />
 
           <KeyboardShortcut label="Go to Servers" keys={["Shift", "G"]} />
