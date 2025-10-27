@@ -4,6 +4,7 @@ use komodo_client::{
   entities::{
     ResourceTarget,
     action::Action,
+    permission::PermissionLevel,
     procedure::Procedure,
     resource::{ResourceQuery, TemplatesQueryBehavior},
     schedule::Schedule,
@@ -35,6 +36,7 @@ impl Resolve<ReadArgs> for ListSchedules {
           specific: Default::default(),
         },
         &args.user,
+        PermissionLevel::Read.into(),
         &all_tags,
       ),
       list_full_for_user::<Procedure>(
@@ -46,6 +48,7 @@ impl Resolve<ReadArgs> for ListSchedules {
           specific: Default::default(),
         },
         &args.user,
+        PermissionLevel::Read.into(),
         &all_tags,
       )
     )?;

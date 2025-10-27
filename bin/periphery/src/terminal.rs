@@ -3,10 +3,10 @@ use std::{collections::VecDeque, sync::Arc, time::Duration};
 use anyhow::{Context, anyhow};
 use bytes::Bytes;
 use encoding::{Decode as _, WithChannel};
-use komodo_client::{
-  api::write::TerminalRecreateMode,
-  entities::{
-    ContainerTerminalMode, komodo_timestamp, server::TerminalInfo,
+use komodo_client::entities::{
+  komodo_timestamp,
+  terminal::{
+    ResizeDimensions, Terminal, TerminalRecreateMode, TerminalTarget,
   },
 };
 use periphery_client::transport::EncodedTerminalMessage;
@@ -75,20 +75,24 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
 #[instrument("CreateTerminalInner", skip_all, fields(name))]
 pub async fn create_terminal(
   name: String,
+  target: TerminalTarget,
   command: Option<String>,
   recreate: TerminalRecreateMode,
-  container: Option<(String, ContainerTerminalMode)>,
-) -> anyhow::Result<Arc<Terminal>> {
+) -> anyhow::Result<Arc<PeripheryTerminal>> {
   let command = command.unwrap_or_else(|| {
     periphery_config().default_terminal_command.clone()
   });
   trace!(
     "CreateTerminal: {name} | command: {command} | recreate: {recreate:?}"
   );
-  let mut terminals = terminals().write().await;
+  let terminals = terminals();
   use TerminalRecreateMode::*;
   if matches!(recreate, Never | DifferentCommand)
-    && let Some(terminal) = terminals.get(&name)
+    && let Some(terminal) = terminals
+      .find(|terminal| {
+        terminal.name == name && terminal.target == target
+      })
+      .await
   {
     if terminal.command == command {
       return Ok(terminal.clone());
@@ -100,44 +104,82 @@ pub async fn create_terminal(
     }
   }
   let terminal = Arc::new(
-    Terminal::new(command, container)
+    PeripheryTerminal::new(name.clone(), target.clone(), command)
       .await
       .context("Failed to init terminal")?,
   );
-  if let Some(prev) = terminals.insert(name, terminal.clone()) {
+  if let Some(prev) = terminals
+    .insert(
+      |terminal| terminal.name == name && terminal.target == target,
+      terminal.clone(),
+    )
+    .await
+  {
     prev.cancel();
   }
   Ok(terminal)
 }
 
 #[instrument("DeleteTerminalInner")]
-pub async fn delete_terminal(name: &str) {
-  if let Some(terminal) = terminals().write().await.remove(name) {
+pub async fn delete_terminal(target: &TerminalTarget, name: &str) {
+  if let Some(terminal) = terminals()
+    .remove(|terminal| {
+      target.matches_on_server(&terminal.target)
+        && name == terminal.name.as_str()
+    })
+    .await
+  {
     terminal.cancel.cancel();
   }
 }
 
 pub async fn list_terminals(
-  container: Option<&str>,
-) -> Vec<TerminalInfo> {
+  target: Option<&TerminalTarget>,
+) -> Vec<Terminal> {
   let mut terminals = terminals()
-    .read()
+    .list()
     .await
     .iter()
-    .filter(|(_, terminal)| {
-      // If no container passed, returns all
-      let Some(container) = container else {
+    .filter(|terminal| {
+      // If no target passed, returns all
+      let Some(target) = target else {
         return true;
       };
-      let Some(term_container) =
-        terminal.container.as_ref().map(|c| c.0.as_str())
-      else {
-        return false;
-      };
-      term_container == container
+      match (target, &terminal.target) {
+        (
+          TerminalTarget::Server { .. },
+          TerminalTarget::Server { .. },
+        ) => true,
+        (
+          TerminalTarget::Container {
+            container: target_container,
+            ..
+          },
+          TerminalTarget::Container { container, .. },
+        ) => target_container == container,
+        (
+          TerminalTarget::Stack {
+            stack: target_stack,
+            service: target_service,
+          },
+          TerminalTarget::Stack { stack, service },
+        ) => {
+          target_stack == stack
+            // If no service passed, only match on stack
+            && (target_service.is_none() || target_service == service)
+        }
+        (
+          TerminalTarget::Deployment {
+            deployment: target_deployment,
+          },
+          TerminalTarget::Deployment { deployment },
+        ) => target_deployment == deployment,
+        _ => false,
+      }
     })
-    .map(|(name, terminal)| TerminalInfo {
-      name: name.to_string(),
+    .map(|terminal| Terminal {
+      name: terminal.name.clone(),
+      target: terminal.target.clone(),
       command: terminal.command.clone(),
       stored_size_kb: terminal.history.size_kb(),
       created_at: terminal.created_at,
@@ -149,37 +191,32 @@ pub async fn list_terminals(
 
 pub async fn get_terminal(
   name: &str,
-) -> anyhow::Result<Arc<Terminal>> {
+  target: &TerminalTarget,
+) -> anyhow::Result<Arc<PeripheryTerminal>> {
   terminals()
-    .read()
+    .find(|terminal| {
+      terminal.name.as_str() == name && &terminal.target == target
+    })
     .await
-    .get(name)
-    .cloned()
-    .with_context(|| format!("No terminal at {name}"))
+    .with_context(|| format!("No terminal for {target:?} at {name}"))
 }
 
 pub async fn clean_up_terminals() {
   terminals()
-    .write()
-    .await
-    .retain(|_, terminal| !terminal.cancel.is_cancelled());
+    .retain(|terminal| !terminal.cancel.is_cancelled())
+    .await;
 }
 
 pub async fn delete_all_terminals() {
   terminals()
-    .write()
-    .await
-    .drain()
-    .for_each(|(_, terminal)| terminal.cancel());
+    .retain(|terminal| {
+      terminal.cancel();
+      false
+    })
+    .await;
   // The terminals poll cancel every 500 millis, need to wait for them
   // to finish cancelling.
-  tokio::time::sleep(Duration::from_millis(100)).await;
-}
-
-#[derive(Clone, serde::Deserialize)]
-pub struct ResizeDimensions {
-  rows: u16,
-  cols: u16,
+  tokio::time::sleep(Duration::from_millis(500)).await;
 }
 
 #[derive(Clone)]
@@ -191,29 +228,29 @@ pub enum StdinMsg {
 pub type StdinSender = mpsc::Sender<StdinMsg>;
 pub type StdoutReceiver = broadcast::Receiver<Bytes>;
 
-pub struct Terminal {
-  /// The command that was used as the root command, eg `shell`
-  command: String,
-  /// Created timestamp milliseconds
-  created_at: i64,
+pub struct PeripheryTerminal {
+  /// The name of the terminal.
+  pub name: String,
+  /// The target resource of the Terminal.
+  pub target: TerminalTarget,
+  /// The command used to init the shell.
+  pub command: String,
+  /// When the Terminal was created.
+  pub created_at: i64,
 
   pub cancel: CancellationToken,
-
   pub stdin: StdinSender,
   pub stdout: StdoutReceiver,
-
   pub history: Arc<History>,
-
-  /// If terminal is for a container.
-  pub container: Option<(String, ContainerTerminalMode)>,
 }
 
-impl Terminal {
+impl PeripheryTerminal {
   async fn new(
+    name: String,
+    target: TerminalTarget,
     command: String,
-    container: Option<(String, ContainerTerminalMode)>,
-  ) -> anyhow::Result<Terminal> {
-    trace!("Creating terminal with command: {command}");
+  ) -> anyhow::Result<PeripheryTerminal> {
+    trace!("Creating Terminal | Command: {command}");
 
     let terminal = native_pty_system()
       .openpty(PtySize::default())
@@ -372,13 +409,14 @@ impl Terminal {
 
     trace!("terminal tasks spawned");
 
-    Ok(Terminal {
+    Ok(PeripheryTerminal {
+      name,
+      target,
       command,
       cancel,
       stdin,
       stdout,
       history,
-      container,
       created_at: komodo_timestamp(),
     })
   }

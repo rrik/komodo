@@ -2,7 +2,8 @@ use std::{borrow::Cow, path::PathBuf};
 
 use anyhow::{Context, anyhow};
 use command::{
-  run_komodo_command, run_komodo_command_with_sanitization,
+  KomodoCommandMode, run_komodo_command_with_sanitization,
+  run_komodo_shell_command, run_komodo_standard_command,
 };
 use formatting::format_serror;
 use git::write_commit_file;
@@ -43,7 +44,7 @@ fn docker_compose() -> &'static str {
 pub async fn list_compose_projects()
 -> anyhow::Result<Vec<ComposeProject>> {
   let docker_compose = docker_compose();
-  let res = run_komodo_command(
+  let res = run_komodo_standard_command(
     "List Projects",
     None,
     format!("{docker_compose} ls --all --format json"),
@@ -111,7 +112,10 @@ impl Resolve<super::Args> for GetComposeLog {
       "{docker_compose} -p {project} logs --tail {tail}{timestamps} {}",
       services.join(" ")
     );
-    Ok(run_komodo_command("get stack log", None, command).await)
+    Ok(
+      run_komodo_standard_command("get stack log", None, command)
+        .await,
+    )
   }
 }
 
@@ -136,7 +140,10 @@ impl Resolve<super::Args> for GetComposeLogSearch {
       "{docker_compose} -p {project} logs --tail 5000{timestamps} {} 2>&1 | {grep}",
       services.join(" ")
     );
-    Ok(run_komodo_command("Get stack log grep", None, command).await)
+    Ok(
+      run_komodo_shell_command("Get stack log grep", None, command)
+        .await,
+    )
   }
 }
 
@@ -395,7 +402,7 @@ impl Resolve<super::Args> for ComposePull {
     let project_name = stack.project_name(false);
 
     let span = info_span!("RunComposePull");
-    let log = run_komodo_command(
+    let log = run_komodo_standard_command(
       "Compose Pull",
       run_directory.as_ref(),
       format!(
@@ -492,7 +499,7 @@ impl Resolve<super::Args> for ComposeUp {
         "Pre Deploy",
         pre_deploy_path.as_path(),
         &stack.config.pre_deploy.command,
-        true,
+        KomodoCommandMode::Multiline,
         &replacers,
       )
       .instrument(span)
@@ -536,7 +543,7 @@ impl Resolve<super::Args> for ComposeUp {
         "Compose Config",
         run_directory.as_path(),
         command,
-        false,
+        KomodoCommandMode::Standard,
         &replacers,
       )
       .instrument(span)
@@ -603,7 +610,7 @@ impl Resolve<super::Args> for ComposeUp {
         "Compose Build",
         run_directory.as_path(),
         command,
-        false,
+        KomodoCommandMode::Shell,
         &replacers,
       )
       .instrument(span)
@@ -625,7 +632,7 @@ impl Resolve<super::Args> for ComposeUp {
         "{docker_compose} -p {project_name} -f {file_args}{env_file_args} pull{service_args}",
       );
       let span = info_span!("RunComposePull");
-      let log = run_komodo_command(
+      let log = run_komodo_standard_command(
         "Compose Pull",
         run_directory.as_ref(),
         command,
@@ -660,7 +667,7 @@ impl Resolve<super::Args> for ComposeUp {
       "Compose Up",
       run_directory.as_path(),
       command,
-      false,
+      KomodoCommandMode::Shell,
       &replacers,
     )
     .instrument(span)
@@ -680,7 +687,7 @@ impl Resolve<super::Args> for ComposeUp {
         "Post Deploy",
         post_deploy_path.as_path(),
         &stack.config.post_deploy.command,
-        true,
+        KomodoCommandMode::Multiline,
         &replacers,
       )
       .instrument(span)
@@ -710,7 +717,7 @@ impl Resolve<super::Args> for ComposeExecution {
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let ComposeExecution { project, command } = self;
     let docker_compose = docker_compose();
-    let log = run_komodo_command(
+    let log = run_komodo_standard_command(
       "Compose Command",
       None,
       format!("{docker_compose} -p {project} {command}"),
@@ -804,7 +811,7 @@ impl Resolve<super::Args> for ComposeRun {
     let project_name = stack.project_name(true);
 
     if pull.unwrap_or_default() {
-      let pull_log = run_komodo_command(
+      let pull_log = run_komodo_standard_command(
         "Compose Pull",
         run_directory.as_ref(),
         format!(
@@ -867,7 +874,7 @@ impl Resolve<super::Args> for ComposeRun {
       "Compose Run",
       run_directory.as_path(),
       command,
-      false,
+      KomodoCommandMode::Shell,
       &replacers,
     )
     .instrument(span)

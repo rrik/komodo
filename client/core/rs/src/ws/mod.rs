@@ -9,7 +9,10 @@ use tokio_tungstenite::{
 };
 use typeshare::typeshare;
 
-use crate::{KomodoClient, api::write::TerminalRecreateMode};
+use crate::{
+  KomodoClient, api::terminal::ConnectTerminalQuery,
+  entities::terminal::TerminalRecreateMode,
+};
 
 pub mod update;
 
@@ -36,13 +39,12 @@ impl WsLoginMessage {
 impl KomodoClient {
   pub async fn connect_terminal_websocket(
     &self,
-    server: &str,
-    terminal: &str,
+    query: &ConnectTerminalQuery,
   ) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     self
       .connect_login_user_websocket(
         "/terminal",
-        Some(&format!("server={server}&terminal={terminal}")),
+        Some(&serde_qs::to_string(query)?),
       )
       .await
   }
@@ -52,13 +54,12 @@ impl KomodoClient {
     server: &str,
     container: &str,
     shell: &str,
-    recreate: Option<TerminalRecreateMode>,
+    recreate: TerminalRecreateMode,
   ) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
-    let mut query =
-      format!("server={server}&container={container}&shell={shell}");
-    if let Some(recreate) = recreate {
-      let _ = write!(&mut query, "&recreate={}", recreate.as_ref());
-    }
+    let query = format!(
+      "server={server}&container={container}&shell={shell}&recreate={}",
+      recreate.as_ref()
+    );
     self
       .connect_login_user_websocket(
         "/container/terminal",
@@ -71,12 +72,12 @@ impl KomodoClient {
     &self,
     server: &str,
     container: &str,
-    recreate: Option<TerminalRecreateMode>,
+    recreate: TerminalRecreateMode,
   ) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
-    let mut query = format!("server={server}&container={container}");
-    if let Some(recreate) = recreate {
-      let _ = write!(&mut query, "&recreate={}", recreate.as_ref());
-    }
+    let query = format!(
+      "server={server}&container={container}&recreate={}",
+      recreate.as_ref()
+    );
     self
       .connect_login_user_websocket(
         "/container/terminal/attach",

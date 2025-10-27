@@ -1,181 +1,61 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::api::write::TerminalRecreateMode;
+use crate::entities::terminal::{
+  ContainerTerminalMode, TerminalRecreateMode, TerminalTarget,
+};
 
-/// Query to connect to a terminal (interactive shell over websocket) on the given server.
+/// Connect to a Terminal.
 #[typeshare]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConnectTerminalQuery {
-  /// Server Id or name
-  pub server: String,
-  /// Each periphery can keep multiple terminals open.
-  /// If a terminals with the specified name does not exist,
-  /// the call will fail.
-  /// Create a terminal using [CreateTerminal][super::write::server::CreateTerminal]
-  pub terminal: String,
+  /// The target to create terminal for.
+  pub target: TerminalTarget,
+  /// Terminal name to connect to.
+  /// If it may not exist yet, also pass 'init' params
+  /// to include initialization.
+  /// Default: Depends on target.
+  pub terminal: Option<String>,
+  /// Pass to init the terminal session
+  /// for when the terminal doesn't already exist.
+  ///
+  /// Example: ?...(query)&init[command]=bash&init[recreate]=DifferentCommand
+  pub init: Option<InitTerminal>,
+}
+
+/// Args to init the Terminal if needed.
+#[typeshare]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct InitTerminal {
+  /// The shell command (eg `bash`) to init the shell.
+  ///
+  /// Default:
+  ///   - Server: Configured on each Periphery
+  ///   - Container: `sh`
+  pub command: Option<String>,
+  /// Default: `Never`
+  #[serde(default)]
+  pub recreate: TerminalRecreateMode,
+  /// Only relevant for container-type terminals.
+  /// Specify the container terminal mode (`exec` or `attach`).
+  /// Default: `exec`
+  pub mode: Option<ContainerTerminalMode>,
 }
 
 /// Execute a terminal command on the given server.
 #[typeshare]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExecuteTerminalBody {
-  /// Server Id or name
-  pub server: String,
-  /// The name of the terminal on the server to use to execute.
-  pub terminal: String,
+  /// The target to create terminal for.
+  pub target: TerminalTarget,
+  /// Terminal name to connect to.
+  /// If it may not exist yet, also pass 'init' params
+  /// to include initialization.
+  /// Default: Depends on target.
+  pub terminal: Option<String>,
   /// The command to execute.
   pub command: String,
   /// Pass to init the terminal session
   /// for when the terminal doesn't already exist.
   pub init: Option<InitTerminal>,
-}
-
-/// Init a terminal on the server.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct InitTerminal {
-  /// The shell command (eg `bash`) to init the shell.
-  ///
-  /// This can also include args:
-  /// `docker exec -it container sh`
-  ///
-  /// Default: Configured on each Periphery
-  pub command: Option<String>,
-  /// Default: `Never`
-  #[serde(default)]
-  pub recreate: TerminalRecreateMode,
-}
-
-/// Query to connect to a container exec session (interactive shell over websocket) on the given server.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConnectContainerExecQuery {
-  /// Server Id or name
-  pub server: String,
-  /// The container name
-  pub container: String,
-  /// The shell to use (eg. `sh` or `bash`)
-  pub shell: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Query to connect to a container attach session (interactive shell over websocket) on the given server.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConnectContainerAttachQuery {
-  /// Server Id or name
-  pub server: String,
-  /// The container name
-  pub container: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Execute a command in the given containers shell.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ExecuteContainerExecBody {
-  /// Server Id or name
-  pub server: String,
-  /// The container name
-  pub container: String,
-  /// The shell to use (eg. `sh` or `bash`)
-  pub shell: String,
-  /// The command to execute.
-  pub command: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Query to connect to a container exec session (interactive shell over websocket) on the given Deployment.
-/// This call will use access to the Deployment Terminal to permission the call.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConnectDeploymentExecQuery {
-  /// Deployment Id or name
-  pub deployment: String,
-  /// The shell to use (eg. `sh` or `bash`)
-  pub shell: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Query to connect to a container attach session (interactive shell over websocket) on the given Deployment.
-/// This call will use access to the Deployment Terminal to permission the call.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConnectDeploymentAttachQuery {
-  /// Deployment Id or name
-  pub deployment: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Execute a command in the given containers shell.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ExecuteDeploymentExecBody {
-  /// Deployment Id or name
-  pub deployment: String,
-  /// The shell to use (eg. `sh` or `bash`)
-  pub shell: String,
-  /// The command to execute.
-  pub command: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Query to connect to a container exec session (interactive shell over websocket) on the given Stack / service.
-/// This call will use access to the Stack Terminal to permission the call.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConnectStackExecQuery {
-  /// Stack Id or name
-  pub stack: String,
-  /// The service name to connect to
-  pub service: String,
-  /// The shell to use (eg. `sh` or `bash`)
-  pub shell: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Query to connect to a container attach session (interactive shell over websocket) on the given Stack / service.
-/// This call will use access to the Stack Terminal to permission the call.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ConnectStackAttachQuery {
-  /// Stack Id or name
-  pub stack: String,
-  /// The service name to attach to
-  pub service: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
-}
-
-/// Execute a command in the given containers shell.
-#[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ExecuteStackExecBody {
-  /// Stack Id or name
-  pub stack: String,
-  /// The service name to connect to
-  pub service: String,
-  /// The shell to use (eg. `sh` or `bash`)
-  pub shell: String,
-  /// The command to execute.
-  pub command: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  pub recreate: Option<TerminalRecreateMode>,
 }

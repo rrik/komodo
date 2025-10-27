@@ -278,9 +278,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-ec2"
-version = "1.175.1"
+version = "1.176.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1515b09ab70c0991c0b002b0e9114a3ee73b7c5d3d65dfdb047278b208f21b0"
+checksum = "171b12a84d9c7b43b75bf2ae99e86ce40ff0b5ecc8194a67d547e55c1ad2438e"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -1097,8 +1097,9 @@ name = "command"
 version = "2.0.0-dev-75"
 dependencies = [
  "komodo_client",
- "run_command",
+ "shlex",
  "svi",
+ "tokio",
 ]
 
 [[package]]
@@ -2062,7 +2063,6 @@ dependencies = [
  "command",
  "formatting",
  "komodo_client",
- "run_command",
  "tokio",
 ]
 
@@ -2926,6 +2926,7 @@ dependencies = [
  "secret_file",
  "serde",
  "serde_json",
+ "serde_qs",
  "serde_yaml_ng",
  "serror",
  "sha2",
@@ -2979,7 +2980,6 @@ dependencies = [
  "periphery_client",
  "portable-pty",
  "resolver_api",
- "run_command",
  "rustls 0.23.33",
  "secret_file",
  "serde",
@@ -4308,15 +4308,6 @@ dependencies = [
  "spki",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "run_command"
-version = "0.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "388e1106aa4bd809ba57afecb8b3efc60b6599cd06a774d5798a7c5a29675307"
-dependencies = [
- "tokio",
 ]
 
 [[package]]

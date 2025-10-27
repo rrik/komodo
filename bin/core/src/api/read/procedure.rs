@@ -45,7 +45,10 @@ impl Resolve<ReadArgs> for ListProcedures {
     };
     Ok(
       resource::list_for_user::<Procedure>(
-        self.query, user, &all_tags,
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
       )
       .await?,
     )
@@ -64,7 +67,10 @@ impl Resolve<ReadArgs> for ListFullProcedures {
     };
     Ok(
       resource::list_full_for_user::<Procedure>(
-        self.query, user, &all_tags,
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
       )
       .await?,
     )
@@ -79,6 +85,7 @@ impl Resolve<ReadArgs> for GetProceduresSummary {
     let procedures = resource::list_full_for_user::<Procedure>(
       Default::default(),
       user,
+      PermissionLevel::Read.into(),
       &[],
     )
     .await

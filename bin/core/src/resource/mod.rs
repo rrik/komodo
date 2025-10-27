@@ -21,7 +21,10 @@ use komodo_client::{
   entities::{
     Operation, ResourceTarget, ResourceTargetVariant,
     komodo_timestamp,
-    permission::{PermissionLevel, SpecificPermission},
+    permission::{
+      PermissionLevel, PermissionLevelAndSpecifics,
+      SpecificPermission,
+    },
     resource::{AddFilters, Resource, ResourceQuery},
     tag::Tag,
     to_general_name,
@@ -43,7 +46,7 @@ use crate::{
     query::{get_tag, id_or_name_filter},
     update::{add_update, make_update},
   },
-  permission::{get_check_permissions, get_resource_ids_for_user},
+  permission::{get_check_permissions, list_resources_for_user},
   state::db_client,
 };
 
@@ -251,30 +254,31 @@ pub async fn get<T: KomodoResource>(
 // LIST
 // ======
 
-/// Returns None if still no need to filter by resource id (eg transparent mode, group membership with all access).
-pub async fn get_resource_object_ids_for_user<T: KomodoResource>(
-  user: &User,
-) -> anyhow::Result<Option<Vec<ObjectId>>> {
-  get_resource_ids_for_user::<T>(user).await.map(|ids| {
-    ids.map(|ids| {
-      ids
-        .into_iter()
-        .flat_map(|id| ObjectId::from_str(&id))
-        .collect()
-    })
+/// Get full resource list with no permissions check.
+pub async fn list_all_resources<T: KomodoResource>(
+  filters: impl Into<Option<Document>>,
+) -> anyhow::Result<Vec<Resource<T::Config, T::Info>>> {
+  find_collect(
+    T::coll(),
+    filters,
+    FindOptions::builder().sort(doc! { "name": 1 }).build(),
+  )
+  .await
+  .with_context(|| {
+    format!("Failed to pull {}s from mongo", T::resource_type())
   })
 }
 
 pub async fn list_for_user<T: KomodoResource>(
   mut query: ResourceQuery<T::QuerySpecifics>,
   user: &User,
-  // permissions: PermissionLevelAndSpecifics,
+  permission: PermissionLevelAndSpecifics,
   all_tags: &[Tag],
 ) -> anyhow::Result<Vec<T::ListItem>> {
   validate_resource_query_tags(&mut query, all_tags)?;
   let mut filters = Document::new();
   query.add_filters(&mut filters);
-  list_for_user_using_document::<T>(filters, user).await
+  list_for_user_using_document::<T>(filters, user, permission).await
 }
 
 // // pub async fn list_for_user_using_pattern<T: KomodoResource>(
@@ -300,9 +304,9 @@ pub async fn list_for_user<T: KomodoResource>(
 pub async fn list_for_user_using_document<T: KomodoResource>(
   filters: Document,
   user: &User,
-  // permissions: PermissionLevelAndSpecifics,
+  permission: PermissionLevelAndSpecifics,
 ) -> anyhow::Result<Vec<T::ListItem>> {
-  let list = list_full_for_user_using_document::<T>(filters, user)
+  let list = list_resources_for_user::<T>(filters, user, permission)
     .await?
     .into_iter()
     .map(|resource| T::to_list_item(resource));
@@ -321,10 +325,12 @@ pub async fn list_full_for_user_using_pattern<T: KomodoResource>(
   pattern: &str,
   query: ResourceQuery<T::QuerySpecifics>,
   user: &User,
+  permission: PermissionLevelAndSpecifics,
   all_tags: &[Tag],
 ) -> anyhow::Result<Vec<Resource<T::Config, T::Info>>> {
   let resources =
-    list_full_for_user::<T>(query, user, all_tags).await?;
+    list_full_for_user::<T>(query, user, permission, all_tags)
+      .await?;
 
   let patterns = parse_string_list(pattern);
   let mut names = HashSet::<String>::new();
@@ -360,32 +366,13 @@ pub async fn list_full_for_user_using_pattern<T: KomodoResource>(
 pub async fn list_full_for_user<T: KomodoResource>(
   mut query: ResourceQuery<T::QuerySpecifics>,
   user: &User,
+  permissions: PermissionLevelAndSpecifics,
   all_tags: &[Tag],
 ) -> anyhow::Result<Vec<Resource<T::Config, T::Info>>> {
   validate_resource_query_tags(&mut query, all_tags)?;
   let mut filters = Document::new();
   query.add_filters(&mut filters);
-  list_full_for_user_using_document::<T>(filters, user).await
-}
-
-pub async fn list_full_for_user_using_document<T: KomodoResource>(
-  mut filters: Document,
-  user: &User,
-) -> anyhow::Result<Vec<Resource<T::Config, T::Info>>> {
-  if let Some(ids) =
-    get_resource_object_ids_for_user::<T>(user).await?
-  {
-    filters.insert("_id", doc! { "$in": ids });
-  }
-  find_collect(
-    T::coll(),
-    filters,
-    FindOptions::builder().sort(doc! { "name": 1 }).build(),
-  )
-  .await
-  .with_context(|| {
-    format!("Failed to pull {}s from mongo", T::resource_type())
-  })
+  list_resources_for_user::<T>(filters, user, permissions).await
 }
 
 pub type IdResourceMap<T> = HashMap<
@@ -477,11 +464,13 @@ pub async fn create<T: KomodoResource>(
 
   // Ensure an existing resource with same name doesn't already exist
   // The database indexing also ensures this but doesn't give a good error message.
-  if list_full_for_user::<T>(Default::default(), system_user(), &[])
+  if T::coll()
+    .find_one(doc! { "name": &name })
     .await
-    .context("Failed to list all resources for duplicate name check")?
-    .into_iter()
-    .any(|r| r.name == name)
+    .context(
+      "Failed to check existing resources for duplicate name check",
+    )?
+    .is_some()
   {
     return Err(
       anyhow!("Resource with name '{}' already exists", name)

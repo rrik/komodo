@@ -66,6 +66,8 @@ pub mod stats;
 pub mod sync;
 /// Subtypes of [Tag][tag::Tag].
 pub mod tag;
+
+pub mod terminal;
 /// Subtypes of [ResourcesToml][toml::ResourcesToml].
 pub mod toml;
 /// Subtypes of [Update][update::Update].
@@ -603,28 +605,6 @@ pub struct RepoExecutionResponse {
   pub commit_hash: Option<String>,
   /// Latest commit message, if it could be retrieved
   pub commit_message: Option<String>,
-}
-
-#[typeshare]
-#[derive(
-  Debug,
-  Clone,
-  Copy,
-  PartialEq,
-  Eq,
-  Hash,
-  Default,
-  Serialize,
-  Deserialize,
-  Display,
-  EnumString,
-)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum ContainerTerminalMode {
-  #[default]
-  Exec,
-  Attach,
 }
 
 #[typeshare]

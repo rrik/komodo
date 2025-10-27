@@ -3,7 +3,10 @@ use std::{
 };
 
 use anyhow::Context;
-use command::run_komodo_command_with_sanitization;
+use command::{
+  KomodoCommandMode, run_komodo_command_with_sanitization,
+  run_standard_command,
+};
 use environment::write_env_file;
 use interpolate::Interpolator;
 use komodo_client::{
@@ -123,7 +126,7 @@ pub async fn handle_post_repo_execution(
       "On Clone",
       path.as_path(),
       on_clone.command,
-      true,
+      KomodoCommandMode::Multiline,
       &replacers,
     )
     .await
@@ -148,7 +151,7 @@ pub async fn handle_post_repo_execution(
       "On Pull",
       path.as_path(),
       on_pull.command,
-      true,
+      KomodoCommandMode::Multiline,
       &replacers,
     )
     .await
@@ -293,7 +296,7 @@ async fn generate_self_signed_ssl_certs() {
   let command = format!(
     "openssl req -x509 -newkey rsa:4096 -keyout {key_path} -out {cert_path} -sha256 -days 3650 -nodes -subj \"/C=XX/CN=periphery\""
   );
-  let log = run_command::async_run_command(&command).await;
+  let log = run_standard_command(&command, None).await;
 
   if log.success() {
     info!("✅ SSL Certs generated");

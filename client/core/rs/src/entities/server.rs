@@ -10,7 +10,7 @@ use crate::{
   deserializers::{
     option_string_list_deserializer, string_list_deserializer,
   },
-  entities::{I64, MaintenanceWindow, Timelength},
+  entities::{MaintenanceWindow, Timelength},
 };
 
 use super::{
@@ -362,62 +362,6 @@ pub struct PeripheryInformation {
   pub docker_connected: bool,
   /// The host public ip, if it can be resolved.
   pub public_ip: Option<String>,
-}
-
-/// Info about an active terminal on a server.
-/// Retrieve with [ListTerminals][crate::api::read::server::ListTerminals].
-#[typeshare]
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub struct TerminalInfo {
-  /// The name of the terminal.
-  pub name: String,
-  /// The root program / args of the pty
-  pub command: String,
-  /// The size of the terminal history in memory.
-  pub stored_size_kb: f64,
-  /// When the Terminal was created.
-  pub created_at: I64,
-}
-
-/// Info about an active terminal on a server.
-/// Retrieve with [ListAllTerminals][crate::api::read::server::ListAllTerminals].
-#[typeshare]
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub struct TerminalInfoWithServer {
-  /// The server id.
-  pub server_id: String,
-  /// The server name.
-  pub server_name: String,
-  /// The name of the terminal.
-  pub name: String,
-  /// The root program / args of the pty
-  pub command: String,
-  /// The size of the terminal history in memory.
-  pub stored_size_kb: f64,
-  /// When the Terminal was created in unix milliseconds.
-  pub created_at: I64,
-}
-
-impl TerminalInfoWithServer {
-  pub fn from_terminal_info(
-    server_id: impl Into<String>,
-    server_name: impl Into<String>,
-    TerminalInfo {
-      name,
-      command,
-      stored_size_kb,
-      created_at,
-    }: TerminalInfo,
-  ) -> Self {
-    Self {
-      server_id: server_id.into(),
-      server_name: server_name.into(),
-      name,
-      command,
-      stored_size_kb,
-      created_at,
-    }
-  }
 }
 
 /// Current pending actions on the server.

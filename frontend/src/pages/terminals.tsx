@@ -1,14 +1,20 @@
 import { Page } from "@components/layouts";
 import { ResourceLink, ResourceSelector } from "@components/resources/common";
-import { TagsFilter } from "@components/tags";
-import { ConfirmButton } from "@components/util";
+import {
+  ConfirmButton,
+  ContainerTerminalModeSelector,
+  DockerResourceLink,
+  ServerContainerSelector,
+  StackServiceLink,
+  StackServiceSelector,
+} from "@components/util";
 import { fmt_date_with_minutes } from "@lib/formatting";
 import {
-  usePermissions,
   useRead,
   useSetTitle,
   useShiftKeyListener,
   useTags,
+  useTerminalTargetPermissions,
   useWrite,
 } from "@lib/hooks";
 import { filterBySplit } from "@lib/utils";
@@ -24,29 +30,27 @@ import {
   DialogTrigger,
 } from "@ui/dialog";
 import { Input } from "@ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ui/select";
+import { useToast } from "@ui/use-toast";
 import { Types } from "komodo_client";
 import { Loader2, PlusCircle, Search, Terminal, Trash } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function TerminalsPage() {
   useSetTitle("Terminals");
   const [search, set] = useState("");
-  const { tags } = useTags();
-  const servers = useRead("ListServers", { query: { tags } }).data ?? [];
-  const { data, refetch } = useRead(
-    "ListAllTerminals",
-    { query: { tags }, fresh: true },
+  const { data: terminals, refetch } = useRead(
+    "ListTerminals",
+    {},
     { refetchInterval: 10_000 }
   );
-  const terminals = data?.map((terminal) => {
-    const server = servers.find((server) => server.id === terminal.server_id);
-    return {
-      ...terminal,
-      server_name: server?.name ?? "Unknown",
-      tags: server?.tags ?? [],
-    };
-  });
   const filtered = filterBySplit(terminals ?? [], search, (item) => item.name);
   return (
     <Page
@@ -68,7 +72,6 @@ export default function TerminalsPage() {
             />
           </div>
           <div className="flex items-center gap-4 flex-wrap">
-            <TagsFilter />
             <div className="relative">
               <Search className="w-4 absolute top-[50%] left-3 -translate-y-[50%] text-muted-foreground" />
               <Input
@@ -91,7 +94,7 @@ export default function TerminalsPage() {
               ),
               cell: ({ row }) => (
                 <Link
-                  to={`/servers/${row.original.server_id}/terminal/${row.original.name}`}
+                  to={terminal_link(row.original.name, row.original.target)}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
@@ -104,12 +107,12 @@ export default function TerminalsPage() {
             },
             {
               size: 200,
-              accessorKey: "server_name",
+              accessorKey: "target",
               header: ({ column }) => (
-                <SortableHeader column={column} title="Server" />
+                <SortableHeader column={column} title="Target" />
               ),
               cell: ({ row }) => (
-                <ResourceLink type="Server" id={row.original.server_id} />
+                <TerminalTargetResourceLink target={row.original.target} />
               ),
             },
             {
@@ -154,7 +157,7 @@ export default function TerminalsPage() {
               header: "Delete",
               cell: ({ row }) => (
                 <DeleteTerminal
-                  server={row.original.server_id}
+                  target={row.original.target}
                   terminal={row.original.name}
                   refetch={refetch}
                 />
@@ -167,37 +170,62 @@ export default function TerminalsPage() {
   );
 }
 
-const default_create_terminal = (first_server: string) => {
-  return {
-    server: first_server,
-    name: "term-1",
-    command: undefined,
-  } as Types.CreateTerminal;
+const terminal_link = (name: string, target: Types.TerminalTarget) => {
+  switch (target.type) {
+    case "Server":
+      return `/servers/${target.params.server}/terminal/${name}`;
+    case "Container":
+      return `/servers/${target.params.server}/container/${target.params.container}/terminal/${name}`;
+    case "Stack":
+      return `/stacks/${target.params.stack}/service/${target.params.service}/terminal/${name}`;
+    case "Deployment":
+      return `/deployments/${target.params.deployment}/terminal/${name}`;
+  }
 };
+
+const TerminalTargetResourceLink = ({
+  target,
+}: {
+  target: Types.TerminalTarget;
+}) => {
+  console.log(target);
+  switch (target.type) {
+    case "Server":
+      return <ResourceLink type="Server" id={target.params.server!} />;
+    case "Container":
+      return (
+        <DockerResourceLink
+          type="container"
+          server_id={target.params.server}
+          name={target.params.container}
+        />
+      );
+    case "Stack":
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <ResourceLink type="Stack" id={target.params.stack} />
+          {target.params.service && (
+            <StackServiceLink
+              id={target.params.stack}
+              service={target.params.service}
+            />
+          )}
+        </div>
+      );
+    case "Deployment":
+      return <ResourceLink type="Deployment" id={target.params.deployment} />;
+  }
+};
+
+const TERMINAL_TYPES = ["Server", "Container", "Stack", "Deployment"] as const;
+type TerminalType = (typeof TERMINAL_TYPES)[number];
 
 const CreateTerminal = () => {
   const [open, setOpen] = useState(false);
-  const nav = useNavigate();
-  const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
-  const [request, setRequest] = useState<Types.CreateTerminal>(
-    default_create_terminal(first_server)
-  );
-  useEffect(() => {
-    if (open) return;
-    setRequest(default_create_terminal(first_server));
-  }, [first_server]);
-  const { mutate, isPending } = useWrite("CreateTerminal", {
-    onSuccess: () => {
-      nav(`/servers/${request.server}/terminal/${request.name}`);
-      setOpen(false);
-      setRequest(default_create_terminal(first_server));
-    },
-  });
-  const onConfirm = () => {
-    if (!request.server || !request.name) return;
-    mutate(request);
-  };
+  const [type, setType] = useState<TerminalType>("Server");
   useShiftKeyListener("N", () => !open && setOpen(true));
+
+  const Selector = <CreateTerminalTypeSelector type={type} setType={setType} />;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -207,62 +235,565 @@ const CreateTerminal = () => {
         </Button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New Terminal</DialogTitle>
-          <DialogDescription>
-            Choose the Server and Command for the new Terminal.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid md:grid-cols-2 gap-6 items-center">
-          Server
-          <ResourceSelector
-            targetClassName="w-full justify-between"
-            type="Server"
-            selected={request.server}
-            onSelect={(server) => setRequest((req) => ({ ...req, server }))}
-            align="end"
+        {type === "Server" ? (
+          <CreateServerTerminal
+            open={open}
+            setOpen={setOpen}
+            Selector={Selector}
           />
-          Terminal Name
-          <Input
-            autoFocus
-            placeholder="terminal-name"
-            value={request.name}
-            onChange={(e) =>
-              setRequest((req) => ({ ...req, name: e.target.value }))
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                onConfirm();
-              }
-            }}
+        ) : type === "Container" ? (
+          <CreateContainerTerminal
+            open={open}
+            setOpen={setOpen}
+            Selector={Selector}
           />
-          Command
-          <Input
-            placeholder="bash (Optional)"
-            value={request.command}
-            onChange={(e) =>
-              setRequest((req) => ({ ...req, command: e.target.value }))
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                onConfirm();
-              }
-            }}
+        ) : type === "Stack" ? (
+          <CreateStackServiceTerminal
+            open={open}
+            setOpen={setOpen}
+            Selector={Selector}
           />
-        </div>
-
-        <DialogFooter>
-          <Button variant="secondary" onClick={onConfirm}>
-            {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              "Create"
-            )}
-          </Button>
-        </DialogFooter>
+        ) : type === "Deployment" ? (
+          <CreateDeploymentTerminal
+            open={open}
+            setOpen={setOpen}
+            Selector={Selector}
+          />
+        ) : (
+          <></>
+        )}
       </DialogContent>
     </Dialog>
+  );
+};
+
+const CreateTerminalTypeSelector = ({
+  type,
+  setType,
+}: {
+  type: TerminalType;
+  setType: (type: TerminalType) => void;
+}) => {
+  return (
+    <>
+      Type
+      <Select value={type} onValueChange={setType}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TERMINAL_TYPES.map((type) => (
+            <SelectItem key={type} value={type}>
+              {type}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </>
+  );
+};
+
+const default_create_server_terminal = (
+  first_server: string
+): Types.CreateTerminal => {
+  return {
+    target: { type: "Server", params: { server: first_server } },
+    name: "term-1",
+    command: undefined,
+  };
+};
+
+const CreateServerTerminal = ({
+  open,
+  setOpen,
+  Selector,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  Selector: ReactNode;
+}) => {
+  const nav = useNavigate();
+  const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
+  const [request, setRequest] = useState<Types.CreateTerminal>(
+    default_create_server_terminal(first_server)
+  );
+  const { server } = request.target.params as {
+    server: string;
+  };
+  useEffect(() => {
+    if (open) return;
+    setRequest(default_create_server_terminal(first_server));
+  }, [first_server]);
+  const { mutate, isPending } = useWrite("CreateTerminal", {
+    onSuccess: () => {
+      nav(`/servers/${server}/terminal/${request.name}`);
+      setOpen(false);
+      setRequest(default_create_server_terminal(first_server));
+    },
+  });
+  const onConfirm = () => {
+    if (!server || !request.name) return;
+    mutate(request);
+  };
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>New Server Terminal</DialogTitle>
+        <DialogDescription>
+          Choose the Server and Command for the new Terminal.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="grid md:grid-cols-2 gap-6 items-center">
+        {Selector}
+        Server
+        <ResourceSelector
+          targetClassName="w-full justify-between"
+          type="Server"
+          selected={server}
+          onSelect={(server) =>
+            setRequest((req) => ({
+              ...req,
+              target: {
+                ...req.target,
+                params: { ...req.target.params, server } as any,
+              },
+            }))
+          }
+          align="end"
+        />
+        Terminal Name
+        <Input
+          autoFocus
+          placeholder="terminal-name"
+          value={request.name}
+          onChange={(e) =>
+            setRequest((req) => ({ ...req, name: e.target.value }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onConfirm();
+            }
+          }}
+        />
+        Command
+        <Input
+          placeholder="bash (Optional)"
+          value={request.command}
+          onChange={(e) =>
+            setRequest((req) => ({ ...req, command: e.target.value }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onConfirm();
+            }
+          }}
+        />
+      </div>
+
+      <DialogFooter>
+        <Button variant="secondary" onClick={onConfirm}>
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+};
+
+const default_create_container_terminal = (
+  first_server: string
+): Types.CreateTerminal => {
+  return {
+    target: {
+      type: "Container",
+      params: { server: first_server, container: "" },
+    },
+    name: "term-1",
+    mode: Types.ContainerTerminalMode.Exec,
+    command: undefined,
+  };
+};
+
+const CreateContainerTerminal = ({
+  open,
+  setOpen,
+  Selector,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  Selector: ReactNode;
+}) => {
+  const nav = useNavigate();
+  const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
+  const [request, setRequest] = useState<Types.CreateTerminal>(
+    default_create_container_terminal(first_server)
+  );
+  useEffect(() => {
+    if (open) return;
+    setRequest(default_create_container_terminal(first_server));
+  }, [first_server]);
+  const { server, container } = request.target.params as {
+    server: string;
+    container: string;
+  };
+  const { mutate, isPending } = useWrite("CreateTerminal", {
+    onSuccess: () => {
+      nav(`/servers/${server}/container/${container}/terminal/${request.name}`);
+      setOpen(false);
+      setRequest(default_create_container_terminal(first_server));
+    },
+  });
+  const onConfirm = () => {
+    if (!server || !container) return;
+    mutate(request);
+  };
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>New Container Terminal</DialogTitle>
+        <DialogDescription>
+          Choose the Server and Container for the new Terminal.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="grid md:grid-cols-2 gap-6 items-center">
+        {Selector}
+        Server
+        <ResourceSelector
+          targetClassName="w-full justify-between"
+          type="Server"
+          selected={server}
+          onSelect={(server) =>
+            setRequest((req) => ({
+              ...req,
+              target: {
+                ...req.target,
+                params: { ...req.target.params, server } as any,
+              },
+            }))
+          }
+          align="end"
+        />
+        Container
+        <ServerContainerSelector
+          targetClassName="w-full justify-between"
+          server_id={server}
+          state={Types.ContainerStateStatusEnum.Running}
+          selected={container}
+          onSelect={(container) =>
+            setRequest((req) => ({
+              ...req,
+              target: {
+                ...req.target,
+                params: { ...req.target.params, container } as any,
+              },
+            }))
+          }
+          align="end"
+        />
+        Terminal Name
+        <Input
+          autoFocus
+          placeholder="terminal-name"
+          value={request.name}
+          onChange={(e) =>
+            setRequest((req) => ({ ...req, name: e.target.value }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onConfirm();
+            }
+          }}
+        />
+        Mode
+        <ContainerTerminalModeSelector
+          mode={request.mode!}
+          setMode={(mode) => setRequest({ ...request, mode })}
+        />
+        {request.mode !== Types.ContainerTerminalMode.Attach && (
+          <>
+            Command
+            <Input
+              placeholder="sh (Optional)"
+              value={request.command}
+              onChange={(e) =>
+                setRequest((req) => ({ ...req, command: e.target.value }))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onConfirm();
+                }
+              }}
+            />
+          </>
+        )}
+      </div>
+
+      <DialogFooter>
+        <Button variant="secondary" onClick={onConfirm}>
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+};
+
+const default_create_stack_service_terminal = (
+  first_stack: string
+): Types.CreateTerminal => {
+  return {
+    target: {
+      type: "Stack",
+      params: { stack: first_stack, service: "" },
+    },
+    name: "term-1",
+    mode: Types.ContainerTerminalMode.Exec,
+    command: undefined,
+  };
+};
+
+const CreateStackServiceTerminal = ({
+  open,
+  setOpen,
+  Selector,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  Selector: ReactNode;
+}) => {
+  const nav = useNavigate();
+  const first_stack = (useRead("ListStacks", {}).data ?? [])[0]?.id ?? "";
+  const [request, setRequest] = useState<Types.CreateTerminal>(
+    default_create_stack_service_terminal(first_stack)
+  );
+  useEffect(() => {
+    if (open) return;
+    setRequest(default_create_stack_service_terminal(first_stack));
+  }, [first_stack]);
+  const { stack, service } = request.target.params as {
+    stack: string;
+    service: string;
+  };
+  const { mutate, isPending } = useWrite("CreateTerminal", {
+    onSuccess: () => {
+      nav(`/stacks/${stack}/service/${service}/terminal/${request.name}`);
+      setOpen(false);
+      setRequest(default_create_stack_service_terminal(first_stack));
+    },
+  });
+  const onConfirm = () => {
+    if (!stack || !service) return;
+    mutate(request);
+  };
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>New Stack Terminal</DialogTitle>
+        <DialogDescription>
+          Choose the Stack and Service for the new Terminal.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="grid md:grid-cols-2 gap-6 items-center">
+        {Selector}
+        Stack
+        <ResourceSelector
+          targetClassName="w-full justify-between"
+          type="Stack"
+          selected={stack}
+          onSelect={(stack) =>
+            setRequest((req) => ({
+              ...req,
+              target: {
+                ...req.target,
+                params: { ...req.target.params, stack } as any,
+              },
+            }))
+          }
+          align="end"
+        />
+        Service
+        <StackServiceSelector
+          targetClassName="w-full justify-between"
+          stack_id={stack}
+          state={Types.ContainerStateStatusEnum.Running}
+          selected={service}
+          onSelect={(service) =>
+            setRequest((req) => ({
+              ...req,
+              target: {
+                ...req.target,
+                params: { ...req.target.params, service } as any,
+              },
+            }))
+          }
+          align="end"
+        />
+        Terminal Name
+        <Input
+          autoFocus
+          placeholder="terminal-name"
+          value={request.name}
+          onChange={(e) =>
+            setRequest((req) => ({ ...req, name: e.target.value }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onConfirm();
+            }
+          }}
+        />
+        Mode
+        <ContainerTerminalModeSelector
+          mode={request.mode!}
+          setMode={(mode) => setRequest({ ...request, mode })}
+        />
+        {request.mode !== Types.ContainerTerminalMode.Attach && (
+          <>
+            Command
+            <Input
+              placeholder="sh (Optional)"
+              value={request.command}
+              onChange={(e) =>
+                setRequest((req) => ({ ...req, command: e.target.value }))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onConfirm();
+                }
+              }}
+            />
+          </>
+        )}
+      </div>
+
+      <DialogFooter>
+        <Button variant="secondary" onClick={onConfirm}>
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+};
+
+const default_create_deployment_terminal = (
+  first_deployment: string
+): Types.CreateTerminal => {
+  return {
+    target: {
+      type: "Deployment",
+      params: { deployment: first_deployment },
+    },
+    name: "term-1",
+    mode: Types.ContainerTerminalMode.Exec,
+    command: undefined,
+  };
+};
+
+const CreateDeploymentTerminal = ({
+  open,
+  setOpen,
+  Selector,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  Selector: ReactNode;
+}) => {
+  const nav = useNavigate();
+  const first_deployment =
+    (useRead("ListDeployments", {}).data ?? [])[0]?.id ?? "";
+  const [request, setRequest] = useState<Types.CreateTerminal>(
+    default_create_deployment_terminal(first_deployment)
+  );
+  useEffect(() => {
+    if (open) return;
+    setRequest(default_create_deployment_terminal(first_deployment));
+  }, [first_deployment]);
+  const { deployment } = request.target.params as {
+    deployment: string;
+  };
+  const { mutate, isPending } = useWrite("CreateTerminal", {
+    onSuccess: () => {
+      nav(`/deployments/${deployment}/terminal/${request.name}`);
+      setOpen(false);
+      setRequest(default_create_deployment_terminal(first_deployment));
+    },
+  });
+  const onConfirm = () => {
+    if (!deployment) return;
+    mutate(request);
+  };
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>New Deployment Terminal</DialogTitle>
+        <DialogDescription>
+          Choose the Deployment for the new Terminal.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="grid md:grid-cols-2 gap-6 items-center">
+        {Selector}
+        Deployment
+        <ResourceSelector
+          targetClassName="w-full justify-between"
+          type="Deployment"
+          selected={deployment}
+          onSelect={(deployment) =>
+            setRequest((req) => ({
+              ...req,
+              target: {
+                ...req.target,
+                params: { ...req.target.params, deployment } as any,
+              },
+            }))
+          }
+          align="end"
+        />
+        Terminal Name
+        <Input
+          autoFocus
+          placeholder="terminal-name"
+          value={request.name}
+          onChange={(e) =>
+            setRequest((req) => ({ ...req, name: e.target.value }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onConfirm();
+            }
+          }}
+        />
+        Mode
+        <ContainerTerminalModeSelector
+          mode={request.mode!}
+          setMode={(mode) => setRequest({ ...request, mode })}
+        />
+        {request.mode !== Types.ContainerTerminalMode.Attach && (
+          <>
+            Command
+            <Input
+              placeholder="sh (Optional)"
+              value={request.command}
+              onChange={(e) =>
+                setRequest((req) => ({ ...req, command: e.target.value }))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onConfirm();
+                }
+              }}
+            />
+          </>
+        )}
+      </div>
+
+      <DialogFooter>
+        <Button variant="secondary" onClick={onConfirm}>
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+        </Button>
+      </DialogFooter>
+    </>
   );
 };
 
@@ -273,8 +804,12 @@ const BatchDeleteAllTerminals = ({
   refetch: () => void;
   noTerminals: boolean;
 }) => {
+  const { toast } = useToast();
   const { mutate, isPending } = useWrite("BatchDeleteAllTerminals", {
-    onSuccess: refetch,
+    onSuccess: () => {
+      refetch();
+      toast({ title: "Deleted All Terminals" });
+    },
   });
   const { tags } = useTags();
   return (
@@ -291,17 +826,21 @@ const BatchDeleteAllTerminals = ({
 };
 
 const DeleteTerminal = ({
-  server,
+  target,
   terminal,
   refetch,
 }: {
-  server: string;
+  target: Types.TerminalTarget;
   terminal: string;
   refetch: () => void;
 }) => {
-  const { canWrite } = usePermissions({ type: "Server", id: server });
+  const { toast } = useToast();
+  const { canWrite } = useTerminalTargetPermissions(target);
   const { mutate, isPending } = useWrite("DeleteTerminal", {
-    onSuccess: refetch,
+    onSuccess: () => {
+      refetch();
+      toast({ title: `Deleted Terminal '${terminal}'` });
+    },
   });
   return (
     <ConfirmButton
@@ -309,7 +848,7 @@ const DeleteTerminal = ({
       variant="destructive"
       icon={<Trash className="w-4 h-4" />}
       className="w-[120px]"
-      onClick={() => mutate({ server, terminal })}
+      onClick={() => mutate({ target, terminal })}
       disabled={!canWrite}
       loading={isPending}
     />

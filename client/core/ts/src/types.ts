@@ -3554,27 +3554,6 @@ export interface ContainerListItem {
 
 export type ListAllDockerContainersResponse = ContainerListItem[];
 
-/**
- * Info about an active terminal on a server.
- * Retrieve with [ListAllTerminals][crate::api::read::server::ListAllTerminals].
- */
-export interface TerminalInfoWithServer {
-	/** The server id. */
-	server_id: string;
-	/** The server name. */
-	server_name: string;
-	/** The name of the terminal. */
-	name: string;
-	/** The root program / args of the pty */
-	command: string;
-	/** The size of the terminal history in memory. */
-	stored_size_kb: number;
-	/** When the Terminal was created in unix milliseconds. */
-	created_at: I64;
-}
-
-export type ListAllTerminalsResponse = TerminalInfoWithServer[];
-
 /** An api key used to authenticate requests via request headers. */
 export interface ApiKey {
 	/** Unique key associated with secret */
@@ -4110,22 +4089,43 @@ export type ListSystemProcessesResponse = SystemProcess[];
 
 export type ListTagsResponse = Tag[];
 
+export type TerminalTarget = 
+	| { type: "Server", params: {
+	server?: string;
+}}
+	| { type: "Container", params: {
+	server: string;
+	container: string;
+}}
+	| { type: "Stack", params: {
+	stack: string;
+	service?: string;
+}}
+	| { type: "Deployment", params: {
+	deployment: string;
+}};
+
 /**
- * Info about an active terminal on a server.
+ * Represents an active terminal on a server.
  * Retrieve with [ListTerminals][crate::api::read::server::ListTerminals].
  */
-export interface TerminalInfo {
+export interface Terminal {
 	/** The name of the terminal. */
 	name: string;
-	/** The root program / args of the pty */
+	/** The target resource of the Terminal. */
+	target: TerminalTarget;
+	/** The command used to init the shell. */
 	command: string;
 	/** The size of the terminal history in memory. */
 	stored_size_kb: number;
-	/** When the Terminal was created. */
+	/**
+	 * When the Terminal was created.
+	 * Unix timestamp milliseconds.
+	 */
 	created_at: I64;
 }
 
-export type ListTerminalsResponse = TerminalInfo[];
+export type ListTerminalsResponse = Terminal[];
 
 export type ListUserGroupsResponse = UserGroup[];
 
@@ -4383,7 +4383,7 @@ export interface BatchCloneRepo {
  * Response: [NoData]
  */
 export interface BatchDeleteAllTerminals {
-	/** optional structured query to filter servers. */
+	/** Optional structured query to filter servers. */
 	query?: ServerQuery;
 }
 
@@ -4655,7 +4655,7 @@ export interface CommitSync {
 export enum TerminalRecreateMode {
 	/**
 	 * Never kill the old terminal if it already exists.
-	 * If the command is different, returns error.
+	 * If the init command is different, returns error.
 	 */
 	Never = "Never",
 	/** Always kill the old terminal and create new one */
@@ -4664,109 +4664,50 @@ export enum TerminalRecreateMode {
 	DifferentCommand = "DifferentCommand",
 }
 
-/** Query to connect to a container attach session (interactive shell over websocket) on the given server. */
-export interface ConnectContainerAttachQuery {
-	/** Server Id or name */
-	server: string;
-	/** The container name */
-	container: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
+/** Specify the container terminal mode (exec or attach) */
+export enum ContainerTerminalMode {
+	Exec = "exec",
+	Attach = "attach",
 }
 
-/** Query to connect to a container exec session (interactive shell over websocket) on the given server. */
-export interface ConnectContainerExecQuery {
-	/** Server Id or name */
-	server: string;
-	/** The container name */
-	container: string;
-	/** The shell to use (eg. `sh` or `bash`) */
-	shell: string;
+/** Args to init the Terminal if needed. */
+export interface InitTerminal {
 	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
+	 * The shell command (eg `bash`) to init the shell.
+	 * 
+	 * Default:
+	 * - Server: Configured on each Periphery
+	 * - Container: `sh`
 	 */
+	command?: string;
+	/** Default: `Never` */
 	recreate?: TerminalRecreateMode;
+	/**
+	 * Only relevant for container-type terminals.
+	 * Specify the container terminal mode (`exec` or `attach`).
+	 * Default: `exec`
+	 */
+	mode?: ContainerTerminalMode;
 }
 
-/**
- * Query to connect to a container attach session (interactive shell over websocket) on the given Deployment.
- * This call will use access to the Deployment Terminal to permission the call.
- */
-export interface ConnectDeploymentAttachQuery {
-	/** Deployment Id or name */
-	deployment: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/**
- * Query to connect to a container exec session (interactive shell over websocket) on the given Deployment.
- * This call will use access to the Deployment Terminal to permission the call.
- */
-export interface ConnectDeploymentExecQuery {
-	/** Deployment Id or name */
-	deployment: string;
-	/** The shell to use (eg. `sh` or `bash`) */
-	shell: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/**
- * Query to connect to a container attach session (interactive shell over websocket) on the given Stack / service.
- * This call will use access to the Stack Terminal to permission the call.
- */
-export interface ConnectStackAttachQuery {
-	/** Stack Id or name */
-	stack: string;
-	/** The service name to attach to */
-	service: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/**
- * Query to connect to a container exec session (interactive shell over websocket) on the given Stack / service.
- * This call will use access to the Stack Terminal to permission the call.
- */
-export interface ConnectStackExecQuery {
-	/** Stack Id or name */
-	stack: string;
-	/** The service name to connect to */
-	service: string;
-	/** The shell to use (eg. `sh` or `bash`) */
-	shell: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/** Query to connect to a terminal (interactive shell over websocket) on the given server. */
+/** Connect to a Terminal. */
 export interface ConnectTerminalQuery {
-	/** Server Id or name */
-	server: string;
+	/** The target to create terminal for. */
+	target: TerminalTarget;
 	/**
-	 * Each periphery can keep multiple terminals open.
-	 * If a terminals with the specified name does not exist,
-	 * the call will fail.
-	 * Create a terminal using [CreateTerminal][super::write::server::CreateTerminal]
+	 * Terminal name to connect to.
+	 * If it may not exist yet, also pass 'init' params
+	 * to include initialization.
+	 * Default: Depends on target.
 	 */
-	terminal: string;
+	terminal?: string;
+	/**
+	 * Pass to init the terminal session
+	 * for when the terminal doesn't already exist.
+	 * 
+	 * Example: ?...(query)&init[command]=bash&init[recreate]=DifferentCommand
+	 */
+	init?: InitTerminal;
 }
 
 /** Blkio stats entry.  This type is Linux-specific and omitted for Windows containers. */
@@ -5330,23 +5271,32 @@ export interface CreateTag {
 }
 
 /**
- * Create a terminal on the server.
+ * Create a Terminal.
+ * Requires minimum Read + Terminal permission on the target Resource.
  * Response: [NoData]
  */
 export interface CreateTerminal {
-	/** Server Id or name */
-	server: string;
-	/** The name of the terminal on the server to create. */
+	/** A name for the Terminal session. */
 	name: string;
+	/** The target to create terminal for */
+	target: TerminalTarget;
 	/**
 	 * The shell command (eg `bash`) to init the shell.
 	 * 
-	 * This can also include args:
-	 * `docker exec -it container sh`
-	 * 
-	 * Default: Configured on each Periphery
+	 * Default:
+	 * - Server: Configured on each Periphery
+	 * - ContainerExec: `sh`
+	 * - Attach: unused
 	 */
 	command?: string;
+	/**
+	 * For container terminals, choose 'exec' or 'attach'.
+	 * 
+	 * Default
+	 * - Server: ignored
+	 * - Container / Stack / Deployment: `exec`
+	 */
+	mode?: ContainerTerminalMode;
 	/** Default: `Never` */
 	recreate?: TerminalRecreateMode;
 }
@@ -5394,7 +5344,7 @@ export interface DeleteAlerter {
 }
 
 /**
- * Delete all terminals on the server.
+ * Delete all Terminals on the Server.
  * Response: [NoData]
  */
 export interface DeleteAllTerminals {
@@ -5553,13 +5503,13 @@ export interface DeleteTag {
 }
 
 /**
- * Delete a terminal on the server.
+ * Delete a terminal.
  * Response: [NoData]
  */
 export interface DeleteTerminal {
-	/** Server Id or name */
-	server: string;
-	/** The name of the terminal on the server to delete. */
+	/** Server / Container / Stack / Deployment */
+	target: TerminalTarget;
+	/** The name of the Terminal to delete. */
 	terminal: string;
 }
 
@@ -5721,76 +5671,17 @@ export interface ExchangeForJwt {
 	token: string;
 }
 
-/** Execute a command in the given containers shell. */
-export interface ExecuteContainerExecBody {
-	/** Server Id or name */
-	server: string;
-	/** The container name */
-	container: string;
-	/** The shell to use (eg. `sh` or `bash`) */
-	shell: string;
-	/** The command to execute. */
-	command: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/** Execute a command in the given containers shell. */
-export interface ExecuteDeploymentExecBody {
-	/** Deployment Id or name */
-	deployment: string;
-	/** The shell to use (eg. `sh` or `bash`) */
-	shell: string;
-	/** The command to execute. */
-	command: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/** Execute a command in the given containers shell. */
-export interface ExecuteStackExecBody {
-	/** Stack Id or name */
-	stack: string;
-	/** The service name to connect to */
-	service: string;
-	/** The shell to use (eg. `sh` or `bash`) */
-	shell: string;
-	/** The command to execute. */
-	command: string;
-	/**
-	 * Specify the recreate behavior.
-	 * Default is 'DifferentCommand'
-	 */
-	recreate?: TerminalRecreateMode;
-}
-
-/** Init a terminal on the server. */
-export interface InitTerminal {
-	/**
-	 * The shell command (eg `bash`) to init the shell.
-	 * 
-	 * This can also include args:
-	 * `docker exec -it container sh`
-	 * 
-	 * Default: Configured on each Periphery
-	 */
-	command?: string;
-	/** Default: `Never` */
-	recreate?: TerminalRecreateMode;
-}
-
 /** Execute a terminal command on the given server. */
 export interface ExecuteTerminalBody {
-	/** Server Id or name */
-	server: string;
-	/** The name of the terminal on the server to use to execute. */
-	terminal: string;
+	/** The target to create terminal for. */
+	target: TerminalTarget;
+	/**
+	 * Terminal name to connect to.
+	 * If it may not exist yet, also pass 'init' params
+	 * to include initialization.
+	 * Default: Depends on target.
+	 */
+	terminal?: string;
 	/** The command to execute. */
 	command: string;
 	/**
@@ -6747,20 +6638,8 @@ export interface ListAlertsResponse {
 export interface ListAllDockerContainers {
 	/** Filter by server id or name. */
 	servers?: string[];
-}
-
-/**
- * List the current terminals on specified server.
- * Response: [ListAllTerminalsResponse].
- */
-export interface ListAllTerminals {
-	/** optional structured query to filter servers. */
-	query?: ServerQuery;
-	/**
-	 * Force a fresh call to Periphery for the list.
-	 * Otherwise the response will be cached for 30s
-	 */
-	fresh?: boolean;
+	/** Filter by container name. */
+	containers?: string[];
 }
 
 /**
@@ -7119,17 +6998,14 @@ export interface ListTags {
 }
 
 /**
- * List the current terminals on specified server.
+ * List Terminals.
  * Response: [ListTerminalsResponse].
  */
 export interface ListTerminals {
-	/** Id or name */
-	server: string;
-	/**
-	 * Force a fresh call to Periphery for the list.
-	 * Otherwise the response will be cached for 30s
-	 */
-	fresh?: boolean;
+	/** Filter the Terminals returned by the Target. */
+	target?: TerminalTarget;
+	/** Return results with resource names instead of ids. */
+	use_names?: boolean;
 }
 
 /**
@@ -7641,6 +7517,12 @@ export interface RepoExecutionResponse {
 	commit_hash?: string;
 	/** Latest commit message, if it could be retrieved */
 	commit_message?: string;
+}
+
+/** JSON structure to send new terminal window dimensions */
+export interface ResizeDimensions {
+	rows: number;
+	cols: number;
 }
 
 export interface ResourceToml<PartialConfig> {
@@ -8634,11 +8516,6 @@ export type AuthRequest =
 	| { type: "ExchangeForJwt", params: ExchangeForJwt }
 	| { type: "GetUser", params: GetUser };
 
-export enum ContainerTerminalMode {
-	Exec = "exec",
-	Attach = "attach",
-}
-
 /** Days of the week */
 export enum DayOfWeek {
 	Monday = "Monday",
@@ -8841,7 +8718,6 @@ export type ReadRequest =
 	| { type: "ListServers", params: ListServers }
 	| { type: "ListFullServers", params: ListFullServers }
 	| { type: "ListTerminals", params: ListTerminals }
-	| { type: "ListAllTerminals", params: ListAllTerminals }
 	| { type: "GetDockerContainersSummary", params: GetDockerContainersSummary }
 	| { type: "ListAllDockerContainers", params: ListAllDockerContainers }
 	| { type: "ListDockerContainers", params: ListDockerContainers }
@@ -9012,10 +8888,6 @@ export type WriteRequest =
 	| { type: "UpdateServer", params: UpdateServer }
 	| { type: "RenameServer", params: RenameServer }
 	| { type: "CreateNetwork", params: CreateNetwork }
-	| { type: "CreateTerminal", params: CreateTerminal }
-	| { type: "DeleteTerminal", params: DeleteTerminal }
-	| { type: "DeleteAllTerminals", params: DeleteAllTerminals }
-	| { type: "BatchDeleteAllTerminals", params: BatchDeleteAllTerminals }
 	| { type: "UpdateServerPublicKey", params: UpdateServerPublicKey }
 	| { type: "RotateServerKeys", params: RotateServerKeys }
 	| { type: "CreateStack", params: CreateStack }
@@ -9072,6 +8944,10 @@ export type WriteRequest =
 	| { type: "WriteSyncFileContents", params: WriteSyncFileContents }
 	| { type: "CommitSync", params: CommitSync }
 	| { type: "RefreshResourceSyncPending", params: RefreshResourceSyncPending }
+	| { type: "CreateTerminal", params: CreateTerminal }
+	| { type: "DeleteTerminal", params: DeleteTerminal }
+	| { type: "DeleteAllTerminals", params: DeleteAllTerminals }
+	| { type: "BatchDeleteAllTerminals", params: BatchDeleteAllTerminals }
 	| { type: "CreateTag", params: CreateTag }
 	| { type: "DeleteTag", params: DeleteTag }
 	| { type: "RenameTag", params: RenameTag }

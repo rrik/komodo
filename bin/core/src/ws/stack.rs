@@ -4,12 +4,10 @@ use axum::{
 };
 use futures_util::SinkExt;
 use komodo_client::{
-  api::{
-    terminal::{ConnectStackAttachQuery, ConnectStackExecQuery},
-    write::TerminalRecreateMode,
-  },
+  api::terminal::{ConnectStackAttachQuery, ConnectStackExecQuery},
   entities::{
     permission::PermissionLevel, server::Server, stack::Stack,
+    terminal::TerminalTarget,
   },
 };
 
@@ -23,26 +21,37 @@ pub async fn exec(
   Query(ConnectStackExecQuery {
     stack,
     service,
-    shell,
-    recreate,
+    terminal,
+    init,
   }): Query<ConnectStackExecQuery>,
   ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
   ws.on_upgrade(async move |socket| {
-    let Some((client_socket, server, container)) =
-      login_get_server_container(socket, &stack, &service).await
+    let Some((mut client_socket, target, server, container)) =
+      login_get_target_server_container(socket, &stack, service)
+        .await
     else {
       return;
     };
 
-    super::handle_container_exec_terminal(
-      client_socket,
-      &server,
-      container,
-      shell,
-      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
-    )
-    .await
+    let (periphery, response) =
+      match super::setup_container_exec_terminal(
+        target, &server, container, terminal, init,
+      )
+      .await
+      {
+        Ok(response) => response,
+        Err(e) => {
+          let _ = client_socket
+            .send(Message::text(format!("ERROR: {e:#}")))
+            .await;
+          let _ = client_socket.close().await;
+          return;
+        }
+      };
+
+    super::forward_ws_channel(periphery, client_socket, response)
+      .await
   })
 }
 
@@ -51,32 +60,49 @@ pub async fn attach(
   Query(ConnectStackAttachQuery {
     stack,
     service,
-    recreate,
+    terminal,
   }): Query<ConnectStackAttachQuery>,
   ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
   ws.on_upgrade(async move |socket| {
-    let Some((client_socket, server, container)) =
-      login_get_server_container(socket, &stack, &service).await
+    let Some((mut client_socket, target, server, container)) =
+      login_get_target_server_container(socket, &stack, service)
+        .await
     else {
       return;
     };
 
-    super::handle_container_attach_terminal(
-      client_socket,
-      &server,
-      container,
-      recreate.unwrap_or(TerminalRecreateMode::DifferentCommand),
-    )
-    .await
+    let (periphery, response) =
+      match super::setup_container_attach_terminal(
+        target, &server, container, terminal,
+      )
+      .await
+      {
+        Ok(response) => response,
+        Err(e) => {
+          let _ = client_socket
+            .send(Message::text(format!("ERROR: {e:#}")))
+            .await;
+          let _ = client_socket.close().await;
+          return;
+        }
+      };
+
+    super::forward_ws_channel(periphery, client_socket, response)
+      .await
   })
 }
 
-async fn login_get_server_container(
+async fn login_get_target_server_container(
   socket: axum::extract::ws::WebSocket,
   stack: &str,
-  service: &str,
-) -> Option<(axum::extract::ws::WebSocket, Server, String)> {
+  service: String,
+) -> Option<(
+  axum::extract::ws::WebSocket,
+  TerminalTarget,
+  Server,
+  String,
+)> {
   let (mut client_socket, user) =
     super::user_ws_login(socket).await?;
 
@@ -149,5 +175,10 @@ async fn login_get_server_container(
     }
   };
 
-  Some((client_socket, server, container))
+  let target = TerminalTarget::Stack {
+    stack: stack.id,
+    service: Some(service),
+  };
+
+  Some((client_socket, target, server, container))
 }

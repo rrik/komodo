@@ -1,12 +1,10 @@
 use derive_empty_traits::EmptyTraits;
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
-use strum::AsRefStr;
 use typeshare::typeshare;
 
 use crate::entities::{
-  NoData,
-  server::{_PartialServerConfig, Server, ServerQuery},
+  server::{_PartialServerConfig, Server},
   update::Update,
 };
 
@@ -128,102 +126,6 @@ pub struct CreateNetwork {
   pub server: String,
   /// The name of the network to create.
   pub name: String,
-}
-
-//
-
-/// Configures the behavior of [CreateTerminal] if the
-/// specified terminal name already exists.
-#[typeshare]
-#[derive(
-  Debug, Clone, Copy, Default, Serialize, Deserialize, AsRefStr,
-)]
-pub enum TerminalRecreateMode {
-  /// Never kill the old terminal if it already exists.
-  /// If the command is different, returns error.
-  #[default]
-  Never,
-  /// Always kill the old terminal and create new one
-  Always,
-  /// Only kill and recreate if the command is different.
-  DifferentCommand,
-}
-
-/// Create a terminal on the server.
-/// Response: [NoData]
-#[typeshare]
-#[derive(
-  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
-)]
-#[empty_traits(KomodoWriteRequest)]
-#[response(NoData)]
-#[error(serror::Error)]
-pub struct CreateTerminal {
-  /// Server Id or name
-  pub server: String,
-  /// The name of the terminal on the server to create.
-  pub name: String,
-  /// The shell command (eg `bash`) to init the shell.
-  ///
-  /// This can also include args:
-  /// `docker exec -it container sh`
-  ///
-  /// Default: Configured on each Periphery
-  pub command: Option<String>,
-  /// Default: `Never`
-  #[serde(default)]
-  pub recreate: TerminalRecreateMode,
-}
-
-//
-
-/// Delete a terminal on the server.
-/// Response: [NoData]
-#[typeshare]
-#[derive(
-  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
-)]
-#[empty_traits(KomodoWriteRequest)]
-#[response(NoData)]
-#[error(serror::Error)]
-pub struct DeleteTerminal {
-  /// Server Id or name
-  pub server: String,
-  /// The name of the terminal on the server to delete.
-  pub terminal: String,
-}
-
-//
-
-/// Delete all terminals on the server.
-/// Response: [NoData]
-#[typeshare]
-#[derive(
-  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
-)]
-#[empty_traits(KomodoWriteRequest)]
-#[response(NoData)]
-#[error(serror::Error)]
-pub struct DeleteAllTerminals {
-  /// Server Id or name
-  pub server: String,
-}
-
-//
-
-/// Delete all terminals on many or all Servers.
-/// Response: [NoData]
-#[typeshare]
-#[derive(
-  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
-)]
-#[empty_traits(KomodoWriteRequest)]
-#[response(NoData)]
-#[error(serror::Error)]
-pub struct BatchDeleteAllTerminals {
-  /// optional structured query to filter servers.
-  #[serde(default)]
-  pub query: ServerQuery,
 }
 
 //

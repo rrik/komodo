@@ -34,6 +34,7 @@ mod service_user;
 mod stack;
 mod sync;
 mod tag;
+mod terminal;
 mod user;
 mod user_group;
 mod variable;
@@ -89,10 +90,6 @@ pub enum WriteRequest {
   UpdateServer(UpdateServer),
   RenameServer(RenameServer),
   CreateNetwork(CreateNetwork),
-  CreateTerminal(CreateTerminal),
-  DeleteTerminal(DeleteTerminal),
-  DeleteAllTerminals(DeleteAllTerminals),
-  BatchDeleteAllTerminals(BatchDeleteAllTerminals),
   UpdateServerPublicKey(UpdateServerPublicKey),
   RotateServerKeys(RotateServerKeys),
 
@@ -167,6 +164,12 @@ pub enum WriteRequest {
   WriteSyncFileContents(WriteSyncFileContents),
   CommitSync(CommitSync),
   RefreshResourceSyncPending(RefreshResourceSyncPending),
+
+  // ==== TERMINAL ====
+  CreateTerminal(CreateTerminal),
+  DeleteTerminal(DeleteTerminal),
+  DeleteAllTerminals(DeleteAllTerminals),
+  BatchDeleteAllTerminals(BatchDeleteAllTerminals),
 
   // ==== TAG ====
   CreateTag(CreateTag),

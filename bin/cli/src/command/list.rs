@@ -5,10 +5,9 @@ use futures_util::{FutureExt, try_join};
 use komodo_client::{
   KomodoClient,
   api::read::{
-    ListActions, ListAlerters, ListAllTerminals, ListBuilders,
-    ListBuilds, ListDeployments, ListProcedures, ListRepos,
-    ListResourceSyncs, ListSchedules, ListServers, ListStacks,
-    ListTags,
+    ListActions, ListAlerters, ListBuilders, ListBuilds,
+    ListDeployments, ListProcedures, ListRepos, ListResourceSyncs,
+    ListSchedules, ListServers, ListStacks, ListTags, ListTerminals,
   },
   entities::{
     ResourceTargetVariant,
@@ -27,20 +26,16 @@ use komodo_client::{
       ProcedureListItem, ProcedureListItemInfo, ProcedureState,
     },
     repo::{RepoListItem, RepoListItemInfo, RepoState},
-    resource::{
-      ResourceListItem, ResourceQuery, TemplatesQueryBehavior,
-    },
+    resource::{ResourceListItem, ResourceQuery},
     resource_link,
     schedule::Schedule,
-    server::{
-      ServerListItem, ServerListItemInfo, ServerState,
-      TerminalInfoWithServer,
-    },
+    server::{ServerListItem, ServerListItemInfo, ServerState},
     stack::{StackListItem, StackListItemInfo, StackState},
     sync::{
       ResourceSyncListItem, ResourceSyncListItemInfo,
       ResourceSyncState,
     },
+    terminal::Terminal,
   },
 };
 use serde::Serialize;
@@ -202,30 +197,16 @@ async fn list_terminals(
   filters: &ResourceFilters,
 ) -> anyhow::Result<()> {
   let client = crate::command::komodo_client().await?;
-  let query = ResourceQuery::builder()
-    .tags(filters.tags.clone())
-    .templates(TemplatesQueryBehavior::Exclude)
-    .build();
-  let (mut terminals, servers) = tokio::try_join!(
-    client.read(ListAllTerminals {
-      query: query.clone(),
-      fresh: true,
-    }),
-    client
-      .read(ListServers { query })
-      .map(|res| res.map(|res| res
-        .into_iter()
-        .map(|t| (t.id, t.name))
-        .collect::<HashMap<_, _>>()))
-  )?;
-  // Fix server ids -> names
-  terminals.iter_mut().for_each(|terminal| {
-    let Some(name) = servers.get(&terminal.server_id) else {
-      terminal.server_id = String::new();
-      return;
-    };
-    terminal.server_id.clone_from(name);
-  });
+  // let query = ResourceQuery::builder()
+  //   .tags(filters.tags.clone())
+  //   .templates(TemplatesQueryBehavior::Exclude)
+  //   .build();
+  let terminals = client
+    .read(ListTerminals {
+      target: None,
+      use_names: true,
+    })
+    .await?;
   if !terminals.is_empty() {
     print_items(terminals, filters.format, filters.links)?;
   }
@@ -1177,14 +1158,14 @@ impl PrintTable for ResourceListItem<AlerterListItemInfo> {
   }
 }
 
-impl PrintTable for TerminalInfoWithServer {
+impl PrintTable for Terminal {
   fn header(_links: bool) -> &'static [&'static str] {
-    &["Terminal", "Server", "Command", "Size", "Created"]
+    &["Terminal", "Target", "Command", "Size", "Created"]
   }
   fn row(self, _links: bool) -> Vec<comfy_table::Cell> {
     vec![
       Cell::new(self.name).add_attribute(Attribute::Bold),
-      Cell::new(self.server_id),
+      Cell::new(format!("{:?}", self.target)),
       Cell::new(self.command),
       Cell::new(if self.stored_size_kb < 1.0 {
         format!("{:.1} KiB", self.stored_size_kb)

@@ -27,13 +27,13 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ContainerLogs } from "./log";
 import { Actions } from "./actions";
-import { ConnectExecQuery, Types } from "komodo_client";
+import { Types } from "komodo_client";
 import { container_state_intention } from "@lib/color";
 import { UsableResource } from "@types";
 import { Fragment } from "react/jsx-runtime";
 import { usePermissions } from "@lib/hooks";
 import { ResourceNotifications } from "@pages/resource-notifications";
-import { ContainerTerminal } from "@components/terminal/container";
+import { ContainerTerminals } from "@components/terminal/container";
 import { ContainerInspect } from "./inspect";
 import { useMemo } from "react";
 import {
@@ -286,17 +286,14 @@ const ContainerTabs = ({
     />
   );
 
-  const terminalQuery = useMemo(
-    () =>
-      ({
-        type: "container",
-        query: {
-          server,
-          container,
-          // This is handled inside ContainerTerminal
-          shell: "",
-        },
-      }) as ConnectExecQuery,
+  const target: Types.TerminalTarget = useMemo(
+    () => ({
+      type: "Container",
+      params: {
+        server,
+        container,
+      },
+    }),
     [server, container]
   );
 
@@ -319,7 +316,7 @@ const ContainerTabs = ({
         />
       );
     case "Terminal":
-      return <ContainerTerminal query={terminalQuery} titleOther={Selector} />;
+      return <ContainerTerminals target={target} titleOther={Selector} />;
   }
 };
 

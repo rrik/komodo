@@ -5,7 +5,8 @@ use std::{
 
 use anyhow::{Context, anyhow};
 use command::{
-  run_komodo_command, run_komodo_command_with_sanitization,
+  KomodoCommandMode, run_komodo_command_with_sanitization,
+  run_komodo_standard_command,
 };
 use formatting::format_serror;
 use interpolate::Interpolator;
@@ -267,7 +268,7 @@ impl Resolve<super::Args> for build::Build {
         "Pre Build",
         pre_build_path.as_path(),
         &pre_build.command,
-        true,
+        KomodoCommandMode::Multiline,
         &replacers,
       )
       .instrument(span)
@@ -323,7 +324,7 @@ impl Resolve<super::Args> for build::Build {
       "Docker Build",
       build_path.as_ref(),
       command,
-      false,
+      KomodoCommandMode::Shell,
       &replacers,
     )
     .instrument(span)
@@ -349,7 +350,10 @@ impl Resolve<super::Args> for PruneBuilders {
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker builder prune -a -f");
-    Ok(run_komodo_command("Prune Builders", None, command).await)
+    Ok(
+      run_komodo_standard_command("Prune Builders", None, command)
+        .await,
+    )
   }
 }
 
@@ -366,6 +370,9 @@ impl Resolve<super::Args> for PruneBuildx {
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Log> {
     let command = String::from("docker buildx prune -a -f");
-    Ok(run_komodo_command("Prune Buildx", None, command).await)
+    Ok(
+      run_komodo_standard_command("Prune Buildx", None, command)
+        .await,
+    )
   }
 }

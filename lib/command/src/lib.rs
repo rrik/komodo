@@ -4,20 +4,33 @@ use komodo_client::{
   entities::{komodo_timestamp, update::Log},
   parsers::parse_multiline_command,
 };
-use run_command::{CommandOutput, async_run_command};
 
-pub async fn run_komodo_command(
+mod output;
+
+pub use output::*;
+use tokio::process::Command;
+
+/// Commands are run directly, and cannot include '&&'
+pub async fn run_komodo_standard_command(
   stage: &str,
   path: impl Into<Option<&Path>>,
-  command: impl AsRef<str>,
+  command: impl Into<String>,
 ) -> Log {
-  let command = if let Some(path) = path.into() {
-    format!("cd {} && {}", path.display(), command.as_ref())
-  } else {
-    command.as_ref().to_string()
-  };
+  let command = command.into();
   let start_ts = komodo_timestamp();
-  let output = async_run_command(&command).await;
+  let output = run_standard_command(&command, path).await;
+  output_into_log(stage, command, start_ts, output)
+}
+
+/// Commands are wrapped in 'sh -c', and can include '&&'
+pub async fn run_komodo_shell_command(
+  stage: &str,
+  path: impl Into<Option<&Path>>,
+  command: impl Into<String>,
+) -> Log {
+  let command = command.into();
+  let start_ts = komodo_timestamp();
+  let output = run_shell_command(&command, path).await;
   output_into_log(stage, command, start_ts, output)
 }
 
@@ -28,7 +41,7 @@ pub async fn run_komodo_command(
 ///
 /// The result may be None if the command is empty after parsing,
 /// ie if all the lines are commented out.
-pub async fn run_komodo_command_multiline(
+pub async fn run_komodo_multiline_command(
   stage: &str,
   path: impl Into<Option<&Path>>,
   command: impl AsRef<str>,
@@ -37,7 +50,13 @@ pub async fn run_komodo_command_multiline(
   if command.is_empty() {
     return None;
   }
-  Some(run_komodo_command(stage, path, command).await)
+  Some(run_komodo_shell_command(stage, path, command).await)
+}
+
+pub enum KomodoCommandMode {
+  Standard,
+  Shell,
+  Multiline,
 }
 
 /// Executes the command, and sanitizes the output to avoid exposing secrets in the log.
@@ -52,13 +71,27 @@ pub async fn run_komodo_command_with_sanitization(
   stage: &str,
   path: impl Into<Option<&Path>>,
   command: impl AsRef<str>,
-  parse_multiline: bool,
+  mode: KomodoCommandMode,
   replacers: &[(String, String)],
 ) -> Option<Log> {
-  let mut log = if parse_multiline {
-    run_komodo_command_multiline(stage, path, command).await
-  } else {
-    run_komodo_command(stage, path, command).await.into()
+  let mut log = match mode {
+    KomodoCommandMode::Standard => run_komodo_standard_command(
+      stage,
+      path,
+      command.as_ref().to_string(),
+    )
+    .await
+    .into(),
+    KomodoCommandMode::Shell => run_komodo_shell_command(
+      stage,
+      path,
+      command.as_ref().to_string(),
+    )
+    .await
+    .into(),
+    KomodoCommandMode::Multiline => {
+      run_komodo_multiline_command(stage, path, command).await
+    }
   }?;
 
   // Sanitize the command and output
@@ -85,4 +118,51 @@ pub fn output_into_log(
     start_ts,
     end_ts: komodo_timestamp(),
   }
+}
+
+/// Commands are run directly, and cannot include '&&'
+pub async fn run_standard_command(
+  command: &str,
+  path: impl Into<Option<&Path>>,
+) -> CommandOutput {
+  let lexed = if let Some(lexed) = shlex::split(command)
+    && !lexed.is_empty()
+  {
+    lexed
+  } else {
+    return CommandOutput::from(Err(std::io::Error::other(
+      "Command lexed into empty args",
+    )));
+  };
+  let mut cmd = Command::new(&lexed[0]);
+  cmd.args(&lexed[1..]);
+  if let Some(path) = path.into() {
+    match path.canonicalize() {
+      Ok(path) => {
+        cmd.current_dir(path);
+      }
+      Err(e) => return CommandOutput::from(Err(e)),
+    }
+  }
+  let output = cmd.output().await;
+  CommandOutput::from(output)
+}
+
+/// Commands are wrapped in 'sh -c', and can include '&&'
+pub async fn run_shell_command(
+  command: &str,
+  path: impl Into<Option<&Path>>,
+) -> CommandOutput {
+  let mut cmd = Command::new("sh");
+  cmd.arg("-c").arg(command);
+  if let Some(path) = path.into() {
+    match path.canonicalize() {
+      Ok(path) => {
+        cmd.current_dir(path);
+      }
+      Err(e) => return CommandOutput::from(Err(e)),
+    }
+  }
+  let output = cmd.output().await;
+  CommandOutput::from(output)
 }

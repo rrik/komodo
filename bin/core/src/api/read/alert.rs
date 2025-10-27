@@ -9,14 +9,14 @@ use komodo_client::{
     GetAlert, GetAlertResponse, ListAlerts, ListAlertsResponse,
   },
   entities::{
-    deployment::Deployment, server::Server, stack::Stack,
-    sync::ResourceSync,
+    deployment::Deployment, permission::PermissionLevel,
+    server::Server, stack::Stack, sync::ResourceSync,
   },
 };
 use resolver_api::Resolve;
 
 use crate::{
-  config::core_config, permission::get_resource_ids_for_user,
+  config::core_config, permission::list_resource_ids_for_user,
   state::db_client,
 };
 
@@ -31,14 +31,29 @@ impl Resolve<ReadArgs> for ListAlerts {
   ) -> serror::Result<ListAlertsResponse> {
     let mut query = self.query.unwrap_or_default();
     if !user.admin && !core_config().transparent_mode {
-      let server_ids =
-        get_resource_ids_for_user::<Server>(user).await?;
-      let stack_ids =
-        get_resource_ids_for_user::<Stack>(user).await?;
-      let deployment_ids =
-        get_resource_ids_for_user::<Deployment>(user).await?;
-      let sync_ids =
-        get_resource_ids_for_user::<ResourceSync>(user).await?;
+      let (server_ids, stack_ids, deployment_ids, sync_ids) = tokio::try_join!(
+        list_resource_ids_for_user::<Server>(
+          None,
+          user,
+          PermissionLevel::Read.into(),
+        ),
+        list_resource_ids_for_user::<Stack>(
+          None,
+          user,
+          PermissionLevel::Read.into(),
+        ),
+        list_resource_ids_for_user::<Deployment>(
+          None,
+          user,
+          PermissionLevel::Read.into(),
+        ),
+        list_resource_ids_for_user::<ResourceSync>(
+          None,
+          user,
+          PermissionLevel::Read.into(),
+        )
+      )?;
+      // All of the vecs will be non-none if !admin and !transparent mode.
       query.extend(doc! {
         "$or": [
           { "target.type": "Server", "target.id": { "$in": &server_ids } },

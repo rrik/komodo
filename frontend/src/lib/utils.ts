@@ -269,3 +269,18 @@ export const file_contents_empty = (contents?: string) => {
       .filter((line) => line.length !== 0 && !line.startsWith("#")).length === 0
   );
 };
+
+export const resourceTargetFromTerminalTarget = (
+  target: Types.TerminalTarget
+): Types.ResourceTarget => {
+  switch (target.type) {
+    case "Server":
+      return { type: "Server", id: target.params.server! };
+    case "Container":
+      return { type: "Server", id: target.params.server };
+    case "Stack":
+      return { type: "Stack", id: target.params.stack };
+    case "Deployment":
+      return { type: "Deployment", id: target.params.deployment };
+  }
+};

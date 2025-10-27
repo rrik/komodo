@@ -30,6 +30,7 @@ pub mod matcher;
 pub mod procedure;
 pub mod prune;
 pub mod query;
+pub mod terminal;
 pub mod update;
 
 // pub mod resource;

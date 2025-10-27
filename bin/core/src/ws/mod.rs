@@ -7,22 +7,20 @@ use crate::{
 use anyhow::anyhow;
 use axum::{
   Router,
-  extract::ws::{self, WebSocket},
+  extract::{
+    FromRequestParts,
+    ws::{self, WebSocket},
+  },
+  http::request,
   routing::get,
 };
 use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
-use komodo_client::{
-  api::write::TerminalRecreateMode,
-  entities::{server::Server, user::User},
-  ws::WsLoginMessage,
-};
+use komodo_client::{entities::user::User, ws::WsLoginMessage};
 use periphery_client::api::terminal::DisconnectTerminal;
+use serde::de::DeserializeOwned;
 use tokio_util::sync::CancellationToken;
 
-mod container;
-mod deployment;
-mod stack;
 mod terminal;
 mod update;
 
@@ -33,12 +31,6 @@ pub fn router() -> Router {
     // User facing
     .route("/update", get(update::handler))
     .route("/terminal", get(terminal::handler))
-    .route("/container/terminal", get(container::exec))
-    .route("/container/terminal/attach", get(container::attach))
-    .route("/deployment/terminal", get(deployment::exec))
-    .route("/deployment/terminal/attach", get(deployment::attach))
-    .route("/stack/terminal", get(stack::exec))
-    .route("/stack/terminal/attach", get(stack::attach))
 }
 
 async fn user_ws_login(
@@ -130,93 +122,6 @@ async fn check_user_valid(user_id: &str) -> anyhow::Result<User> {
   Ok(user)
 }
 
-async fn handle_container_exec_terminal(
-  mut client_socket: WebSocket,
-  server: &Server,
-  container: String,
-  shell: String,
-  recreate: TerminalRecreateMode,
-) {
-  let periphery = match crate::helpers::periphery_client(server).await
-  {
-    Ok(periphery) => periphery,
-    Err(e) => {
-      debug!("couldn't get periphery | {e:#}");
-      let _ = client_socket
-        .send(ws::Message::text(format!("ERROR: {e:#}")))
-        .await;
-      let _ = client_socket.close().await;
-      return;
-    }
-  };
-
-  trace!("connecting to periphery container exec websocket");
-
-  let response = match periphery
-    .connect_container_exec(container, shell, recreate)
-    .await
-  {
-    Ok(ws) => ws,
-    Err(e) => {
-      debug!(
-        "Failed connect to periphery container exec websocket | {e:#}"
-      );
-      let _ = client_socket
-        .send(ws::Message::text(format!("ERROR: {e:#}")))
-        .await;
-      let _ = client_socket.close().await;
-      return;
-    }
-  };
-
-  trace!("connected to periphery container exec websocket");
-
-  forward_ws_channel(periphery, client_socket, response).await
-}
-
-async fn handle_container_attach_terminal(
-  mut client_socket: WebSocket,
-  server: &Server,
-  container: String,
-  recreate: TerminalRecreateMode,
-) {
-  let periphery = match crate::helpers::periphery_client(server).await
-  {
-    Ok(periphery) => periphery,
-    Err(e) => {
-      debug!("couldn't get periphery | {e:#}");
-      let _ = client_socket
-        .send(ws::Message::text(format!("ERROR: {e:#}")))
-        .await;
-      let _ = client_socket.close().await;
-      return;
-    }
-  };
-
-  trace!("connecting to periphery container exec websocket");
-
-  let response = match periphery
-    .connect_container_attach(container, recreate)
-    .await
-  {
-    Ok(ws) => ws,
-    Err(e) => {
-      debug!(
-        "Failed connect to periphery container attach websocket | {e:#}"
-      );
-      let _ = client_socket
-        .send(ws::Message::text(format!("ERROR: {e:#}")))
-        .await;
-      let _ = client_socket.close().await;
-      return;
-    }
-  };
-
-  trace!("connected to periphery container attach websocket");
-
-  forward_ws_channel(periphery, client_socket, response).await
-}
-
 async fn forward_ws_channel(
   periphery: PeripheryClient,
   client_socket: axum::extract::ws::WebSocket,
@@ -238,59 +143,44 @@ async fn forward_ws_channel(
       let client_recv_res = tokio::select! {
         res = client_receive.next() => res,
         _ = cancel.cancelled() => {
-          trace!("core to periphery read: cancelled from inside");
+          let _ = periphery_sender
+            .send_terminal(
+              channel,
+              Err(anyhow!("Client disconnected")),
+            )
+            .await;
           break;
         }
       };
       match client_recv_res {
         Some(Ok(ws::Message::Binary(bytes))) => {
-          if let Err(e) = periphery_sender
+          if let Err(_e) = periphery_sender
             .send_terminal(channel, Ok(bytes.into()))
             .await
           {
-            debug!("Failed to send terminal message | {e:?}",);
             cancel.cancel();
             break;
           };
         }
         Some(Ok(ws::Message::Text(text))) => {
           let bytes: Bytes = text.into();
-          if let Err(e) = periphery_sender
+          if let Err(_e) = periphery_sender
             .send_terminal(channel, Ok(bytes.into()))
             .await
           {
-            debug!("Failed to send terminal message | {e:?}",);
             cancel.cancel();
             break;
           };
         }
         Some(Ok(ws::Message::Close(_frame))) => {
-          let _ = periphery_sender
-            .send_terminal(
-              channel,
-              Err(anyhow!("Client disconnected")),
-            )
-            .await;
           cancel.cancel();
           break;
         }
         Some(Err(_e)) => {
-          let _ = periphery_sender
-            .send_terminal(
-              channel,
-              Err(anyhow!("Client disconnected")),
-            )
-            .await;
           cancel.cancel();
           break;
         }
         None => {
-          let _ = periphery_sender
-            .send_terminal(
-              channel,
-              Err(anyhow!("Client disconnected")),
-            )
-            .await;
           cancel.cancel();
           break;
         }
@@ -345,5 +235,28 @@ async fn forward_ws_channel(
     periphery_connections().get(&periphery.id).await
   {
     connection.terminals.remove(&channel).await;
+  }
+}
+
+pub struct Qs<T>(pub T);
+
+impl<S, T> FromRequestParts<S> for Qs<T>
+where
+  S: Send + Sync,
+  T: DeserializeOwned,
+{
+  type Rejection = axum::response::Response;
+
+  async fn from_request_parts(
+    parts: &mut request::Parts,
+    _state: &S,
+  ) -> Result<Self, Self::Rejection> {
+    let raw = parts.uri.query().unwrap_or_default();
+    serde_qs::from_str::<T>(raw).map(Qs).map_err(|e| {
+      axum::response::IntoResponse::into_response((
+        axum::http::StatusCode::BAD_REQUEST,
+        format!("Failed to parse request query: {e}"),
+      ))
+    })
   }
 }

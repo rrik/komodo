@@ -60,17 +60,15 @@ fn clone_anyhow_error(e: &anyhow::Error) -> anyhow::Error {
 }
 
 #[derive(Debug)]
-pub struct CloneCache<K: PartialEq + Eq + Hash, T: Clone> {
-  cache: RwLock<HashMap<K, T>>,
-}
+pub struct CloneCache<K: PartialEq + Eq + Hash, T: Clone>(
+  RwLock<HashMap<K, T>>,
+);
 
 impl<K: PartialEq + Eq + Hash, T: Clone> Default
   for CloneCache<K, T>
 {
   fn default() -> Self {
-    Self {
-      cache: RwLock::new(HashMap::new()),
-    }
+    Self(RwLock::new(HashMap::new()))
   }
 }
 
@@ -78,21 +76,21 @@ impl<K: PartialEq + Eq + Hash + std::fmt::Debug + Clone, T: Clone>
   CloneCache<K, T>
 {
   pub async fn get(&self, key: &K) -> Option<T> {
-    self.cache.read().await.get(key).cloned()
+    self.0.read().await.get(key).cloned()
   }
 
   pub async fn get_keys(&self) -> Vec<K> {
-    let cache = self.cache.read().await;
+    let cache = self.0.read().await;
     cache.keys().cloned().collect()
   }
 
   pub async fn get_values(&self) -> Vec<T> {
-    let cache = self.cache.read().await;
+    let cache = self.0.read().await;
     cache.values().cloned().collect()
   }
 
   pub async fn get_entries(&self) -> Vec<(K, T)> {
-    let cache = self.cache.read().await;
+    let cache = self.0.read().await;
     cache.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
   }
 
@@ -101,11 +99,11 @@ impl<K: PartialEq + Eq + Hash + std::fmt::Debug + Clone, T: Clone>
     T: std::fmt::Debug,
     Key: Into<K> + std::fmt::Debug,
   {
-    self.cache.write().await.insert(key.into(), val)
+    self.0.write().await.insert(key.into(), val)
   }
 
   pub async fn remove(&self, key: &K) -> Option<T> {
-    self.cache.write().await.remove(key)
+    self.0.write().await.remove(key)
   }
 }
 
@@ -115,12 +113,79 @@ impl<
 > CloneCache<K, T>
 {
   pub async fn get_or_insert_default(&self, key: &K) -> T {
-    let mut lock = self.cache.write().await;
+    let mut lock = self.0.write().await;
     match lock.get(key).cloned() {
       Some(item) => item,
       None => {
         let item: T = Default::default();
         lock.insert(key.clone(), item.clone());
+        item
+      }
+    }
+  }
+}
+
+pub struct CloneVecCache<T: Clone>(RwLock<Vec<T>>);
+
+impl<T: Clone> Default for CloneVecCache<T> {
+  fn default() -> Self {
+    Self(RwLock::new(Vec::new()))
+  }
+}
+
+impl<T: Clone> CloneVecCache<T> {
+  pub async fn find(
+    &self,
+    find: impl FnMut(&&T) -> bool,
+  ) -> Option<T> {
+    self.0.read().await.iter().find(find).cloned()
+  }
+
+  pub async fn list(&self) -> Vec<T> {
+    self.0.read().await.clone()
+  }
+
+  pub async fn insert(
+    &self,
+    find: impl FnMut(&T) -> bool,
+    mut val: T,
+  ) -> Option<T> {
+    let mut cache = self.0.write().await;
+    let index = cache.iter().position(find);
+    if let Some(index) = index {
+      std::mem::swap(&mut cache[index], &mut val);
+      Some(val)
+    } else {
+      cache.push(val);
+      None
+    }
+  }
+
+  pub async fn remove(
+    &self,
+    find: impl FnMut(&T) -> bool,
+  ) -> Option<T> {
+    let mut cache = self.0.write().await;
+    let index = cache.iter().position(find)?;
+    Some(cache.swap_remove(index))
+  }
+
+  pub async fn retain(&self, keep: impl FnMut(&T) -> bool) {
+    self.0.write().await.retain(keep);
+  }
+}
+
+impl<T: Clone + Default> CloneVecCache<T> {
+  pub async fn find_or_insert_default(
+    &self,
+    find: impl FnMut(&&T) -> bool,
+  ) -> T {
+    let mut cache = self.0.write().await;
+    match cache.iter().find(find).cloned() {
+      Some(item) => item,
+      None => {
+        let item: T = Default::default();
+        cache.push(item.clone());
         item
       }
     }

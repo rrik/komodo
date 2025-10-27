@@ -13,7 +13,5 @@ formatting.workspace = true
 command.workspace = true
 cache.workspace = true
 #
-run_command.workspace = true
-#
 anyhow.workspace = true
 tokio.workspace = true

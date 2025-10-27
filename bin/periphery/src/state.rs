@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{Context, anyhow};
 use arc_swap::ArcSwap;
-use cache::CloneCache;
+use cache::{CloneCache, CloneVecCache};
 use komodo_client::entities::docker::container::ContainerStats;
 use noise::key::{RotatableKeyPair, SpkiPublicKey};
 use periphery_client::transport::EncodedTransportMessage;
@@ -20,7 +20,7 @@ use crate::{
   docker::DockerClient,
   helpers::resolve_host_public_ip,
   stats::StatsClient,
-  terminal::{StdinMsg, Terminal},
+  terminal::{PeripheryTerminal, StdinMsg},
 };
 
 /// Should call in startup to ensure Periphery errors without valid private key.
@@ -168,12 +168,9 @@ pub fn stats_client() -> &'static RwLock<StatsClient> {
   STATS_CLIENT.get_or_init(|| RwLock::new(StatsClient::default()))
 }
 
-pub type PtyName = String;
-pub type PtyMap =
-  tokio::sync::RwLock<HashMap<PtyName, Arc<Terminal>>>;
-
-pub fn terminals() -> &'static PtyMap {
-  static TERMINALS: OnceLock<PtyMap> = OnceLock::new();
+pub fn terminals() -> &'static CloneVecCache<Arc<PeripheryTerminal>> {
+  static TERMINALS: OnceLock<CloneVecCache<Arc<PeripheryTerminal>>> =
+    OnceLock::new();
   TERMINALS.get_or_init(Default::default)
 }
 

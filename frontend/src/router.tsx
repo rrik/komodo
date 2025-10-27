@@ -108,10 +108,12 @@ export const Router = () => {
               <Route path=":type">
                 <Route path="" element={<Resources />} />
                 <Route path=":id" element={<Resource />} />
+                {/* Stack Service */}
                 <Route
                   path=":id/service/:service"
                   element={<StackServicePage />}
                 />
+                {/* Docker Resource */}
                 <Route
                   path=":id/container/:container"
                   element={<ContainerPage />}
@@ -119,8 +121,17 @@ export const Router = () => {
                 <Route path=":id/network/:network" element={<NetworkPage />} />
                 <Route path=":id/image/:image" element={<ImagePage />} />
                 <Route path=":id/volume/:volume" element={<VolumePage />} />
+                {/* TerminalPage */}
                 <Route
                   path=":id/terminal/:terminal"
+                  element={<TerminalPage />}
+                />
+                <Route
+                  path=":id/service/:service/terminal/:terminal"
+                  element={<TerminalPage />}
+                />
+                <Route
+                  path=":id/container/:container/terminal/:terminal"
                   element={<TerminalPage />}
                 />
               </Route>

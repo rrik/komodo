@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use anyhow::Context;
 use komodo_client::entities::{
-  resource::ResourceQuery, server::Server, user::User,
+  permission::PermissionLevel, resource::ResourceQuery,
+  server::Server, user::system_user,
 };
 
 use crate::resource;
@@ -33,10 +34,8 @@ async fn get_all_servers_map()
 {
   let servers = resource::list_full_for_user::<Server>(
     ResourceQuery::default(),
-    &User {
-      admin: true,
-      ..Default::default()
-    },
+    system_user(),
+    PermissionLevel::Read.into(),
     &[],
   )
   .await

@@ -1,5 +1,5 @@
 import { Section } from "@components/layouts";
-import { ReactNode, useCallback, useState } from "react";
+import { ReactNode, useCallback, useMemo, useState } from "react";
 import { komodo_client, useLocalStorage, useRead, useWrite } from "@lib/hooks";
 import { Card, CardContent, CardHeader } from "@ui/card";
 import { Badge } from "@ui/badge";
@@ -16,7 +16,7 @@ import {
 import { filterBySplit } from "@lib/utils";
 import { useServer } from "@components/resources/server";
 import { Terminal } from ".";
-import { TerminalCallbacks } from "komodo_client";
+import { TerminalCallbacks, Types } from "komodo_client";
 
 export const ServerTerminals = ({
   id,
@@ -25,11 +25,14 @@ export const ServerTerminals = ({
   id: string;
   titleOther?: ReactNode;
 }) => {
+  const target: Types.TerminalTarget = useMemo(
+    () => ({ type: "Server", params: { server: id } }),
+    [id]
+  );
   const { data: terminals, refetch: refetchTerminals } = useRead(
     "ListTerminals",
     {
-      server: id,
-      fresh: true,
+      target,
     },
     {
       refetchInterval: 5000,
@@ -55,7 +58,7 @@ export const ServerTerminals = ({
       terminals.map((t) => t.name)
     );
     await create_terminal({
-      server: id,
+      target,
       name,
       command,
     });
@@ -93,7 +96,7 @@ export const ServerTerminals = ({
                   variant="destructive"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    await delete_terminal({ server: id, terminal });
+                    await delete_terminal({ target, terminal });
                     refetchTerminals();
                     if (selected === terminal) {
                       setSelected({ selected: undefined });
@@ -147,7 +150,7 @@ export const ServerTerminal = ({
   const make_ws = useCallback(
     (callbacks: TerminalCallbacks) =>
       komodo_client().connect_terminal({
-        query: { server, terminal },
+        query: { target: { type: "Server", params: { server } }, terminal },
         ...callbacks,
       }),
     [server, terminal]

@@ -54,8 +54,13 @@ impl Resolve<ReadArgs> for ListBuilds {
       get_all_tags(None).await?
     };
     Ok(
-      resource::list_for_user::<Build>(self.query, user, &all_tags)
-        .await?,
+      resource::list_for_user::<Build>(
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
+      )
+      .await?,
     )
   }
 }
@@ -72,7 +77,10 @@ impl Resolve<ReadArgs> for ListFullBuilds {
     };
     Ok(
       resource::list_full_for_user::<Build>(
-        self.query, user, &all_tags,
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
       )
       .await?,
     )
@@ -108,6 +116,7 @@ impl Resolve<ReadArgs> for GetBuildsSummary {
     let builds = resource::list_full_for_user::<Build>(
       Default::default(),
       user,
+      PermissionLevel::Read.into(),
       &[],
     )
     .await
@@ -271,7 +280,10 @@ impl Resolve<ReadArgs> for ListCommonBuildExtraArgs {
       get_all_tags(None).await?
     };
     let builds = resource::list_full_for_user::<Build>(
-      self.query, user, &all_tags,
+      self.query,
+      user,
+      PermissionLevel::Read.into(),
+      &all_tags,
     )
     .await
     .context("failed to get resources matching query")?;

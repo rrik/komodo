@@ -576,7 +576,7 @@ export var TerminalRecreateMode;
 (function (TerminalRecreateMode) {
     /**
      * Never kill the old terminal if it already exists.
-     * If the command is different, returns error.
+     * If the init command is different, returns error.
      */
     TerminalRecreateMode["Never"] = "Never";
     /** Always kill the old terminal and create new one */
@@ -584,6 +584,12 @@ export var TerminalRecreateMode;
     /** Only kill and recreate if the command is different. */
     TerminalRecreateMode["DifferentCommand"] = "DifferentCommand";
 })(TerminalRecreateMode || (TerminalRecreateMode = {}));
+/** Specify the container terminal mode (exec or attach) */
+export var ContainerTerminalMode;
+(function (ContainerTerminalMode) {
+    ContainerTerminalMode["Exec"] = "exec";
+    ContainerTerminalMode["Attach"] = "attach";
+})(ContainerTerminalMode || (ContainerTerminalMode = {}));
 export var DefaultRepoFolder;
 (function (DefaultRepoFolder) {
     /** /${root_directory}/stacks */
@@ -604,11 +610,6 @@ export var SearchCombinator;
     SearchCombinator["Or"] = "Or";
     SearchCombinator["And"] = "And";
 })(SearchCombinator || (SearchCombinator = {}));
-export var ContainerTerminalMode;
-(function (ContainerTerminalMode) {
-    ContainerTerminalMode["Exec"] = "exec";
-    ContainerTerminalMode["Attach"] = "attach";
-})(ContainerTerminalMode || (ContainerTerminalMode = {}));
 /** Days of the week */
 export var DayOfWeek;
 (function (DayOfWeek) {

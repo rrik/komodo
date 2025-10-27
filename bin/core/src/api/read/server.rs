@@ -12,7 +12,6 @@ use database::mungos::{
   find::find_collect,
   mongodb::{bson::doc, options::FindOptions},
 };
-use futures_util::{StreamExt as _, stream::FuturesUnordered};
 use komodo_client::{
   api::read::*,
   entities::{
@@ -26,11 +25,10 @@ use komodo_client::{
       network::Network,
       volume::Volume,
     },
-    komodo_timestamp,
     permission::PermissionLevel,
     server::{
       Server, ServerActionState, ServerListItem, ServerQuery,
-      ServerState, TerminalInfo, TerminalInfoWithServer,
+      ServerState,
     },
     stack::{Stack, StackServiceNames},
     stats::{SystemInformation, SystemProcess},
@@ -51,7 +49,7 @@ use tokio::sync::Mutex;
 
 use crate::{
   helpers::{periphery_client, query::get_all_tags},
-  permission::get_check_permissions,
+  permission::{get_check_permissions, list_resources_for_user},
   resource,
   stack::compose_container_match_regex,
   state::{action_states, db_client, server_status_cache},
@@ -67,6 +65,7 @@ impl Resolve<ReadArgs> for GetServersSummary {
     let servers = resource::list_for_user::<Server>(
       Default::default(),
       user,
+      PermissionLevel::Read.into(),
       &[],
     )
     .await?;
@@ -127,8 +126,13 @@ impl Resolve<ReadArgs> for ListServers {
       get_all_tags(None).await?
     };
     Ok(
-      resource::list_for_user::<Server>(self.query, user, &all_tags)
-        .await?,
+      resource::list_for_user::<Server>(
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
+      )
+      .await?,
     )
   }
 }
@@ -145,7 +149,10 @@ impl Resolve<ReadArgs> for ListFullServers {
     };
     Ok(
       resource::list_full_for_user::<Server>(
-        self.query, user, &all_tags,
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
       )
       .await?,
     )
@@ -392,6 +399,7 @@ impl Resolve<ReadArgs> for ListAllDockerContainers {
     let servers = resource::list_for_user::<Server>(
       ServerQuery::builder().names(self.servers.clone()).build(),
       user,
+      PermissionLevel::Read.into(),
       &[],
     )
     .await?;
@@ -427,6 +435,7 @@ impl Resolve<ReadArgs> for GetDockerContainersSummary {
     let servers = resource::list_full_for_user::<Server>(
       Default::default(),
       user,
+      PermissionLevel::Read.into(),
       &[],
     )
     .await
@@ -578,12 +587,12 @@ impl Resolve<ReadArgs> for GetResourceMatchingContainer {
     }
 
     // then check stacks
-    let stacks =
-      resource::list_full_for_user_using_document::<Stack>(
-        doc! { "config.server_id": &server.id },
-        user,
-      )
-      .await?;
+    let stacks = list_resources_for_user::<Stack>(
+      doc! { "config.server_id": &server.id },
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
 
     // check matching stack
     for stack in stacks {
@@ -824,126 +833,46 @@ impl Resolve<ReadArgs> for ListComposeProjects {
   }
 }
 
-#[derive(Default)]
-struct TerminalCacheItem {
-  list: Vec<TerminalInfo>,
-  ttl: i64,
-}
+// impl Resolve<ReadArgs> for ListAllTerminals {
+//   async fn resolve(
+//     self,
+//     args: &ReadArgs,
+//   ) -> Result<Self::Response, Self::Error> {
+//     // match self.tar
+//     let mut terminals = resource::list_full_for_user::<Server>(
+//       self.query, &args.user, &all_tags,
+//     )
+//     .await?
+//     .into_iter()
+//     .map(|server| async move {
+//       (
+//         list_terminals_inner(&server, self.fresh).await,
+//         (server.id, server.name),
+//       )
+//     })
+//     .collect::<FuturesUnordered<_>>()
+//     .collect::<Vec<_>>()
+//     .await
+//     .into_iter()
+//     .flat_map(|(terminals, server)| {
+//       let terminals = terminals.ok()?;
+//       Some((terminals, server))
+//     })
+//     .flat_map(|(terminals, (server_id, server_name))| {
+//       terminals.into_iter().map(move |info| {
+//         TerminalInfoWithServer::from_terminal_info(
+//           &server_id,
+//           &server_name,
+//           info,
+//         )
+//       })
+//     })
+//     .collect::<Vec<_>>();
 
-const TERMINAL_CACHE_TIMEOUT: i64 = 30_000;
+//     terminals.sort_by(|a, b| {
+//       a.server_name.cmp(&b.server_name).then(a.name.cmp(&b.name))
+//     });
 
-#[derive(Default)]
-struct TerminalCache(
-  std::sync::Mutex<
-    HashMap<String, Arc<tokio::sync::Mutex<TerminalCacheItem>>>,
-  >,
-);
-
-impl TerminalCache {
-  fn get_or_insert(
-    &self,
-    server_id: String,
-  ) -> Arc<tokio::sync::Mutex<TerminalCacheItem>> {
-    if let Some(cached) =
-      self.0.lock().unwrap().get(&server_id).cloned()
-    {
-      return cached;
-    }
-    let to_cache =
-      Arc::new(tokio::sync::Mutex::new(TerminalCacheItem::default()));
-    self.0.lock().unwrap().insert(server_id, to_cache.clone());
-    to_cache
-  }
-}
-
-fn terminals_cache() -> &'static TerminalCache {
-  static TERMINALS: OnceLock<TerminalCache> = OnceLock::new();
-  TERMINALS.get_or_init(Default::default)
-}
-
-impl Resolve<ReadArgs> for ListTerminals {
-  async fn resolve(
-    self,
-    ReadArgs { user }: &ReadArgs,
-  ) -> serror::Result<ListTerminalsResponse> {
-    let server = get_check_permissions::<Server>(
-      &self.server,
-      user,
-      PermissionLevel::Read.terminal(),
-    )
-    .await?;
-    list_terminals_inner(&server, self.fresh)
-      .await
-      .map_err(Into::into)
-  }
-}
-
-impl Resolve<ReadArgs> for ListAllTerminals {
-  async fn resolve(
-    self,
-    args: &ReadArgs,
-  ) -> Result<Self::Response, Self::Error> {
-    let all_tags = if self.query.tags.is_empty() {
-      vec![]
-    } else {
-      get_all_tags(None).await?
-    };
-
-    let mut terminals = resource::list_full_for_user::<Server>(
-      self.query, &args.user, &all_tags,
-    )
-    .await?
-    .into_iter()
-    .map(|server| async move {
-      (
-        list_terminals_inner(&server, self.fresh).await,
-        (server.id, server.name),
-      )
-    })
-    .collect::<FuturesUnordered<_>>()
-    .collect::<Vec<_>>()
-    .await
-    .into_iter()
-    .flat_map(|(terminals, server)| {
-      let terminals = terminals.ok()?;
-      Some((terminals, server))
-    })
-    .flat_map(|(terminals, (server_id, server_name))| {
-      terminals.into_iter().map(move |info| {
-        TerminalInfoWithServer::from_terminal_info(
-          &server_id,
-          &server_name,
-          info,
-        )
-      })
-    })
-    .collect::<Vec<_>>();
-
-    terminals.sort_by(|a, b| {
-      a.server_name.cmp(&b.server_name).then(a.name.cmp(&b.name))
-    });
-
-    Ok(terminals)
-  }
-}
-
-async fn list_terminals_inner(
-  server: &Server,
-  fresh: bool,
-) -> anyhow::Result<Vec<TerminalInfo>> {
-  let cache = terminals_cache().get_or_insert(server.id.clone());
-  let mut cache = cache.lock().await;
-  if fresh || komodo_timestamp() > cache.ttl {
-    cache.list = periphery_client(server)
-      .await?
-      .request(periphery_client::api::terminal::ListTerminals {
-        container: None,
-      })
-      .await
-      .context("Failed to get fresh terminal list")?;
-    cache.ttl = komodo_timestamp() + TERMINAL_CACHE_TIMEOUT;
-    Ok(cache.list.clone())
-  } else {
-    Ok(cache.list.clone())
-  }
-}
+//     Ok(terminals)
+//   }
+// }

@@ -1,6 +1,6 @@
-use komodo_client::{
-  api::write::TerminalRecreateMode,
-  entities::{NoData, server::TerminalInfo},
+use komodo_client::entities::{
+  NoData,
+  terminal::{Terminal, TerminalRecreateMode, TerminalTarget},
 };
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
@@ -11,19 +11,18 @@ pub const START_OF_OUTPUT: &str = "__KOMODO_START_OF_OUTPUT__";
 pub const END_OF_OUTPUT: &str = "__KOMODO_END_OF_OUTPUT__";
 
 #[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
-#[response(Vec<TerminalInfo>)]
+#[response(Vec<Terminal>)]
 #[error(anyhow::Error)]
 pub struct ListTerminals {
-  /// If none, only includes non-container terminals.
-  /// if Some, only includes that containers terminals.
-  pub container: Option<String>,
+  /// Optionally restrict list to specific target.
+  pub target: Option<TerminalTarget>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
 #[response(NoData)]
 #[error(anyhow::Error)]
-pub struct CreateTerminal {
-  /// The name of the terminal to create
+pub struct CreateServerTerminal {
+  /// A name for the terminal session
   pub name: String,
   /// The shell command (eg `bash`) to init the shell.
   ///
@@ -32,6 +31,46 @@ pub struct CreateTerminal {
   ///
   /// Default: Set in Periphery config.
   pub command: Option<String>,
+  /// Specify the recreate behavior.
+  /// Default: `Never`
+  #[serde(default)]
+  pub recreate: TerminalRecreateMode,
+}
+
+//
+
+#[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
+#[response(NoData)]
+#[error(anyhow::Error)]
+pub struct CreateContainerExecTerminal {
+  /// A name for the terminal session
+  pub name: String,
+  /// The target for the terminal sessions (Container, Stack, Deployment).
+  pub target: TerminalTarget,
+  /// The name of the container to connect to
+  pub container: String,
+  /// The command to init shell inside container.
+  /// Default: `sh`
+  pub command: Option<String>,
+  /// Specify the recreate behavior.
+  /// Default: `Never`
+  #[serde(default)]
+  pub recreate: TerminalRecreateMode,
+}
+
+//
+
+#[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
+#[response(NoData)]
+#[error(anyhow::Error)]
+pub struct CreateContainerAttachTerminal {
+  /// A name for the terminal session
+  pub name: String,
+  /// The target for the terminal sessions (Container, Stack, Deployment).
+  pub target: TerminalTarget,
+  /// The name of the container to attach to
+  pub container: String,
+  /// Specify the recreate behavior.
   /// Default: `Never`
   #[serde(default)]
   pub recreate: TerminalRecreateMode,
@@ -45,38 +84,8 @@ pub struct CreateTerminal {
 pub struct ConnectTerminal {
   /// The name of the terminal to connect to
   pub terminal: String,
-}
-
-//
-
-#[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
-#[response(Uuid)]
-#[error(anyhow::Error)]
-pub struct ConnectContainerExec {
-  /// The name of the container to connect to.
-  pub container: String,
-  /// The shell to start inside container.
-  /// Default: `sh`
-  #[serde(default = "default_container_shell")]
-  pub shell: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
-}
-
-//
-
-#[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
-#[response(Uuid)]
-#[error(anyhow::Error)]
-pub struct ConnectContainerAttach {
-  /// The name of the container to attach to.
-  pub container: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
+  /// The target for the terminal session
+  pub target: TerminalTarget,
 }
 
 //
@@ -96,8 +105,10 @@ pub struct DisconnectTerminal {
 #[response(NoData)]
 #[error(anyhow::Error)]
 pub struct DeleteTerminal {
-  /// The name of the terminal to delete
+  /// The name of the terminal to delete.
   pub terminal: String,
+  /// The terminal target.
+  pub target: TerminalTarget,
 }
 
 //
@@ -116,34 +127,8 @@ pub struct DeleteAllTerminals {}
 pub struct ExecuteTerminal {
   /// Specify the terminal to execute the command on.
   pub terminal: String,
+  /// The terminal target.
+  pub target: TerminalTarget,
   /// The command to execute.
   pub command: String,
-}
-
-//
-
-#[derive(Serialize, Deserialize, Debug, Clone, Resolve)]
-#[response(Uuid)]
-#[error(anyhow::Error)]
-pub struct ExecuteContainerExec {
-  /// The name of the container to execute command in.
-  pub container: String,
-  /// The shell to start inside container.
-  /// Default: `sh`
-  #[serde(default = "default_container_shell")]
-  pub shell: String,
-  /// The command to execute.
-  pub command: String,
-  /// Specify the recreate behavior.
-  /// Default is 'DifferentCommand'
-  #[serde(default = "default_container_recreate_mode")]
-  pub recreate: TerminalRecreateMode,
-}
-
-fn default_container_shell() -> String {
-  String::from("sh")
-}
-
-fn default_container_recreate_mode() -> TerminalRecreateMode {
-  TerminalRecreateMode::DifferentCommand
 }

@@ -63,7 +63,6 @@ export type ReadResponses = {
   ListServers: Types.ListServersResponse;
   ListFullServers: Types.ListFullServersResponse;
   ListTerminals: Types.ListTerminalsResponse;
-  ListAllTerminals: Types.ListAllTerminalsResponse;
 
   // ==== DOCKER ====
   GetDockerContainersSummary: Types.GetDockerContainersSummaryResponse;
@@ -217,10 +216,6 @@ export type WriteResponses = {
   UpdateServer: Types.Server;
   RenameServer: Types.Update;
   CreateNetwork: Types.Update;
-  CreateTerminal: Types.NoData;
-  DeleteTerminal: Types.NoData;
-  DeleteAllTerminals: Types.NoData;
-  BatchDeleteAllTerminals: Types.NoData;
   UpdateServerPublicKey: Types.Update;
   RotateServerKeys: Types.Update;
 
@@ -295,6 +290,12 @@ export type WriteResponses = {
   CommitSync: Types.Update;
   WriteSyncFileContents: Types.Update;
   RefreshResourceSyncPending: Types.ResourceSync;
+
+  // ==== TERMINAL ====
+  CreateTerminal: Types.NoData;
+  DeleteTerminal: Types.NoData;
+  DeleteAllTerminals: Types.NoData;
+  BatchDeleteAllTerminals: Types.NoData;
 
   // ==== TAG ====
   CreateTag: Types.Tag;

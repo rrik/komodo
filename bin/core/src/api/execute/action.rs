@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::Context;
-use command::run_komodo_command;
+use command::run_komodo_standard_command;
 use config::merge_objects;
 use database::mungos::{
   by_id::update_one_by_id, mongodb::bson::to_document,
@@ -178,7 +178,7 @@ impl Resolve<ExecuteArgs> for RunAction {
       ""
     };
 
-    let mut res = run_komodo_command(
+    let mut res = run_komodo_standard_command(
       // Keep this stage name as is, the UI will find the latest update log by matching the stage name
       "Execute Action",
       None,

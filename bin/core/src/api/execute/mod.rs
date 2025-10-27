@@ -8,9 +8,7 @@ use axum_extra::{TypedHeader, headers::ContentType};
 use database::mungos::by_id::find_one_by_id;
 use derive_variants::{EnumVariants, ExtractVariant};
 use formatting::format_serror;
-use futures_util::{
-  StreamExt as _, future::join_all, stream::FuturesUnordered,
-};
+use futures_util::future::join_all;
 use komodo_client::{
   api::execute::*,
   entities::{
@@ -32,7 +30,6 @@ use uuid::Uuid;
 use crate::{
   auth::auth_request,
   helpers::update::{init_execution_update, update_update},
-  permission::get_check_permissions,
   resource::{KomodoResource, list_full_for_user_using_pattern},
   state::db_client,
 };
@@ -324,31 +321,10 @@ async fn batch_execute<E: BatchExecute>(
     pattern,
     Default::default(),
     user,
+    PermissionLevel::Execute.into(),
     &[],
   )
   .await?;
-
-  let resources = if user.admin {
-    resources
-  } else {
-    // Only keep resources with execute permissions
-    resources
-      .into_iter()
-      .map(|resource| async move {
-        get_check_permissions::<E::Resource>(
-          &resource.id,
-          user,
-          PermissionLevel::Execute.into(),
-        )
-        .await
-      })
-      .collect::<FuturesUnordered<_>>()
-      .collect::<Vec<_>>()
-      .await
-      .into_iter()
-      .flatten()
-      .collect()
-  };
 
   let futures = resources.into_iter().map(|resource| {
     let user = user.clone();

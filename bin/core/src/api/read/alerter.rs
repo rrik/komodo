@@ -11,8 +11,10 @@ use komodo_client::{
 use resolver_api::Resolve;
 
 use crate::{
-  helpers::query::get_all_tags, permission::get_check_permissions,
-  resource, state::db_client,
+  helpers::query::get_all_tags,
+  permission::{get_check_permissions, list_resource_ids_for_user},
+  resource,
+  state::db_client,
 };
 
 use super::ReadArgs;
@@ -44,8 +46,13 @@ impl Resolve<ReadArgs> for ListAlerters {
       get_all_tags(None).await?
     };
     Ok(
-      resource::list_for_user::<Alerter>(self.query, user, &all_tags)
-        .await?,
+      resource::list_for_user::<Alerter>(
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
+      )
+      .await?,
     )
   }
 }
@@ -62,7 +69,10 @@ impl Resolve<ReadArgs> for ListFullAlerters {
     };
     Ok(
       resource::list_full_for_user::<Alerter>(
-        self.query, user, &all_tags,
+        self.query,
+        user,
+        PermissionLevel::Read.into(),
+        &all_tags,
       )
       .await?,
     )
@@ -74,9 +84,11 @@ impl Resolve<ReadArgs> for GetAlertersSummary {
     self,
     ReadArgs { user }: &ReadArgs,
   ) -> serror::Result<GetAlertersSummaryResponse> {
-    let query = match resource::get_resource_object_ids_for_user::<
-      Alerter,
-    >(user)
+    let query = match list_resource_ids_for_user::<Alerter>(
+      None,
+      user,
+      PermissionLevel::Read.into(),
+    )
     .await?
     {
       Some(ids) => doc! {

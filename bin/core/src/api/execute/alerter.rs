@@ -104,22 +104,23 @@ impl Resolve<ExecuteArgs> for SendAlert {
     self,
     ExecuteArgs { user, update, id }: &ExecuteArgs,
   ) -> Result<Self::Response, Self::Error> {
-    let alerters =
-      list_full_for_user::<Alerter>(Default::default(), user, &[])
-        .await?
-        .into_iter()
-        .filter(|a| {
-          a.config.enabled
-            && (self.alerters.is_empty()
-              || self.alerters.contains(&a.name)
-              || self.alerters.contains(&a.id))
-            && (a.config.alert_types.is_empty()
-              || a
-                .config
-                .alert_types
-                .contains(&AlertDataVariant::Custom))
-        })
-        .collect::<Vec<_>>();
+    let alerters = list_full_for_user::<Alerter>(
+      Default::default(),
+      user,
+      PermissionLevel::Read.into(),
+      &[],
+    )
+    .await?
+    .into_iter()
+    .filter(|a| {
+      a.config.enabled
+        && (self.alerters.is_empty()
+          || self.alerters.contains(&a.name)
+          || self.alerters.contains(&a.id))
+        && (a.config.alert_types.is_empty()
+          || a.config.alert_types.contains(&AlertDataVariant::Custom))
+    })
+    .collect::<Vec<_>>();
 
     let alerters = if user.admin {
       alerters

@@ -1,11 +1,11 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use anyhow::{Context, anyhow};
 use colored::Colorize;
 use futures_util::{Stream, StreamExt, TryStreamExt};
 use komodo_client::entities::{
-  ContainerTerminalMode, KOMODO_EXIT_CODE, NoData,
-  server::TerminalInfo,
+  KOMODO_EXIT_CODE, NoData,
+  terminal::{Terminal, TerminalTarget},
 };
 use periphery_client::{
   api::terminal::*, transport::EncodedTransportMessage,
@@ -30,17 +30,17 @@ impl Resolve<super::Args> for ListTerminals {
   async fn resolve(
     self,
     _: &super::Args,
-  ) -> anyhow::Result<Vec<TerminalInfo>> {
+  ) -> anyhow::Result<Vec<Terminal>> {
     clean_up_terminals().await;
-    Ok(list_terminals(self.container.as_deref()).await)
+    Ok(list_terminals(self.target.as_ref()).await)
   }
 }
 
 //
 
-impl Resolve<super::Args> for CreateTerminal {
+impl Resolve<super::Args> for CreateServerTerminal {
   #[instrument(
-    "CreateTerminal",
+    "CreateServerTerminal",
     skip_all,
     fields(
       id = args.id.to_string(),
@@ -56,12 +56,110 @@ impl Resolve<super::Args> for CreateTerminal {
   ) -> anyhow::Result<NoData> {
     if periphery_config().disable_terminals {
       return Err(anyhow!(
-        "Terminals are disabled in the periphery config"
+        "Terminals are disabled in the Periphery config"
       ));
     }
-    create_terminal(self.name, self.command, self.recreate, None)
-      .await
-      .map(|_| NoData {})
+    create_terminal(
+      self.name,
+      TerminalTarget::Server { server: None },
+      self.command,
+      self.recreate,
+    )
+    .await
+    .map(|_| NoData {})
+  }
+}
+
+//
+
+impl Resolve<super::Args> for CreateContainerExecTerminal {
+  #[instrument(
+    "CreateContainerExecTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      terminal = self.name,
+      target = format!("{:?}", self.target),
+      command = self.command,
+      recreate = format!("{:?}", self.recreate),
+    )
+  )]
+  async fn resolve(
+    self,
+    args: &super::Args,
+  ) -> anyhow::Result<NoData> {
+    if periphery_config().disable_container_terminals {
+      return Err(anyhow!(
+        "Container Terminals are disabled in the Periphery config"
+      ));
+    }
+    let CreateContainerExecTerminal {
+      name,
+      target,
+      container,
+      command,
+      recreate,
+    } = self;
+    let command = command.unwrap_or_else(|| String::from("sh"));
+    if container.contains("&&") || command.contains("&&") {
+      return Err(anyhow!(
+        "The use of '&&' is forbidden in the container name or command"
+      ));
+    }
+    create_terminal(
+      name,
+      target,
+      Some(format!("docker exec -it {container} {command}")),
+      recreate,
+    )
+    .await
+    .map(|_| NoData {})
+  }
+}
+
+//
+
+impl Resolve<super::Args> for CreateContainerAttachTerminal {
+  #[instrument(
+    "CreateContainerAttachTerminal",
+    skip_all,
+    fields(
+      id = args.id.to_string(),
+      core = args.core,
+      terminal = self.name,
+      target = format!("{:?}", self.target),
+      recreate = format!("{:?}", self.recreate),
+    )
+  )]
+  async fn resolve(
+    self,
+    args: &super::Args,
+  ) -> anyhow::Result<NoData> {
+    if periphery_config().disable_container_terminals {
+      return Err(anyhow!(
+        "Container Terminals are disabled in the Periphery config"
+      ));
+    }
+    let CreateContainerAttachTerminal {
+      name,
+      target,
+      container,
+      recreate,
+    } = self;
+    if container.contains("&&") {
+      return Err(anyhow!(
+        "The use of '&&' is forbidden in the container name"
+      ));
+    }
+    create_terminal(
+      name,
+      target,
+      Some(format!("docker attach {container} --sig-proxy=false")),
+      recreate,
+    )
+    .await
+    .map(|_| NoData {})
   }
 }
 
@@ -81,7 +179,7 @@ impl Resolve<super::Args> for DeleteTerminal {
     self,
     args: &super::Args,
   ) -> anyhow::Result<NoData> {
-    delete_terminal(&self.terminal).await;
+    delete_terminal(&self.target, &self.terminal).await;
     Ok(NoData {})
   }
 }
@@ -119,12 +217,6 @@ impl Resolve<super::Args> for ConnectTerminal {
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
-    if periphery_config().disable_terminals {
-      return Err(anyhow!(
-        "Terminals are disabled in the periphery config"
-      ));
-    }
-
     let connection =
       core_connections().get(&args.core).await.with_context(
         || format!("Failed to find channel for {}", args.core),
@@ -132,115 +224,7 @@ impl Resolve<super::Args> for ConnectTerminal {
 
     clean_up_terminals().await;
 
-    let terminal = get_terminal(&self.terminal).await?;
-
-    let channel =
-      spawn_terminal_forwarding(connection, terminal).await;
-
-    Ok(channel)
-  }
-}
-
-//
-
-impl Resolve<super::Args> for ConnectContainerExec {
-  #[instrument(
-    "ConnectContainerExec",
-    skip_all,
-    fields(
-      id = args.id.to_string(),
-      core = args.core,
-      container = self.container,
-      shell = self.shell,
-      recreate = format!("{:?}", self.recreate),
-    )
-  )]
-  async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
-    if periphery_config().disable_container_terminals {
-      return Err(anyhow!(
-        "Container Terminals are disabled in the periphery config"
-      ));
-    }
-
-    let connection =
-      core_connections().get(&args.core).await.with_context(
-        || format!("Failed to find channel for {}", args.core),
-      )?;
-
-    let ConnectContainerExec {
-      container,
-      shell,
-      recreate,
-    } = self;
-
-    if container.contains("&&") || shell.contains("&&") {
-      return Err(anyhow!(
-        "The use of '&&' is forbidden in the container name or shell"
-      ));
-    }
-
-    // Create (recreate if shell changed)
-    let terminal = create_terminal(
-      container.clone(),
-      Some(format!("docker exec -it {container} {shell}")),
-      recreate,
-      Some((container, ContainerTerminalMode::Exec)),
-    )
-    .await
-    .context("Failed to create terminal for container exec")?;
-
-    let channel =
-      spawn_terminal_forwarding(connection, terminal).await;
-
-    Ok(channel)
-  }
-}
-
-//
-
-impl Resolve<super::Args> for ConnectContainerAttach {
-  #[instrument(
-    "ConnectContainerAttach",
-    skip_all,
-    fields(
-      id = args.id.to_string(),
-      core = args.core,
-      container = self.container,
-      recreate = format!("{:?}", self.recreate),
-    )
-  )]
-  async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
-    if periphery_config().disable_container_terminals {
-      return Err(anyhow!(
-        "Container Terminals are disabled in the periphery config"
-      ));
-    }
-
-    let connection =
-      core_connections().get(&args.core).await.with_context(
-        || format!("Failed to find channel for {}", args.core),
-      )?;
-
-    let ConnectContainerAttach {
-      container,
-      recreate,
-    } = self;
-
-    if container.contains("&&") {
-      return Err(anyhow!(
-        "The use of '&&' is forbidden in the container name"
-      ));
-    }
-
-    // Create (recreate if shell changed)
-    let terminal = create_terminal(
-      container.clone(),
-      Some(format!("docker attach {container} --sig-proxy=false")),
-      recreate,
-      Some((container, ContainerTerminalMode::Attach)),
-    )
-    .await
-    .context("Failed to create terminal for container attach")?;
+    let terminal = get_terminal(&self.terminal, &self.target).await?;
 
     let channel =
       spawn_terminal_forwarding(connection, terminal).await;
@@ -288,18 +272,12 @@ impl Resolve<super::Args> for ExecuteTerminal {
     )
   )]
   async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
-    if periphery_config().disable_terminals {
-      return Err(anyhow!(
-        "Terminals are disabled in the Periphery config"
-      ));
-    }
-
     let channel =
       core_connections().get(&args.core).await.with_context(
         || format!("Failed to find channel for {}", args.core),
       )?;
 
-    let terminal = get_terminal(&self.terminal).await?;
+    let terminal = get_terminal(&self.terminal, &self.target).await?;
 
     let channel_id = Uuid::new_v4();
 
@@ -323,82 +301,10 @@ impl Resolve<super::Args> for ExecuteTerminal {
   }
 }
 
-//
-
-impl Resolve<super::Args> for ExecuteContainerExec {
-  #[instrument(
-    "ExecuteContainerExec",
-    skip_all,
-    fields(
-      id = args.id.to_string(),
-      core = args.core,
-      container = self.container,
-      shell = self.shell,
-      command = self.command,
-      recreate = format!("{:?}", self.recreate)
-    )
-  )]
-  async fn resolve(self, args: &super::Args) -> anyhow::Result<Uuid> {
-    if periphery_config().disable_container_terminals {
-      return Err(anyhow!(
-        "Container Terminals are disabled in the Periphery config"
-      ));
-    }
-
-    let Self {
-      container,
-      shell,
-      command,
-      recreate,
-    } = self;
-
-    if container.contains("&&") || shell.contains("&&") {
-      return Err(anyhow!(
-        "The use of '&&' is forbidden in the container name or shell"
-      ));
-    }
-
-    let channel =
-      core_connections().get(&args.core).await.with_context(
-        || format!("Failed to find channel for {}", args.core),
-      )?;
-
-    let terminal = create_terminal(
-      container.clone(),
-      Some(format!("docker exec -it {container} {shell}")),
-      recreate,
-      Some((container, ContainerTerminalMode::Exec)),
-    )
-    .await
-    .context("Failed to create terminal for container exec")?;
-
-    // Wait a bit for terminal to initialize
-    tokio::time::sleep(Duration::from_millis(500)).await;
-
-    let channel_id = Uuid::new_v4();
-
-    let stdout = setup_execute_command_on_terminal(
-      channel_id, &terminal, &command,
-    )
-    .await?;
-
-    tokio::spawn(async move {
-      forward_execute_command_on_terminal_response(
-        &channel.sender,
-        channel_id,
-        stdout,
-      )
-      .await
-    });
-
-    Ok(channel_id)
-  }
-}
-
 #[instrument("SpawnTerminalForwarding", skip_all)]
 async fn spawn_terminal_forwarding(
   connection: Arc<BufferedChannel<EncodedTransportMessage>>,
-  terminal: Arc<Terminal>,
+  terminal: Arc<PeripheryTerminal>,
 ) -> Uuid {
   let channel = Uuid::new_v4();
   let cancel = CancellationToken::new();
@@ -430,7 +336,7 @@ async fn spawn_terminal_forwarding(
 async fn handle_terminal_forwarding(
   sender: &Sender<EncodedTransportMessage>,
   channel: Uuid,
-  terminal: Arc<Terminal>,
+  terminal: Arc<PeripheryTerminal>,
   cancel: CancellationToken,
 ) {
   // This waits to begin forwarding until Core sends the None byte start trigger.
@@ -474,19 +380,9 @@ async fn handle_terminal_forwarding(
     let res = tokio::select! {
       res = stdout.recv() => res,
       _ = terminal.cancel.cancelled() => {
-        let _ = sender.send_terminal(channel, Err(anyhow!(
-          "\n{} {}",
-          "pty".bold(),
-          "exited".red().bold()
-        ))).await;
         break
       },
       _ = cancel.cancelled() => {
-        let _ = sender.send_terminal(channel, Err(anyhow!(
-          "\n{} {}",
-          "websocket".bold(),
-          "disconnected".red().bold()
-        ))).await;
         break
       }
     };
@@ -532,7 +428,7 @@ async fn handle_terminal_forwarding(
 #[instrument("SetupExecuteTerminal", skip(terminal))]
 async fn setup_execute_command_on_terminal(
   channel_id: Uuid,
-  terminal: &Terminal,
+  terminal: &PeripheryTerminal,
   command: &str,
 ) -> anyhow::Result<
   impl Stream<Item = Result<String, LinesCodecError>> + 'static,

@@ -1,20 +1,14 @@
 import { Section } from "@components/layouts";
-import {
-  container_state_intention,
-  stroke_color_class_by_intention,
-} from "@lib/color";
+import { container_state_intention } from "@lib/color";
 import { useRead } from "@lib/hooks";
-import { cn } from "@lib/utils";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { useStack } from ".";
 import { Types } from "komodo_client";
 import { Fragment, ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@ui/button";
-import { Layers2 } from "lucide-react";
 import {
   ContainerPortsTableView,
   DockerResourceLink,
+  StackServiceLink,
   StatusBadge,
 } from "@components/util";
 
@@ -53,26 +47,9 @@ export const StackServices = ({
               header: ({ column }) => (
                 <SortableHeader column={column} title="Service" />
               ),
-              cell: ({ row }) => {
-                const state = row.original.container?.state;
-                const color = stroke_color_class_by_intention(
-                  container_state_intention(state)
-                );
-                return (
-                  <Link
-                    to={`/stacks/${id}/service/${row.original.service}`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Button
-                      variant="link"
-                      className="flex gap-2 items-center p-0"
-                    >
-                      <Layers2 className={cn("w-4 h-4", color)} />
-                      {row.original.service}
-                    </Button>
-                  </Link>
-                );
-              },
+              cell: ({ row }) => (
+                <StackServiceLink id={id} service={row.original.service} />
+              ),
             },
             {
               accessorKey: "container.state",

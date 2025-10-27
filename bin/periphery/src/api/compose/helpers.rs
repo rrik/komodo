@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::{Context, anyhow};
-use command::run_komodo_command;
+use command::run_komodo_standard_command;
 use formatting::format_serror;
 use komodo_client::entities::{
   FileContents, RepoExecutionArgs,
@@ -99,7 +99,7 @@ pub async fn compose_down(
   } else {
     format!(" {}", services.join(" "))
   };
-  let log = run_komodo_command(
+  let log = run_komodo_standard_command(
     "Compose Down",
     None,
     format!("{docker_compose} -p {project} down{service_args}"),

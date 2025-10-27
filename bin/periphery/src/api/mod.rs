@@ -1,4 +1,4 @@
-use command::run_komodo_command;
+use command::run_komodo_standard_command;
 use derive_variants::EnumVariants;
 use encoding::{EncodedJsonMessage, EncodedResponse};
 use futures_util::FutureExt;
@@ -144,15 +144,14 @@ pub enum PeripheryRequest {
 
   // Terminal
   ListTerminals(ListTerminals),
-  CreateTerminal(CreateTerminal),
+  CreateServerTerminal(CreateServerTerminal),
+  CreateContainerExecTerminal(CreateContainerExecTerminal),
+  CreateContainerAttachTerminal(CreateContainerAttachTerminal),
   DeleteTerminal(DeleteTerminal),
   DeleteAllTerminals(DeleteAllTerminals),
   ConnectTerminal(ConnectTerminal),
-  ConnectContainerExec(ConnectContainerExec),
-  ConnectContainerAttach(ConnectContainerAttach),
   DisconnectTerminal(DisconnectTerminal),
   ExecuteTerminal(ExecuteTerminal),
-  ExecuteContainerExec(ExecuteContainerExec),
 
   // Keys
   RotatePrivateKey(RotatePrivateKey),
@@ -311,6 +310,9 @@ impl Resolve<Args> for PruneSystem {
   )]
   async fn resolve(self, args: &Args) -> anyhow::Result<Log> {
     let command = String::from("docker system prune -a -f --volumes");
-    Ok(run_komodo_command("Prune System", None, command).await)
+    Ok(
+      run_komodo_standard_command("Prune System", None, command)
+        .await,
+    )
   }
 }

@@ -1,8 +1,7 @@
 use anyhow::{Context, anyhow};
 use bollard::Docker;
-use command::run_komodo_command;
+use command::{run_komodo_standard_command, run_shell_command};
 use komodo_client::entities::{TerminationSignal, update::Log};
-use run_command::async_run_command;
 
 pub mod stats;
 
@@ -38,9 +37,9 @@ pub async fn docker_login(
     Some(token) => token,
     None => crate::helpers::registry_token(domain, account)?,
   };
-  let log = async_run_command(&format!(
+  let log = run_shell_command(&format!(
     "echo {registry_token} | docker login {domain} --username '{account}' --password-stdin",
-  ))
+  ), None)
   .await;
   if log.success() {
     Ok(true)
@@ -63,7 +62,7 @@ pub async fn docker_login(
 #[instrument("PullImage")]
 pub async fn pull_image(image: &str) -> Log {
   let command = format!("docker pull {image}");
-  run_komodo_command("Docker Pull", None, command).await
+  run_komodo_standard_command("Docker Pull", None, command).await
 }
 
 pub fn stop_container_command(

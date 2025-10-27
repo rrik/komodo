@@ -29,7 +29,7 @@ use resolver_api::Resolve;
 
 use crate::{
   config::core_config,
-  permission::{get_check_permissions, get_resource_ids_for_user},
+  permission::{get_check_permissions, list_resource_ids_for_user},
   state::db_client,
 };
 
@@ -45,99 +45,137 @@ impl Resolve<ReadArgs> for ListUpdates {
     let query = if user.admin || core_config().transparent_mode {
       self.query
     } else {
-      let server_query = get_resource_ids_for_user::<Server>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Server", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Server" });
-
-      let deployment_query =
-        get_resource_ids_for_user::<Deployment>(user)
-          .await?
-          .map(|ids| {
-            doc! {
-              "target.type": "Deployment", "target.id": { "$in": ids }
-            }
-          })
-          .unwrap_or_else(|| doc! { "target.type": "Deployment" });
-
-      let stack_query = get_resource_ids_for_user::<Stack>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Stack", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Stack" });
-
-      let build_query = get_resource_ids_for_user::<Build>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Build", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Build" });
-
-      let repo_query = get_resource_ids_for_user::<Repo>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Repo", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Repo" });
-
-      let procedure_query =
-        get_resource_ids_for_user::<Procedure>(user)
-          .await?
-          .map(|ids| {
-            doc! {
-              "target.type": "Procedure", "target.id": { "$in": ids }
-            }
-          })
-          .unwrap_or_else(|| doc! { "target.type": "Procedure" });
-
-      let action_query = get_resource_ids_for_user::<Action>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Action", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Action" });
-
-      let builder_query = get_resource_ids_for_user::<Builder>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Builder", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Builder" });
-
-      let alerter_query = get_resource_ids_for_user::<Alerter>(user)
-        .await?
-        .map(|ids| {
-          doc! {
-            "target.type": "Alerter", "target.id": { "$in": ids }
-          }
-        })
-        .unwrap_or_else(|| doc! { "target.type": "Alerter" });
-
-      let resource_sync_query = get_resource_ids_for_user::<
-        ResourceSync,
-      >(user)
+      let server_query = list_resource_ids_for_user::<Server>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
       .await?
       .map(|ids| {
         doc! {
-          "target.type": "ResourceSync", "target.id": { "$in": ids }
+          "target.type": "Server", "target.id": { "$in": ids }
         }
       })
-      .unwrap_or_else(|| doc! { "target.type": "ResourceSync" });
+      .unwrap_or_else(|| doc! { "target.type": "Server" });
+
+      let deployment_query =
+        list_resource_ids_for_user::<Deployment>(
+          None,
+          user,
+          PermissionLevel::Read.into(),
+        )
+        .await?
+        .map(|ids| {
+          doc! {
+            "target.type": "Deployment", "target.id": { "$in": ids }
+          }
+        })
+        .unwrap_or_else(|| doc! { "target.type": "Deployment" });
+
+      let stack_query = list_resource_ids_for_user::<Stack>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Stack", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Stack" });
+
+      let build_query = list_resource_ids_for_user::<Build>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Build", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Build" });
+
+      let repo_query = list_resource_ids_for_user::<Repo>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Repo", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Repo" });
+
+      let procedure_query = list_resource_ids_for_user::<Procedure>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Procedure", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Procedure" });
+
+      let action_query = list_resource_ids_for_user::<Action>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Action", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Action" });
+
+      let builder_query = list_resource_ids_for_user::<Builder>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Builder", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Builder" });
+
+      let alerter_query = list_resource_ids_for_user::<Alerter>(
+        None,
+        user,
+        PermissionLevel::Read.into(),
+      )
+      .await?
+      .map(|ids| {
+        doc! {
+          "target.type": "Alerter", "target.id": { "$in": ids }
+        }
+      })
+      .unwrap_or_else(|| doc! { "target.type": "Alerter" });
+
+      let resource_sync_query =
+        list_resource_ids_for_user::<ResourceSync>(
+          None,
+          user,
+          PermissionLevel::Read.into(),
+        )
+        .await?
+        .map(|ids| {
+          doc! {
+            "target.type": "ResourceSync", "target.id": { "$in": ids }
+          }
+        })
+        .unwrap_or_else(|| doc! { "target.type": "ResourceSync" });
 
       let mut query = self.query.unwrap_or_default();
       query.extend(doc! {

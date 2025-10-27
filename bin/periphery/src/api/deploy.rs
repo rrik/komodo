@@ -1,5 +1,7 @@
 use anyhow::Context;
-use command::run_komodo_command_with_sanitization;
+use command::{
+  KomodoCommandMode, run_komodo_command_with_sanitization,
+};
 use formatting::format_serror;
 use interpolate::Interpolator;
 use komodo_client::{
@@ -102,7 +104,7 @@ impl Resolve<super::Args> for Deploy {
       "Docker Run",
       None,
       command,
-      false,
+      KomodoCommandMode::Shell,
       &replacers,
     )
     .instrument(span)

@@ -21,6 +21,7 @@ pub mod terminal;
 
 #[derive(Debug)]
 pub struct PeripheryClient {
+  /// Usually the server id
   pub id: String,
   pub responses: Arc<ResponseChannels>,
   pub terminals: Arc<TerminalChannels>,

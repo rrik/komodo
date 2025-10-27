@@ -1,16 +1,8 @@
-import { ClientState } from "./lib";
+import { ClientState, Types } from "./lib";
 import {
-  ConnectContainerAttachQuery,
-  ConnectContainerExecQuery,
-  ConnectDeploymentAttachQuery,
-  ConnectDeploymentExecQuery,
-  ConnectStackAttachQuery,
-  ConnectStackExecQuery,
   ConnectTerminalQuery,
-  ExecuteContainerExecBody,
-  ExecuteDeploymentExecBody,
-  ExecuteStackExecBody,
   ExecuteTerminalBody,
+  TerminalTarget,
   WsLoginMessage,
 } from "./types";
 
@@ -21,48 +13,6 @@ export type TerminalCallbacks = {
   on_close?: () => void;
 };
 
-export type ConnectExecQuery =
-  | {
-      type: "container";
-      query: ConnectContainerExecQuery;
-    }
-  | {
-      type: "deployment";
-      query: ConnectDeploymentExecQuery;
-    }
-  | {
-      type: "stack";
-      query: ConnectStackExecQuery;
-    };
-
-export type ConnectAttachQuery =
-  | {
-      type: "container";
-      query: ConnectContainerAttachQuery;
-    }
-  | {
-      type: "deployment";
-      query: ConnectDeploymentAttachQuery;
-    }
-  | {
-      type: "stack";
-      query: ConnectStackAttachQuery;
-    };
-
-export type ExecuteExecBody =
-  | {
-      type: "container";
-      body: ExecuteContainerExecBody;
-    }
-  | {
-      type: "deployment";
-      body: ExecuteDeploymentExecBody;
-    }
-  | {
-      type: "stack";
-      body: ExecuteStackExecBody;
-    };
-
 export type ExecuteCallbacks = {
   onLine?: (line: string) => void | Promise<void>;
   onFinish?: (code: string) => void | Promise<void>;
@@ -70,7 +20,7 @@ export type ExecuteCallbacks = {
 
 export const terminal_methods = (url: string, state: ClientState) => {
   const connect_terminal = ({
-    query,
+    query: { target, terminal, init },
     on_message,
     on_login,
     on_open,
@@ -78,9 +28,19 @@ export const terminal_methods = (url: string, state: ClientState) => {
   }: {
     query: ConnectTerminalQuery;
   } & TerminalCallbacks) => {
-    const url_query = new URLSearchParams(
-      query as any as Record<string, string>
-    ).toString();
+    let url_query = connect_terminal_target_query(target);
+    if (terminal) {
+      url_query += `&terminal=${terminal}`;
+    }
+    if (init?.command) {
+      url_query += `&init[command]=${init.command}`;
+    }
+    if (init?.recreate) {
+      url_query += `&init[recreate]=${init.recreate}`;
+    }
+    if (init?.mode) {
+      url_query += `&init[mode]=${init.mode}`;
+    }
     const ws = new WebSocket(
       url.replace("http", "ws") + "/ws/terminal?" + url_query
     );
@@ -139,200 +99,6 @@ export const terminal_methods = (url: string, state: ClientState) => {
 
   const execute_terminal_stream = (request: ExecuteTerminalBody) =>
     execute_stream("/terminal/execute", request);
-
-  const connect_container_exec = ({
-    query,
-    ...callbacks
-  }: {
-    query: ConnectContainerExecQuery;
-  } & TerminalCallbacks) =>
-    connect_exec({ query: { type: "container", query }, ...callbacks });
-
-  const connect_deployment_exec = ({
-    query,
-    ...callbacks
-  }: {
-    query: ConnectDeploymentExecQuery;
-  } & TerminalCallbacks) =>
-    connect_exec({ query: { type: "deployment", query }, ...callbacks });
-
-  const connect_stack_exec = ({
-    query,
-    ...callbacks
-  }: {
-    query: ConnectStackExecQuery;
-  } & TerminalCallbacks) =>
-    connect_exec({ query: { type: "stack", query }, ...callbacks });
-
-  const connect_exec = ({
-    query: { type, query },
-    on_message,
-    on_login,
-    on_open,
-    on_close,
-  }: {
-    query: ConnectExecQuery;
-  } & TerminalCallbacks) => {
-    const url_query = new URLSearchParams(
-      query as any as Record<string, string>
-    ).toString();
-    const ws = new WebSocket(
-      url.replace("http", "ws") + `/ws/${type}/terminal?` + url_query
-    );
-    // Handle login on websocket open
-    ws.onopen = () => {
-      const login_msg: WsLoginMessage = state.jwt
-        ? {
-            type: "Jwt",
-            params: {
-              jwt: state.jwt,
-            },
-          }
-        : {
-            type: "ApiKeys",
-            params: {
-              key: state.key!,
-              secret: state.secret!,
-            },
-          };
-      ws.send(JSON.stringify(login_msg));
-      on_open?.();
-    };
-
-    ws.onmessage = (e) => {
-      if (e.data == "LOGGED_IN") {
-        ws.binaryType = "arraybuffer";
-        ws.onmessage = (e) => on_message?.(e);
-        on_login?.();
-        return;
-      } else {
-        on_message?.(e);
-      }
-    };
-
-    ws.onclose = () => on_close?.();
-
-    return ws;
-  };
-
-  const connect_container_attach = ({
-    query,
-    ...callbacks
-  }: {
-    query: ConnectContainerAttachQuery;
-  } & TerminalCallbacks) =>
-    connect_attach({ query: { type: "container", query }, ...callbacks });
-
-  const connect_deployment_attach = ({
-    query,
-    ...callbacks
-  }: {
-    query: ConnectDeploymentAttachQuery;
-  } & TerminalCallbacks) =>
-    connect_attach({ query: { type: "deployment", query }, ...callbacks });
-
-  const connect_stack_attach = ({
-    query,
-    ...callbacks
-  }: {
-    query: ConnectStackAttachQuery;
-  } & TerminalCallbacks) =>
-    connect_attach({ query: { type: "stack", query }, ...callbacks });
-
-  const connect_attach = ({
-    query: { type, query },
-    on_message,
-    on_login,
-    on_open,
-    on_close,
-  }: {
-    query: ConnectAttachQuery;
-  } & TerminalCallbacks) => {
-    const url_query = new URLSearchParams(
-      query as any as Record<string, string>
-    ).toString();
-    const ws = new WebSocket(
-      url.replace("http", "ws") + `/ws/${type}/terminal/attach?` + url_query
-    );
-    // Handle login on websocket open
-    ws.onopen = () => {
-      const login_msg: WsLoginMessage = state.jwt
-        ? {
-            type: "Jwt",
-            params: {
-              jwt: state.jwt,
-            },
-          }
-        : {
-            type: "ApiKeys",
-            params: {
-              key: state.key!,
-              secret: state.secret!,
-            },
-          };
-      ws.send(JSON.stringify(login_msg));
-      on_open?.();
-    };
-
-    ws.onmessage = (e) => {
-      if (e.data == "LOGGED_IN") {
-        ws.binaryType = "arraybuffer";
-        ws.onmessage = (e) => on_message?.(e);
-        on_login?.();
-        return;
-      } else {
-        on_message?.(e);
-      }
-    };
-
-    ws.onclose = () => on_close?.();
-
-    return ws;
-  };
-
-  const execute_container_exec = (
-    body: ExecuteContainerExecBody,
-    callbacks?: ExecuteCallbacks
-  ) => execute_exec({ type: "container", body }, callbacks);
-
-  const execute_deployment_exec = (
-    body: ExecuteDeploymentExecBody,
-    callbacks?: ExecuteCallbacks
-  ) => execute_exec({ type: "deployment", body }, callbacks);
-
-  const execute_stack_exec = (
-    body: ExecuteStackExecBody,
-    callbacks?: ExecuteCallbacks
-  ) => execute_exec({ type: "stack", body }, callbacks);
-
-  const execute_exec = async (
-    request: ExecuteExecBody,
-    callbacks?: ExecuteCallbacks
-  ) => {
-    const stream = await execute_exec_stream(request);
-    for await (const line of stream) {
-      if (line.startsWith("__KOMODO_EXIT_CODE")) {
-        await callbacks?.onFinish?.(line.split(":")[1]);
-        return;
-      } else {
-        await callbacks?.onLine?.(line);
-      }
-    }
-    // This is hit if no __KOMODO_EXIT_CODE is sent, ie early exit
-    await callbacks?.onFinish?.("Early exit without code");
-  };
-
-  const execute_container_exec_stream = (body: ExecuteContainerExecBody) =>
-    execute_exec_stream({ type: "container", body });
-
-  const execute_deployment_exec_stream = (body: ExecuteDeploymentExecBody) =>
-    execute_exec_stream({ type: "deployment", body });
-
-  const execute_stack_exec_stream = (body: ExecuteStackExecBody) =>
-    execute_exec_stream({ type: "stack", body });
-
-  const execute_exec_stream = (request: ExecuteExecBody) =>
-    execute_stream(`/terminal/execute/${request.type}`, request.body);
 
   const execute_stream = (path: string, request: any) =>
     new Promise<AsyncIterable<string>>(async (res, rej) => {
@@ -412,19 +178,25 @@ export const terminal_methods = (url: string, state: ClientState) => {
     connect_terminal,
     execute_terminal,
     execute_terminal_stream,
-    connect_exec,
-    connect_attach,
-    connect_container_exec,
-    connect_container_attach,
-    execute_container_exec,
-    execute_container_exec_stream,
-    connect_deployment_exec,
-    connect_deployment_attach,
-    execute_deployment_exec,
-    execute_deployment_exec_stream,
-    connect_stack_exec,
-    connect_stack_attach,
-    execute_stack_exec,
-    execute_stack_exec_stream,
   };
+};
+
+const connect_terminal_target_query = (target: TerminalTarget) => {
+  const base = `target[type]=${target.type}&`;
+  switch (target.type) {
+    case "Server":
+      return base + `target[params][server]=${target.params.server}`;
+    case "Container":
+      return (
+        base +
+        `target[params][server]=${target.params.server}&target[params][container]=${target.params.container}`
+      );
+    case "Stack":
+      return (
+        base +
+        `target[params][stack]=${target.params.stack}&target[params][service]=${target.params.service}`
+      );
+    case "Deployment":
+      return base + `target[params][deployment]=${target.params.deployment}`;
+  }
 };

@@ -1,10 +1,12 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use anyhow::{Context, anyhow};
-use database::mongo_indexed::doc;
 use database::mungos::find::find_collect;
+use database::{bson::Document, mongo_indexed::doc};
 use futures_util::{FutureExt, future::BoxFuture};
 use indexmap::IndexSet;
+use komodo_client::entities::ResourceTarget;
+use komodo_client::entities::permission::SpecificPermission;
 use komodo_client::{
   api::read::GetPermission,
   entities::{
@@ -15,6 +17,7 @@ use komodo_client::{
 };
 use resolver_api::Resolve;
 
+use crate::resource::list_all_resources;
 use crate::{
   api::read::ReadArgs,
   config::core_config,
@@ -162,68 +165,186 @@ pub fn get_user_permission_on_resource<'a, T: KomodoResource>(
   })
 }
 
-/// Returns None if still no need to filter by resource id (eg transparent mode, group membership with all access).
-pub async fn get_resource_ids_for_user<T: KomodoResource>(
+pub async fn list_resources_for_user<T: KomodoResource>(
+  filters: impl Into<Option<Document>>,
   user: &User,
-) -> anyhow::Result<Option<Vec<String>>> {
-  // Check admin or transparent mode
-  if user.admin || core_config().transparent_mode {
-    return Ok(None);
+  permission: PermissionLevelAndSpecifics,
+) -> anyhow::Result<Vec<Resource<T::Config, T::Info>>> {
+  // Check admin
+  if user.admin {
+    return list_all_resources::<T>(filters).await;
+  }
+
+  let mut base = PermissionLevelAndSpecifics {
+    level: if core_config().transparent_mode {
+      PermissionLevel::Read
+    } else {
+      PermissionLevel::None
+    },
+    specific: Default::default(),
+  };
+
+  // 'transparent_mode' early return.
+  if base.fulfills(&permission) {
+    return list_all_resources::<T>(filters).await;
   }
 
   let resource_type = T::resource_type();
 
   // Check user 'all' on variant
-  if let Some(permission) = user.all.get(&resource_type).cloned()
-    && permission.level > PermissionLevel::None
-  {
-    return Ok(None);
+  if let Some(all_permission) = user.all.get(&resource_type) {
+    base.elevate(all_permission);
+    // 'user.all' early return.
+    if base.fulfills(&permission) {
+      return list_all_resources::<T>(filters).await;
+    }
   }
 
   // Check user groups 'all' on variant
   let groups = get_user_user_groups(&user.id).await?;
   for group in &groups {
-    if let Some(permission) = group.all.get(&resource_type).cloned()
-      && permission.level > PermissionLevel::None
-    {
-      return Ok(None);
+    if let Some(all_permission) = group.all.get(&resource_type) {
+      base.elevate(all_permission);
+      // 'group.all' early return.
+      if base.fulfills(&permission) {
+        return list_all_resources::<T>(filters).await;
+      }
     }
   }
 
-  let (base, perms) = tokio::try_join!(
-    // Get any resources with non-none base permission,
-    find_collect(
-      T::coll(),
-      doc! { "$or": [
-        { "base_permission": { "$in": ["Read", "Execute", "Write"] } },
-        { "base_permission.level": { "$in": ["Read", "Execute", "Write"] } }
-      ] },
-      None,
-    )
-    .map(|res| res.with_context(|| format!(
-      "failed to query {resource_type} on db"
-    ))),
+  let (all, permissions) = tokio::try_join!(
+    list_all_resources::<T>(filters),
     // And any ids using the permissions table
     find_collect(
       &db_client().permissions,
       doc! {
         "$or": user_target_query(&user.id, &groups)?,
         "resource_target.type": resource_type.as_ref(),
-        "level": { "$in": ["Read", "Execute", "Write"] }
       },
       None,
     )
     .map(|res| res.context("failed to query permissions on db"))
   )?;
 
-  // Add specific ids
-  let ids = perms
+  let permission_by_resource_id = permissions
     .into_iter()
-    .map(|p| p.resource_target.extract_variant_id().1.to_string())
-    // Chain in the ones with non-None base permissions
-    .chain(base.into_iter().map(|res| res.id))
-    // collect into hashset first to remove any duplicates
-    .collect::<HashSet<_>>();
+    .map(|perm| {
+      (
+        perm.resource_target.extract_variant_id().1.to_string(),
+        perm,
+      )
+    })
+    .collect::<HashMap<_, _>>();
 
-  Ok(Some(ids.into_iter().collect()))
+  let mut resources = Vec::new();
+  let mut additional_specific_cache =
+    HashMap::<ResourceTarget, IndexSet<SpecificPermission>>::new();
+
+  for resource in all {
+    let mut perm = if let Some(perm) =
+      permission_by_resource_id.get(&resource.id)
+    {
+      base.join(perm)
+    } else {
+      base.clone()
+    };
+    // Check if already fulfils
+    if perm.fulfills(&permission) {
+      resources.push(resource);
+      continue;
+    }
+
+    // Also check if fulfills with inherited specific
+    let additional_target = if let Some(additional_target) =
+      T::inherit_specific_permissions_from(&resource)
+      && !additional_target.is_empty()
+    {
+      additional_target
+    } else {
+      continue;
+    };
+    let additional_specific = match additional_specific_cache
+      .get(&additional_target)
+      .cloned()
+    {
+      Some(specific) => specific,
+      None => {
+        let specific = GetPermission {
+          target: additional_target.clone(),
+        }
+        .resolve(&ReadArgs { user: user.clone() })
+        .await
+        .map_err(|e| e.error)
+        .context(
+          "failed to get user permission on additional target",
+        )?
+        .specific;
+        additional_specific_cache
+          .insert(additional_target, specific.clone());
+        specific
+      }
+    };
+    perm.specific.extend(additional_specific);
+    if perm.fulfills(&permission) {
+      resources.push(resource);
+    }
+  }
+
+  Ok(resources)
+}
+
+/// Returns None if still no need to filter by resource id (eg transparent mode, group membership with all access).
+pub async fn list_resource_ids_for_user<T: KomodoResource>(
+  filters: Option<Document>,
+  user: &User,
+  permission: PermissionLevelAndSpecifics,
+) -> anyhow::Result<Option<Vec<String>>> {
+  // Check admin
+  if user.admin {
+    return Ok(None);
+  }
+
+  let mut base = PermissionLevelAndSpecifics {
+    level: if core_config().transparent_mode {
+      PermissionLevel::Read
+    } else {
+      PermissionLevel::None
+    },
+    specific: Default::default(),
+  };
+
+  // 'transparent_mode' early return.
+  if base.fulfills(&permission) {
+    return Ok(None);
+  }
+
+  let resource_type = T::resource_type();
+
+  if let Some(all) = user.all.get(&resource_type) {
+    base.elevate(all);
+    // 'user.all' early return.
+    if base.fulfills(&permission) {
+      return Ok(None);
+    }
+  }
+
+  // Check user groups 'all' on variant
+  let groups = get_user_user_groups(&user.id).await?;
+  for group in &groups {
+    if let Some(all) = group.all.get(&resource_type) {
+      base.elevate(all);
+      // 'group.all' early return.
+      if base.fulfills(&permission) {
+        return Ok(None);
+      }
+    }
+  }
+
+  let ids = list_resources_for_user::<T>(filters, user, permission)
+    .await?
+    .into_iter()
+    .map(|resource| resource.id)
+    .collect();
+
+  Ok(Some(ids))
 }

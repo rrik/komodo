@@ -46,6 +46,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Alerter>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -56,6 +57,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Builder>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -66,6 +68,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Server>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -76,6 +79,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Stack>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -86,6 +90,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Deployment>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -96,6 +101,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Build>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -106,6 +112,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Repo>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -116,6 +123,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Procedure>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -126,6 +134,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<Action>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?
@@ -136,6 +145,7 @@ async fn get_all_targets(
     resource::list_full_for_user::<ResourceSync>(
       ResourceQuery::builder().tags(tags).build(),
       user,
+      PermissionLevel::Read.into(),
       &all_tags,
     )
     .await?

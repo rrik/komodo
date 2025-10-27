@@ -1,4 +1,4 @@
-import { ConnectExecQuery, Types } from "komodo_client";
+import { Types } from "komodo_client";
 import { useDeployment } from ".";
 import { useLocalStorage, usePermissions } from "@lib/hooks";
 import { useServer } from "../server";
@@ -10,7 +10,7 @@ import {
 import { DeploymentConfig } from "./config";
 import { DeploymentLogs } from "./log";
 import { DeploymentInspect } from "./inspect";
-import { ContainerTerminal } from "@components/terminal/container";
+import { ContainerTerminals } from "@components/terminal/container";
 
 export const DeploymentTabs = ({ id }: { id: string }) => {
   const deployment = useDeployment(id);
@@ -98,16 +98,13 @@ const DeploymentTabsInner = ({
     />
   );
 
-  const terminalQuery = useMemo(
-    () =>
-      ({
-        type: "deployment",
-        query: {
-          deployment: deployment.id,
-          // This is handled inside ContainerTerminal
-          shell: "",
-        },
-      }) as ConnectExecQuery,
+  const target: Types.TerminalTarget = useMemo(
+    () => ({
+      type: "Deployment",
+      params: {
+        deployment: deployment.id,
+      },
+    }),
     [deployment.id]
   );
 
@@ -119,6 +116,6 @@ const DeploymentTabsInner = ({
     case "Inspect":
       return <DeploymentInspect id={deployment.id} titleOther={Selector} />;
     case "Terminal":
-      return <ContainerTerminal query={terminalQuery} titleOther={Selector} />;
+      return <ContainerTerminals target={target} titleOther={Selector} />;
   }
 };

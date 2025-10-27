@@ -246,6 +246,47 @@ impl PermissionLevel {
 }
 
 impl PermissionLevelAndSpecifics {
+  /// Elevates self by permissions in other:
+  /// - If other.level > self.level, set self.level = other.level
+  /// - If other includes more specifics, add them.
+  pub fn elevate(&mut self, other: &impl HasLevelAndSpecific) {
+    let other_level = other.level();
+    if other_level > self.level {
+      self.level = other_level;
+    }
+    self.specific.extend(other.specific().iter().cloned());
+  }
+
+  /// Joins permissions in self with other to produce a new PermissionsLevelAndSpecifics:
+  /// - If other.level > self.level, set self.level = other.level
+  /// - If other includes more specifics, add them.
+  pub fn join(
+    &self,
+    other: &impl HasLevelAndSpecific,
+  ) -> PermissionLevelAndSpecifics {
+    let mut specific = self.specific.clone();
+    specific.extend(other.specific().iter().cloned());
+    PermissionLevelAndSpecifics {
+      level: std::cmp::max(self.level, other.level()),
+      specific,
+    }
+  }
+
+  /// Joins permissions in self with other to produce a new PermissionsLevelAndSpecifics:
+  /// - If other.level > self.level, set self.level = other.level
+  /// - If other includes more specifics, add them.
+  pub fn join_permission(
+    &self,
+    other: &Permission,
+  ) -> PermissionLevelAndSpecifics {
+    let mut specific = self.specific.clone();
+    specific.extend(other.specific.iter().cloned());
+    PermissionLevelAndSpecifics {
+      level: std::cmp::max(self.level, other.level),
+      specific,
+    }
+  }
+
   /// Returns true when self.level >= other.level,
   /// and has all required specific permissions.
   pub fn fulfills(
@@ -330,5 +371,28 @@ impl PermissionLevelAndSpecifics {
   /// Operation requires Processes permission
   pub fn processes(self) -> PermissionLevelAndSpecifics {
     self.specific(SpecificPermission::Processes)
+  }
+}
+
+pub trait HasLevelAndSpecific {
+  fn level(&self) -> PermissionLevel;
+  fn specific(&self) -> &IndexSet<SpecificPermission>;
+}
+
+impl HasLevelAndSpecific for Permission {
+  fn level(&self) -> PermissionLevel {
+    self.level
+  }
+  fn specific(&self) -> &IndexSet<SpecificPermission> {
+    &self.specific
+  }
+}
+
+impl HasLevelAndSpecific for PermissionLevelAndSpecifics {
+  fn level(&self) -> PermissionLevel {
+    self.level
+  }
+  fn specific(&self) -> &IndexSet<SpecificPermission> {
+    &self.specific
   }
 }

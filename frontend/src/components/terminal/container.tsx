@@ -1,151 +1,261 @@
 import { Section } from "@components/layouts";
-import { komodo_client, useLocalStorage } from "@lib/hooks";
+import { komodo_client, useLocalStorage, useRead, useWrite } from "@lib/hooks";
 import { Button } from "@ui/button";
-import { CardTitle } from "@ui/card";
-import { Input } from "@ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ui/select";
-import { RefreshCcw } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@ui/card";
+import { Loader2, Plus, RefreshCcw, X } from "lucide-react";
 import { ReactNode, useCallback, useState } from "react";
 import { Terminal } from ".";
-import { ConnectExecQuery, TerminalCallbacks, Types } from "komodo_client";
-import { ConnectAttachQuery } from "komodo_client/dist/terminal";
+import { TerminalCallbacks, Types } from "komodo_client";
+import { Badge } from "@ui/badge";
+import { filterBySplit } from "@lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@ui/popover";
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@ui/command";
 
-const BASE_SHELLS = ["sh", "bash"];
+const BASE_SHELLS = ["sh", "bash", "attach"];
 
-export const ContainerTerminal = ({
-  query: { type, query },
+export const ContainerTerminals = ({
+  target,
   titleOther,
 }: {
-  query: ConnectExecQuery | ConnectAttachQuery;
+  target: Types.TerminalTarget;
   titleOther?: ReactNode;
 }) => {
+  const { data: terminals, refetch: refetchTerminals } = useRead(
+    "ListTerminals",
+    {
+      target,
+    },
+    {
+      refetchInterval: 5000,
+    }
+  );
+  const { mutateAsync: create_terminal, isPending: create_pending } =
+    useWrite("CreateTerminal");
+  const { mutateAsync: delete_terminal } = useWrite("DeleteTerminal");
+  const [_selected, setSelected] = useLocalStorage<{
+    selected: string | undefined;
+  }>(`${JSON.stringify(target)}-selected-terminal-v1`, { selected: undefined });
+
+  const selected = _selected.selected ?? terminals?.[0]?.name;
+
   const [_reconnect, _setReconnect] = useState(false);
   const triggerReconnect = () => _setReconnect((r) => !r);
-  const [_clear, _setClear] = useState(false);
 
-  const storageKey =
-    type === "container"
-      ? `server-${query.server}-${query.container}`
-      : type === "deployment"
-        ? `deployment-${query.deployment}`
-        : `stack-${query.stack}-${query.service}`;
-
-  const [shell, setShell] = useLocalStorage(
-    `${storageKey}-term-shell-v1`,
-    "sh"
-  );
-  const [mode, setMode] = useLocalStorage<Types.ContainerTerminalMode>(
-    `${storageKey}-term-mode-v2`,
-    Types.ContainerTerminalMode.Exec
-  );
-  const [otherShell, setOtherShell] = useState("");
-
-  const make_ws = useCallback(
-    (callbacks: TerminalCallbacks) => {
-      if (mode === Types.ContainerTerminalMode.Exec) {
-        return komodo_client().connect_exec({
-          query: { type, query: { ...query, shell } } as any,
-          ...callbacks,
-        });
-      } else if (mode === Types.ContainerTerminalMode.Attach) {
-        return komodo_client().connect_attach({
-          query: { type, query: { ...query } } as any,
-          ...callbacks,
-        });
-      }
-    },
-    [query, shell, mode]
-  );
-
+  const create = async (command: string | undefined) => {
+    if (!terminals) return;
+    const name = next_terminal_name(
+      command,
+      terminals.map((t) => t.name)
+    );
+    await create_terminal({
+      target,
+      name,
+      command,
+      mode: !command
+        ? Types.ContainerTerminalMode.Attach
+        : Types.ContainerTerminalMode.Exec,
+    });
+    refetchTerminals();
+    setTimeout(() => {
+      setSelected({
+        selected: name,
+      });
+    }, 100);
+  };
   return (
-    <Section
-      titleOther={titleOther}
-      actions={
-        <CardTitle className="text-muted-foreground flex items-center gap-2 flex-wrap">
-          docker
-          <Select
-            value={mode}
-            onValueChange={(mode) =>
-              setMode(mode as Types.ContainerTerminalMode)
-            }
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {Object.values(Types.ContainerTerminalMode).map((mode) => (
-                  <SelectItem key={mode} value={mode}>
-                    {mode}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          {mode === Types.ContainerTerminalMode.Exec ? "-it " : ""}container
-          <Select
-            value={shell}
-            onValueChange={setShell}
-            disabled={mode === Types.ContainerTerminalMode.Attach}
-          >
-            <SelectTrigger
-              className="w-[120px]"
-              disabled={mode === Types.ContainerTerminalMode.Attach}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {[
-                  ...BASE_SHELLS,
-                  ...(!BASE_SHELLS.includes(shell) ? [shell] : []),
-                ].map((shell) => (
-                  <SelectItem key={shell} value={shell}>
-                    {shell}
-                  </SelectItem>
-                ))}
-                <Input
-                  placeholder="other"
-                  value={otherShell}
-                  onChange={(e) => setOtherShell(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setShell(otherShell);
-                      setOtherShell("");
-                    } else {
-                      e.stopPropagation();
+    <Section titleOther={titleOther}>
+      <Card>
+        <CardHeader>
+          <div className="flex gap-4 items-center flex-wrap">
+            {terminals?.map(({ name: terminal, stored_size_kb }) => (
+              <Badge
+                key={terminal}
+                variant={terminal === selected ? "default" : "secondary"}
+                className="w-fit min-w-[150px] px-2 py-1 cursor-pointer flex gap-4 justify-between"
+                onClick={() => setSelected({ selected: terminal })}
+              >
+                <div className="text-sm w-full flex gap-1 items-center justify-between">
+                  {terminal}
+                  {/* <div className="min-w-[20px] max-w-[70px] text-xs text-muted-foreground text-nowrap whitespace-nowrap overflow-hidden overflow-ellipsis">
+                    {command}
+                  </div> */}
+                  <div className="text-muted-foreground text-xs">
+                    {stored_size_kb.toFixed()} KiB
+                  </div>
+                </div>
+                <Button
+                  className="p-1 h-fit"
+                  variant="destructive"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await delete_terminal({ target, terminal });
+                    refetchTerminals();
+                    if (selected === terminal) {
+                      setSelected({ selected: undefined });
                     }
                   }}
-                />
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <Button
-            className="flex items-center gap-2 ml-2"
-            variant="secondary"
-            onClick={() => triggerReconnect()}
-          >
-            Reconnect
-            <RefreshCcw className="w-4 h-4" />
-          </Button>
-        </CardTitle>
-      }
-    >
-      <div className="min-h-[65vh]">
-        <Terminal
-          make_ws={make_ws}
-          selected={true}
-          _clear={_clear}
-          _reconnect={_reconnect}
-        />
-      </div>
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </Badge>
+            ))}
+            {terminals && (
+              <NewTerminal create={create} pending={create_pending} />
+            )}
+            <Button
+              className="flex items-center gap-2 m-0"
+              variant="secondary"
+              onClick={() => triggerReconnect()}
+            >
+              Reconnect
+              <RefreshCcw className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="min-h-[65vh]">
+          {terminals?.map(({ name: terminal }) => (
+            <ContainerTerminal
+              key={terminal}
+              target={target}
+              terminal={terminal}
+              selected={selected === terminal}
+              _reconnect={_reconnect}
+            />
+          ))}
+        </CardContent>
+      </Card>
     </Section>
   );
+};
+
+export const ContainerTerminal = ({
+  terminal,
+  target,
+  selected,
+  _reconnect,
+}: {
+  terminal: string;
+  target: Types.TerminalTarget;
+  selected: boolean;
+  _reconnect: boolean;
+}) => {
+  const make_ws = useCallback(
+    (callbacks: TerminalCallbacks) => {
+      return komodo_client().connect_terminal({
+        query: { target, terminal },
+        ...callbacks,
+      });
+    },
+    [target, terminal]
+  );
+  return (
+    <Terminal make_ws={make_ws} selected={selected} _reconnect={_reconnect} />
+  );
+};
+
+const NewTerminal = ({
+  create,
+  pending,
+}: {
+  create: (command: string | undefined) => Promise<void>;
+  pending: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [shells, setShells] = useLocalStorage(
+    "container-shells-v1",
+    BASE_SHELLS
+  );
+  const filtered = filterBySplit(shells, search, (item) => item);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className="flex items-center gap-2"
+          disabled={pending}
+        >
+          New Terminal
+          {pending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] max-h-[300px] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Enter shell"
+            className="h-9"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandGroup>
+              {filtered.map((shell) => (
+                <CommandItem
+                  key={shell}
+                  onSelect={() => {
+                    create(shell === "attach" ? undefined : shell);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="p-1">{shell}</div>
+                  {!BASE_SHELLS.includes(shell) && (
+                    <Button
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShells((shells) =>
+                          shells.filter((s) => s !== shell)
+                        );
+                      }}
+                      className="p-1 h-fit"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </CommandItem>
+              ))}
+              {filtered.length === 0 && (
+                <CommandItem
+                  onSelect={() => {
+                    setShells((shells) => [...shells, search]);
+                    create(search);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="p-1">{search}</div>
+                  <Plus className="w-4 h-4" />
+                </CommandItem>
+              )}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const next_terminal_name = (
+  command: string | undefined,
+  terminal_names: string[]
+) => {
+  const shell = !command ? "attach" : command.split(" ")[0];
+  for (let i = 1; i <= terminal_names.length + 1; i++) {
+    const name = i > 1 ? `${shell} ${i}` : shell;
+    if (!terminal_names.includes(name)) {
+      return name;
+    }
+  }
+  return shell;
 };

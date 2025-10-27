@@ -1,7 +1,7 @@
 use std::{fmt::Write as _, sync::OnceLock};
 
 use anyhow::{Context, anyhow};
-use command::run_komodo_command;
+use command::run_komodo_standard_command;
 use database::{
   bson::{Document, doc},
   mungos::find::find_collect,
@@ -151,7 +151,7 @@ impl Resolve<ExecuteArgs> for BackupCoreDatabase {
 
     update_update(update.clone()).await?;
 
-    let res = run_komodo_command(
+    let res = run_komodo_standard_command(
       "Backup Core Database",
       None,
       "km database backup --yes",

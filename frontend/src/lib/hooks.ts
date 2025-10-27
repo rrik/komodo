@@ -20,7 +20,11 @@ import { atom, useAtom } from "jotai";
 import { atomFamily } from "jotai/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { has_minimum_permissions, RESOURCE_TARGETS } from "./utils";
+import {
+  has_minimum_permissions,
+  RESOURCE_TARGETS,
+  resourceTargetFromTerminalTarget,
+} from "./utils";
 
 export const atomWithStorage = <T>(key: string, init: T) => {
   const stored = localStorage.getItem(key);
@@ -773,6 +777,11 @@ export const usePermissions = ({ type, id }: Types.ResourceTarget) => {
     specificAttach,
     specificProcesses,
   };
+};
+
+export const useTerminalTargetPermissions = (target: Types.TerminalTarget) => {
+  const resourceTarget = resourceTargetFromTerminalTarget(target);
+  return usePermissions(resourceTarget);
 };
 
 const templatesQueryBehaviorAtom =

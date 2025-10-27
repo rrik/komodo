@@ -25,7 +25,7 @@ import {
   useContainerPortsMap,
 } from "@lib/hooks";
 import { cn } from "@lib/utils";
-import { ConnectExecQuery, Types } from "komodo_client";
+import { Types } from "komodo_client";
 import { ChevronLeft, Clapperboard, Layers2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { StackServiceLogs } from "./log";
@@ -34,7 +34,7 @@ import { ExportButton } from "@components/export";
 import { ContainerPortLink, DockerResourceLink } from "@components/util";
 import { ResourceNotifications } from "@pages/resource-notifications";
 import { Fragment } from "react/jsx-runtime";
-import { ContainerTerminal } from "@components/terminal/container";
+import { ContainerTerminals } from "@components/terminal/container";
 import { useServer } from "@components/resources/server";
 import { StackServiceInspect } from "./inspect";
 import { useMemo } from "react";
@@ -298,17 +298,14 @@ const StackServiceTabs = ({
     />
   );
 
-  const terminalQuery = useMemo(
-    () =>
-      ({
-        type: "stack",
-        query: {
-          stack: stack.id,
-          service,
-          // This is handled inside ContainerTerminal
-          shell: "",
-        },
-      }) as ConnectExecQuery,
+  const target: Types.TerminalTarget = useMemo(
+    () => ({
+      type: "Stack",
+      params: {
+        stack: stack.id,
+        service,
+      },
+    }),
     [stack.id, service]
   );
 
@@ -331,6 +328,6 @@ const StackServiceTabs = ({
         />
       );
     case "Terminal":
-      return <ContainerTerminal query={terminalQuery} titleOther={Selector} />;
+      return <ContainerTerminals target={target} titleOther={Selector} />;
   }
 };

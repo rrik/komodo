@@ -5,11 +5,12 @@ use futures_util::{SinkExt, StreamExt};
 use komodo_client::{
   api::{
     read::{ListAllDockerContainers, ListServers},
-    write::{CreateTerminal, TerminalRecreateMode},
+    terminal::{ConnectTerminalQuery, InitTerminal},
   },
   entities::{
     config::cli::args::terminal::{Attach, Connect, Exec},
     server::ServerQuery,
+    terminal::{TerminalRecreateMode, TerminalTarget},
   },
 };
 use tokio::{
@@ -30,21 +31,24 @@ pub async fn handle_connect(
   }: &Connect,
 ) -> anyhow::Result<()> {
   handle_terminal_forwarding(async {
-    let client = super::komodo_client().await?;
-    // Init the terminal if it doesn't exist already.
-    client
-      .write(CreateTerminal {
-        server: server.to_string(),
-        name: name.to_string(),
-        command: command.clone(),
-        recreate: if *recreate {
-          TerminalRecreateMode::Always
-        } else {
-          TerminalRecreateMode::DifferentCommand
+    super::komodo_client()
+      .await?
+      .connect_terminal_websocket(&ConnectTerminalQuery {
+        target: TerminalTarget::Server {
+          server: Some(server.to_string()),
         },
+        terminal: Some(name.to_string()),
+        init: Some(InitTerminal {
+          command: command.clone(),
+          recreate: if *recreate {
+            TerminalRecreateMode::Always
+          } else {
+            TerminalRecreateMode::DifferentCommand
+          },
+          mode: None,
+        }),
       })
-      .await?;
-    client.connect_terminal_websocket(server, name).await
+      .await
   })
   .await
 }
@@ -65,7 +69,11 @@ pub async fn handle_exec(
         &server,
         container,
         shell,
-        recreate.then_some(TerminalRecreateMode::Always),
+        if *recreate {
+          TerminalRecreateMode::Always
+        } else {
+          TerminalRecreateMode::DifferentCommand
+        },
       )
       .await
   })
@@ -86,7 +94,11 @@ pub async fn handle_attach(
       .connect_container_attach_websocket(
         &server,
         container,
-        recreate.then_some(TerminalRecreateMode::Always),
+        if *recreate {
+          TerminalRecreateMode::Always
+        } else {
+          TerminalRecreateMode::DifferentCommand
+        },
       )
       .await
   })

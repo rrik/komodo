@@ -24,6 +24,7 @@ import {
   EthernetPort,
   FolderGit,
   HardDrive,
+  Layers2,
   LinkIcon,
   Loader2,
   Network,
@@ -751,6 +752,35 @@ export const DockerResourceLink = ({
   );
 };
 
+export const StackServiceLink = ({
+  id,
+  service,
+}: {
+  id: string;
+  service: string;
+}) => {
+  const services = useRead(
+    "ListStackServices",
+    { stack: id },
+    { refetchInterval: 10_000 }
+  ).data;
+  const container = services?.find((s) => s.service === service)?.container;
+  const state = container?.state;
+  const color = stroke_color_class_by_intention(
+    container_state_intention(state)
+  );
+  return (
+    <Link
+      to={`/stacks/${id}/service/${service}`}
+      onClick={(e) => e.stopPropagation()}
+      className="flex items-center gap-2 text-sm hover:underline"
+    >
+      <Layers2 className={cn("w-4 h-4", color)} />
+      {service}
+    </Link>
+  );
+};
+
 export const DockerResourcePageName = ({ name: _name }: { name?: string }) => {
   const name = _name ?? "Unknown";
   return (
@@ -1351,5 +1381,248 @@ export const ContainerPortsTableView = ({
         </Fragment>
       ))}
     </div>
+  );
+};
+
+export const ServerContainerSelector = ({
+  server_id,
+  selected,
+  onSelect,
+  disabled,
+  align,
+  placeholder,
+  targetClassName,
+  state,
+}: {
+  server_id: string;
+  selected: string | undefined;
+  onSelect?: (name: string) => void;
+  disabled?: boolean;
+  align?: "start" | "center" | "end";
+  placeholder?: string;
+  targetClassName?: string;
+  state?: Types.ContainerStateStatusEnum;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containers = useRead("ListDockerContainers", {
+    server: server_id,
+  }).data?.filter((container) => !state || container.state === state);
+  const name = containers?.find((r) => r.name === selected)?.name;
+
+  if (!containers) return null;
+
+  const filtered = filterBySplit(containers, search, (item) => item.name).sort(
+    (a, b) => {
+      if (a.name > b.name) {
+        return 1;
+      } else if (a.name < b.name) {
+        return -1;
+      } else {
+        return 0;
+      }
+    }
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="secondary"
+          className={cn(
+            "flex justify-start gap-2 w-fit max-w-[350px]",
+            targetClassName
+          )}
+          disabled={disabled}
+        >
+          {name || (placeholder ?? "Select Container")}
+          {!disabled && <ChevronsUpDown className="w-3 h-3" />}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] max-h-[300px] p-0" align={align}>
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search Containers"
+            className="h-9"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty className="flex justify-evenly items-center pt-3 pb-2">
+              No Containers Found
+              <SearchX className="w-3 h-3" />
+            </CommandEmpty>
+
+            <CommandGroup>
+              {!search && (
+                <CommandItem
+                  onSelect={() => {
+                    onSelect && onSelect("");
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="p-1">None</div>
+                </CommandItem>
+              )}
+              {filtered.map((container) => (
+                <CommandItem
+                  key={container.name}
+                  onSelect={() => {
+                    onSelect && onSelect(container.name);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="p-1">{container.name}</div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export const StackServiceSelector = ({
+  stack_id,
+  selected,
+  onSelect,
+  disabled,
+  align,
+  placeholder,
+  targetClassName,
+  state,
+}: {
+  stack_id: string;
+  selected: string | undefined;
+  onSelect?: (name: string) => void;
+  disabled?: boolean;
+  align?: "start" | "center" | "end";
+  placeholder?: string;
+  targetClassName?: string;
+  state?: Types.ContainerStateStatusEnum;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const services = useRead("ListStackServices", {
+    stack: stack_id,
+  }).data?.filter((service) => !state || service?.container?.state === state);
+  const name = services?.find((s) => s.service === selected)?.service;
+
+  if (!services) return null;
+
+  const filtered = filterBySplit(services, search, (item) => item.service).sort(
+    (a, b) => {
+      if (a.service > b.service) {
+        return 1;
+      } else if (a.service < b.service) {
+        return -1;
+      } else {
+        return 0;
+      }
+    }
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="secondary"
+          className={cn(
+            "flex justify-start gap-2 w-fit max-w-[350px]",
+            targetClassName
+          )}
+          disabled={disabled}
+        >
+          {name || (placeholder ?? "Select Service")}
+          {!disabled && <ChevronsUpDown className="w-3 h-3" />}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] max-h-[300px] p-0" align={align}>
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search Services"
+            className="h-9"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty className="flex justify-evenly items-center pt-3 pb-2">
+              No Services Found
+              <SearchX className="w-3 h-3" />
+            </CommandEmpty>
+
+            <CommandGroup>
+              {!search && (
+                <CommandItem
+                  onSelect={() => {
+                    onSelect && onSelect("");
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="p-1">None</div>
+                </CommandItem>
+              )}
+              {filtered.map((service) => (
+                <CommandItem
+                  key={service.service}
+                  onSelect={() => {
+                    onSelect && onSelect(service.service);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between cursor-pointer"
+                >
+                  <div className="p-1">{service.service}</div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export function ValueSelector<T extends string>({
+  values,
+  value,
+  setValue,
+}: {
+  values: T[];
+  value: T;
+  setValue: (value: T) => void;
+}) {
+  return (
+    <Select value={value} onValueChange={setValue}>
+      <SelectTrigger>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {values.map((value) => (
+          <SelectItem key={value} value={value}>
+            {value}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export const ContainerTerminalModeSelector = ({
+  mode,
+  setMode,
+}: {
+  mode: Types.ContainerTerminalMode;
+  setMode: (mode: Types.ContainerTerminalMode) => void;
+}) => {
+  return (
+    <ValueSelector
+      values={Object.values(Types.ContainerTerminalMode)}
+      value={mode}
+      setValue={setMode}
+    />
   );
 };
