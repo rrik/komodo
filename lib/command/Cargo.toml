@@ -12,6 +12,7 @@ komodo_client.workspace = true
 #
 svi.workspace = true
 #
+tracing.workspace = true
 tokio.workspace = true
 shlex.workspace = true
 nix.workspace = true

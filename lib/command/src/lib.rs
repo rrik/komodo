@@ -202,11 +202,20 @@ pub async fn run_shell_command(
   CommandOutput::from(cmd.output().await)
 }
 
-pub fn spawn_process_reaper_if_pid1() -> std::io::Result<()> {
+pub fn spawn_process_reaper_if_pid1() {
   if std::process::id() != 1 {
-    return Ok(());
+    return;
   }
-  let mut sig = signal(SignalKind::child())?;
+  tracing::info!("Spawning process reaper");
+  let mut sig = match signal(SignalKind::child()) {
+    Ok(sig) => sig,
+    Err(e) => {
+      tracing::warn!(
+        "Failed to spawn process reaper inside container. This may lead to unreaped processes on host | {e:?}"
+      );
+      return;
+    }
+  };
   tokio::spawn(async move {
     loop {
       let _ = sig.recv().await;
@@ -220,5 +229,4 @@ pub fn spawn_process_reaper_if_pid1() -> std::io::Result<()> {
       }
     }
   });
-  Ok(())
 }

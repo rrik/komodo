@@ -1,4 +1,3 @@
-use anyhow::Context;
 use futures_util::{StreamExt, stream::FuturesUnordered};
 use komodo_client::entities::config::periphery::Command;
 use tracing::Instrument;
@@ -24,6 +23,7 @@ async fn app() -> anyhow::Result<()> {
   dotenvy::dotenv().ok();
   let config = config::periphery_config();
   logger::init(&config.logging)?;
+  command::spawn_process_reaper_if_pid1();
 
   let startup_span = info_span!("PeripheryStartup");
 
@@ -104,13 +104,9 @@ async fn main() -> anyhow::Result<()> {
     return noise::key::command::handle(command).await;
   }
 
-  command::spawn_process_reaper_if_pid1()
-    .context("Failed to spawn process reaper inside container. This may lead to unreaped processes on host.")?;
-
   let mut term_signal = tokio::signal::unix::signal(
     tokio::signal::unix::SignalKind::terminate(),
   )?;
-
   tokio::select! {
     res = tokio::spawn(app()) => return res?,
     _ = term_signal.recv() => {

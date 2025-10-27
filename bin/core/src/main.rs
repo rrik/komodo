@@ -41,6 +41,7 @@ async fn app() -> anyhow::Result<()> {
   dotenvy::dotenv().ok();
   let config = core_config();
   logger::init(&config.logging)?;
+  command::spawn_process_reaper_if_pid1();
 
   let startup_span = info_span!("CoreStartup");
 
@@ -160,13 +161,9 @@ async fn app() -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-  command::spawn_process_reaper_if_pid1()
-    .context("Failed to spawn process reaper inside container. This may lead to unreaped processes on host.")?;
-
   let mut term_signal = tokio::signal::unix::signal(
     tokio::signal::unix::SignalKind::terminate(),
   )?;
-  
   tokio::select! {
     res = tokio::spawn(app()) => res?,
     _ = term_signal.recv() => Ok(()),
