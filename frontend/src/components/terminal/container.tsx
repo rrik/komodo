@@ -17,7 +17,7 @@ import {
   CommandList,
 } from "@ui/command";
 
-const BASE_SHELLS = ["sh", "bash", "attach"];
+const BASE_COMMANDS = ["sh", "bash", "attach"];
 
 export const ContainerTerminals = ({
   target,
@@ -168,11 +168,11 @@ const NewTerminal = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [shells, setShells] = useLocalStorage(
-    "container-shells-v1",
-    BASE_SHELLS
+  const [commands, setCommands] = useLocalStorage(
+    "container-commands-v1",
+    BASE_COMMANDS
   );
-  const filtered = filterBySplit(shells, search, (item) => item);
+  const filtered = filterBySplit(commands, search, (item) => item);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -192,30 +192,30 @@ const NewTerminal = ({
       <PopoverContent className="w-[200px] max-h-[300px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Enter shell"
+            placeholder="Enter command"
             className="h-9"
             value={search}
             onValueChange={setSearch}
           />
           <CommandList>
             <CommandGroup>
-              {filtered.map((shell) => (
+              {filtered.map((command) => (
                 <CommandItem
-                  key={shell}
+                  key={command}
                   onSelect={() => {
-                    create(shell === "attach" ? undefined : shell);
+                    create(command === "attach" ? undefined : command);
                     setOpen(false);
                   }}
                   className="flex items-center justify-between cursor-pointer"
                 >
-                  <div className="p-1">{shell}</div>
-                  {!BASE_SHELLS.includes(shell) && (
+                  <div className="p-1">{command}</div>
+                  {!BASE_COMMANDS.includes(command) && (
                     <Button
                       variant="destructive"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShells((shells) =>
-                          shells.filter((s) => s !== shell)
+                        setCommands((commands) =>
+                          commands.filter((s) => s !== command)
                         );
                       }}
                       className="p-1 h-fit"
@@ -228,7 +228,7 @@ const NewTerminal = ({
               {filtered.length === 0 && (
                 <CommandItem
                   onSelect={() => {
-                    setShells((shells) => [...shells, search]);
+                    setCommands((commands) => [...commands, search]);
                     create(search);
                     setOpen(false);
                   }}
@@ -247,15 +247,15 @@ const NewTerminal = ({
 };
 
 const next_terminal_name = (
-  command: string | undefined,
+  _command: string | undefined,
   terminal_names: string[]
 ) => {
-  const shell = !command ? "attach" : command.split(" ")[0];
+  const command = !_command ? "attach" : _command.split(" ")[0];
   for (let i = 1; i <= terminal_names.length + 1; i++) {
-    const name = i > 1 ? `${shell} ${i}` : shell;
+    const name = i > 1 ? `${command} ${i}` : command;
     if (!terminal_names.includes(name)) {
       return name;
     }
   }
-  return shell;
+  return command;
 };
