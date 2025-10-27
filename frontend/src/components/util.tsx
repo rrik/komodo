@@ -1408,6 +1408,10 @@ export const ServerContainerSelector = ({
   const containers = useRead("ListDockerContainers", {
     server: server_id,
   }).data?.filter((container) => !state || container.state === state);
+  const first_container = containers?.[0].name;
+  useEffect(() => {
+    first_container && onSelect?.(first_container);
+  }, [first_container]);
   const name = containers?.find((r) => r.name === selected)?.name;
 
   if (!containers) return null;
@@ -1509,7 +1513,11 @@ export const StackServiceSelector = ({
   const services = useRead("ListStackServices", {
     stack: stack_id,
   }).data?.filter((service) => !state || service?.container?.state === state);
-  const name = services?.find((s) => s.service === selected)?.service;
+  const first_service = services?.[0].service;
+  useEffect(() => {
+    first_service && onSelect?.(first_service);
+  }, [first_service]);
+  const selected_name = services?.find((s) => s.service === selected)?.service;
 
   if (!services) return null;
 
@@ -1536,7 +1544,7 @@ export const StackServiceSelector = ({
           )}
           disabled={disabled}
         >
-          {name || (placeholder ?? "Select Service")}
+          {selected_name || (placeholder ?? "Select Service")}
           {!disabled && <ChevronsUpDown className="w-3 h-3" />}
         </Button>
       </PopoverTrigger>

@@ -248,17 +248,9 @@ const CreateTerminal = () => {
             Selector={Selector}
           />
         ) : type === "Stack" ? (
-          <CreateStackServiceTerminal
-            open={open}
-            setOpen={setOpen}
-            Selector={Selector}
-          />
+          <CreateStackServiceTerminal setOpen={setOpen} Selector={Selector} />
         ) : type === "Deployment" ? (
-          <CreateDeploymentTerminal
-            open={open}
-            setOpen={setOpen}
-            Selector={Selector}
-          />
+          <CreateDeploymentTerminal setOpen={setOpen} Selector={Selector} />
         ) : (
           <></>
         )}
@@ -409,7 +401,7 @@ const default_create_container_terminal = (
       type: "Container",
       params: { server: first_server, container: "" },
     },
-    name: "term-1",
+    name: "exec-1",
     mode: Types.ContainerTerminalMode.Exec,
     command: undefined,
   };
@@ -433,6 +425,18 @@ const CreateContainerTerminal = ({
     if (open) return;
     setRequest(default_create_container_terminal(first_server));
   }, [first_server]);
+  useEffect(() => {
+    setRequest((req) => ({
+      ...req,
+      name:
+        // Preserves existing name if non-default
+        req.name !== "attach" && !req.name.startsWith("exec-")
+          ? req.name
+          : request.mode === Types.ContainerTerminalMode.Attach
+            ? "attach"
+            : "exec-1",
+    }));
+  }, [request.mode]);
   const { server, container } = request.target.params as {
     server: string;
     container: string;
@@ -548,30 +552,44 @@ const default_create_stack_service_terminal = (
       type: "Stack",
       params: { stack: first_stack, service: "" },
     },
-    name: "term-1",
+    name: "exec-1",
     mode: Types.ContainerTerminalMode.Exec,
     command: undefined,
   };
 };
 
 const CreateStackServiceTerminal = ({
-  open,
   setOpen,
   Selector,
 }: {
-  open: boolean;
   setOpen: (open: boolean) => void;
   Selector: ReactNode;
 }) => {
   const nav = useNavigate();
-  const first_stack = (useRead("ListStacks", {}).data ?? [])[0]?.id ?? "";
+  const first_stack =
+    (useRead("ListStacks", {}).data ?? []).filter((s) =>
+      [Types.StackState.Running, Types.StackState.Unhealthy].includes(
+        s.info.state
+      )
+    )[0]?.id ?? "";
   const [request, setRequest] = useState<Types.CreateTerminal>(
     default_create_stack_service_terminal(first_stack)
   );
   useEffect(() => {
-    if (open) return;
     setRequest(default_create_stack_service_terminal(first_stack));
   }, [first_stack]);
+  useEffect(() => {
+    setRequest((req) => ({
+      ...req,
+      name:
+        // Preserves existing name if non-default
+        req.name !== "attach" && !req.name.startsWith("exec-")
+          ? req.name
+          : request.mode === Types.ContainerTerminalMode.Attach
+            ? "attach"
+            : "exec-1",
+    }));
+  }, [request.mode]);
   const { stack, service } = request.target.params as {
     stack: string;
     service: string;
@@ -687,31 +705,42 @@ const default_create_deployment_terminal = (
       type: "Deployment",
       params: { deployment: first_deployment },
     },
-    name: "term-1",
+    name: "exec-1",
     mode: Types.ContainerTerminalMode.Exec,
     command: undefined,
   };
 };
 
 const CreateDeploymentTerminal = ({
-  open,
   setOpen,
   Selector,
 }: {
-  open: boolean;
   setOpen: (open: boolean) => void;
   Selector: ReactNode;
 }) => {
   const nav = useNavigate();
   const first_deployment =
-    (useRead("ListDeployments", {}).data ?? [])[0]?.id ?? "";
+    (useRead("ListDeployments", {}).data ?? []).filter(
+      (d) => d.info.state === Types.DeploymentState.Running
+    )[0]?.id ?? "";
   const [request, setRequest] = useState<Types.CreateTerminal>(
     default_create_deployment_terminal(first_deployment)
   );
   useEffect(() => {
-    if (open) return;
     setRequest(default_create_deployment_terminal(first_deployment));
   }, [first_deployment]);
+  useEffect(() => {
+    setRequest((req) => ({
+      ...req,
+      name:
+        // Preserves existing name if non-default
+        req.name !== "attach" && !req.name.startsWith("exec-")
+          ? req.name
+          : request.mode === Types.ContainerTerminalMode.Attach
+            ? "attach"
+            : "exec-1",
+    }));
+  }, [request.mode]);
   const { deployment } = request.target.params as {
     deployment: string;
   };
