@@ -1,4 +1,8 @@
-use std::path::Path;
+use std::{
+  path::{Path, PathBuf},
+  process::Stdio,
+  sync::OnceLock,
+};
 
 use komodo_client::{
   entities::{komodo_timestamp, update::Log},
@@ -135,7 +139,10 @@ pub async fn run_standard_command(
     )));
   };
   let mut cmd = Command::new(&lexed[0]);
-  cmd.args(&lexed[1..]).kill_on_drop(true);
+  cmd
+    .args(&lexed[1..])
+    .kill_on_drop(true)
+    .stdin(Stdio::null());
   if let Some(path) = path.into() {
     match path.canonicalize() {
       Ok(path) => {
@@ -148,13 +155,29 @@ pub async fn run_standard_command(
   CommandOutput::from(output)
 }
 
+fn shell() -> &'static str {
+  static DEFAULT_SHELL: OnceLock<String> = OnceLock::new();
+  DEFAULT_SHELL.get_or_init(|| {
+    if PathBuf::from("/bin/bash").exists()
+      || PathBuf::from("/usr/bin/bash").exists()
+    {
+      String::from("bash")
+    } else {
+      String::from("sh")
+    }
+  })
+}
+
 /// Commands are wrapped in 'sh -c', and can include '&&'
 pub async fn run_shell_command(
   command: &str,
   path: impl Into<Option<&Path>>,
 ) -> CommandOutput {
-  let mut cmd = Command::new("sh");
-  cmd.arg("-c").arg(command).kill_on_drop(true);
+  let mut cmd = Command::new(shell());
+  cmd
+    .args(["-c", command])
+    .kill_on_drop(true)
+    .stdin(Stdio::null());
   if let Some(path) = path.into() {
     match path.canonicalize() {
       Ok(path) => {
