@@ -135,7 +135,7 @@ pub async fn run_standard_command(
     )));
   };
   let mut cmd = Command::new(&lexed[0]);
-  cmd.args(&lexed[1..]);
+  cmd.args(&lexed[1..]).kill_on_drop(true);
   if let Some(path) = path.into() {
     match path.canonicalize() {
       Ok(path) => {
@@ -154,7 +154,7 @@ pub async fn run_shell_command(
   path: impl Into<Option<&Path>>,
 ) -> CommandOutput {
   let mut cmd = Command::new("sh");
-  cmd.arg("-c").arg(command);
+  cmd.arg("-c").arg(command).kill_on_drop(true);
   if let Some(path) = path.into() {
     match path.canonicalize() {
       Ok(path) => {
