@@ -323,16 +323,25 @@ const CreateServerTerminal = ({
 }) => {
   const nav = useNavigate();
   const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
-  const [request, setRequest] = useState<Types.CreateTerminal>(
+  const [request, _setRequest] = useState<Types.CreateTerminal>(
     default_create_server_terminal(first_server)
   );
+  const [changed, setChanged] = useState(false);
+  const setRequest = (
+    req:
+      | Types.CreateTerminal
+      | ((req: Types.CreateTerminal) => Types.CreateTerminal)
+  ) => {
+    setChanged(true);
+    _setRequest(req);
+  };
+  useEffect(() => {
+    if (changed) return;
+    setRequest(default_create_server_terminal(first_server));
+  }, [open, first_server]);
   const { server } = request.target.params as {
     server: string;
   };
-  useEffect(() => {
-    if (open) return;
-    setRequest(default_create_server_terminal(first_server));
-  }, [first_server]);
   const { mutate, isPending } = useWrite("CreateTerminal", {
     onSuccess: () => {
       nav(`/servers/${server}/terminal/${request.name}`);
@@ -420,13 +429,22 @@ const CreateContainerTerminal = ({
 }) => {
   const nav = useNavigate();
   const first_server = (useRead("ListServers", {}).data ?? [])[0]?.id ?? "";
-  const [request, setRequest] = useState<Types.CreateTerminal>(
+  const [request, _setRequest] = useState<Types.CreateTerminal>(
     default_create_container_terminal(first_server)
   );
+  const [changed, setChanged] = useState(false);
+  const setRequest = (
+    req:
+      | Types.CreateTerminal
+      | ((req: Types.CreateTerminal) => Types.CreateTerminal)
+  ) => {
+    setChanged(true);
+    _setRequest(req);
+  };
   useEffect(() => {
-    if (open) return;
+    if (changed) return;
     setRequest(default_create_container_terminal(first_server));
-  }, [first_server]);
+  }, [open, first_server]);
   useEffect(() => {
     setRequest((req) => ({
       ...req,
@@ -559,10 +577,20 @@ const CreateStackServiceTerminal = ({
         s.info.state
       )
     )[0]?.id ?? "";
-  const [request, setRequest] = useState<Types.CreateTerminal>(
+  const [request, _setRequest] = useState<Types.CreateTerminal>(
     default_create_stack_service_terminal(first_stack)
   );
+  const [changed, setChanged] = useState(false);
+  const setRequest = (
+    req:
+      | Types.CreateTerminal
+      | ((req: Types.CreateTerminal) => Types.CreateTerminal)
+  ) => {
+    setChanged(true);
+    _setRequest(req);
+  };
   useEffect(() => {
+    if (changed) return;
     setRequest(default_create_stack_service_terminal(first_stack));
   }, [first_stack]);
   useEffect(() => {
@@ -695,10 +723,20 @@ const CreateDeploymentTerminal = ({
     (useRead("ListDeployments", {}).data ?? []).filter(
       (d) => d.info.state === Types.DeploymentState.Running
     )[0]?.id ?? "";
-  const [request, setRequest] = useState<Types.CreateTerminal>(
+  const [request, _setRequest] = useState<Types.CreateTerminal>(
     default_create_deployment_terminal(first_deployment)
   );
+  const [changed, setChanged] = useState(false);
+  const setRequest = (
+    req:
+      | Types.CreateTerminal
+      | ((req: Types.CreateTerminal) => Types.CreateTerminal)
+  ) => {
+    setChanged(true);
+    _setRequest(req);
+  };
   useEffect(() => {
+    if (changed) return;
     setRequest(default_create_deployment_terminal(first_deployment));
   }, [first_deployment]);
   useEffect(() => {
