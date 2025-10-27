@@ -350,6 +350,7 @@ const CreateServerTerminal = ({
         <ResourceSelector
           targetClassName="w-full justify-between"
           type="Server"
+          state={Types.ServerState.Ok}
           selected={server}
           onSelect={(server) =>
             setRequest((req) => ({
@@ -462,6 +463,7 @@ const CreateContainerTerminal = ({
         <ResourceSelector
           targetClassName="w-full justify-between"
           type="Server"
+          state={Types.ServerState.Ok}
           selected={server}
           onSelect={(server) =>
             setRequest((req) => ({
@@ -600,6 +602,7 @@ const CreateStackServiceTerminal = ({
         <ResourceSelector
           targetClassName="w-full justify-between"
           type="Stack"
+          state={Types.StackState.Running || Types.StackState.Unhealthy}
           selected={stack}
           onSelect={(stack) =>
             setRequest((req) => ({
@@ -738,6 +741,7 @@ const CreateDeploymentTerminal = ({
         <ResourceSelector
           targetClassName="w-full justify-between"
           type="Deployment"
+          state={Types.DeploymentState.Running}
           selected={deployment}
           onSelect={(deployment) =>
             setRequest((req) => ({
