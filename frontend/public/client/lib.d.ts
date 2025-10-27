@@ -158,8 +158,8 @@ export declare function KomodoClient(url: string, options: InitOptions): {
         query: ConnectTerminalQuery;
     } & TerminalCallbacks) => WebSocket;
     /**
-     * Executes a command on a given Server / terminal,
-     * and gives a callback to handle the output as it comes in.
+     * Executes a command on a given target / terminal,
+     * and gives callbacks to handle the output as it comes in.
      *
      * ```ts
      * await komodo.execute_terminal(
@@ -186,7 +186,7 @@ export declare function KomodoClient(url: string, options: InitOptions): {
      */
     execute_terminal: (request: ExecuteTerminalBody, callbacks?: import("./terminal.js").ExecuteCallbacks) => Promise<void>;
     /**
-     * Executes a command on a given Server / terminal,
+     * Executes a command on a given target / terminal,
      * and returns a stream to process the output as it comes in.
      *
      * Note. The final line of the stream will usually be
@@ -218,4 +218,120 @@ export declare function KomodoClient(url: string, options: InitOptions): {
      * ```
      */
     execute_terminal_stream: (request: ExecuteTerminalBody) => Promise<AsyncIterable<string>>;
+    /**
+     * Executes a command on a given Server / terminal,
+     * and gives callbacks to handle the output as it comes in.
+     *
+     * ```ts
+     * await komodo.execute_server_terminal(
+     *   {
+     *     server: "my-server",
+     *     terminal: "name",
+     *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+     *     init: {
+     *       command: "bash",
+     *       recreate: Types.TerminalRecreateMode.Always
+     *     }
+     *   },
+     *   {
+     *     onLine: (line) => console.log(line),
+     *     onFinish: (code) => console.log("Finished:", code),
+     *   }
+     * );
+     * ```
+     */
+    execute_server_terminal: ({ server, terminal, command, init, }: {
+        server: string;
+        terminal?: string;
+        command: string;
+        init?: import("./types.js").InitTerminal;
+    }, callbacks?: import("./terminal.js").ExecuteCallbacks) => Promise<void>;
+    /**
+     * Executes a command on a given Server / Container / terminal,
+     * and gives callbacks to handle the output as it comes in.
+     *
+     * ```ts
+     * await komodo.execute_container_terminal(
+     *   {
+     *     server: "my-server",
+     *     container: "my-container",
+     *     terminal: "name",
+     *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+     *     init: {
+     *       command: "bash",
+     *       recreate: Types.TerminalRecreateMode.Always
+     *     }
+     *   },
+     *   {
+     *     onLine: (line) => console.log(line),
+     *     onFinish: (code) => console.log("Finished:", code),
+     *   }
+     * );
+     * ```
+     */
+    execute_container_terminal: ({ server, container, terminal, command, init, }: {
+        server: string;
+        container: string;
+        terminal?: string;
+        command: string;
+        init?: import("./types.js").InitTerminal;
+    }, callbacks?: import("./terminal.js").ExecuteCallbacks) => Promise<void>;
+    /**
+     * Executes a command on a given Stack / service / terminal,
+     * and gives callbacks to handle the output as it comes in.
+     *
+     * ```ts
+     * await komodo.execute_stack_service_terminal(
+     *   {
+     *     stack: "my-stack",
+     *     service: "my-service",
+     *     terminal: "name",
+     *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+     *     init: {
+     *       command: "bash",
+     *       recreate: Types.TerminalRecreateMode.Always
+     *     }
+     *   },
+     *   {
+     *     onLine: (line) => console.log(line),
+     *     onFinish: (code) => console.log("Finished:", code),
+     *   }
+     * );
+     * ```
+     */
+    execute_stack_service_terminal: ({ stack, service, terminal, command, init, }: {
+        stack: string;
+        service: string;
+        terminal?: string;
+        command: string;
+        init?: import("./types.js").InitTerminal;
+    }, callbacks?: import("./terminal.js").ExecuteCallbacks) => Promise<void>;
+    /**
+     * Executes a command on a given Deployment / terminal,
+     * and gives callbacks to handle the output as it comes in.
+     *
+     * ```ts
+     * await komodo.execute_deployment_terminal(
+     *   {
+     *     deployment: "my-deployemnt",
+     *     terminal: "name",
+     *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+     *     init: {
+     *       command: "bash",
+     *       recreate: Types.TerminalRecreateMode.Always
+     *     }
+     *   },
+     *   {
+     *     onLine: (line) => console.log(line),
+     *     onFinish: (code) => console.log("Finished:", code),
+     *   }
+     * );
+     * ```
+     */
+    execute_deployment_terminal: ({ deployment, terminal, command, init, }: {
+        deployment: string;
+        terminal?: string;
+        command: string;
+        init?: import("./types.js").InitTerminal;
+    }, callbacks?: import("./terminal.js").ExecuteCallbacks) => Promise<void>;
 };

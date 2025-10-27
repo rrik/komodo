@@ -18,7 +18,7 @@ export const DeploymentTabs = ({ id }: { id: string }) => {
   return <DeploymentTabsInner deployment={deployment} />;
 };
 
-type DeploymentTabsView = "Config" | "Log" | "Inspect" | "Terminal";
+type DeploymentTabsView = "Config" | "Log" | "Inspect" | "Terminals";
 
 const DeploymentTabsInner = ({
   deployment,
@@ -54,7 +54,7 @@ const DeploymentTabsInner = ({
   const view =
     (logsDisabled && _view === "Log") ||
     (inspectDisabled && _view === "Inspect") ||
-    (terminalDisabled && _view === "Terminal")
+    (terminalDisabled && _view === "Terminals")
       ? "Config"
       : _view;
 
@@ -74,7 +74,7 @@ const DeploymentTabsInner = ({
         disabled: inspectDisabled,
       },
       {
-        value: "Terminal",
+        value: "Terminals",
         hidden: !specificTerminal,
         disabled: terminalDisabled,
       },
@@ -115,7 +115,7 @@ const DeploymentTabsInner = ({
       return <DeploymentLogs id={deployment.id} titleOther={Selector} />;
     case "Inspect":
       return <DeploymentInspect id={deployment.id} titleOther={Selector} />;
-    case "Terminal":
+    case "Terminals":
       return <ContainerTerminals target={target} titleOther={Selector} />;
   }
 };

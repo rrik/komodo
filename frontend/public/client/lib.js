@@ -176,7 +176,7 @@ export function KomodoClient(url, options) {
             }
         }
     };
-    const { connect_terminal, execute_terminal, execute_terminal_stream } = terminal_methods(url, state);
+    const { connect_terminal, execute_terminal, execute_terminal_stream, execute_server_terminal, execute_container_terminal, execute_stack_service_terminal, execute_deployment_terminal, } = terminal_methods(url, state);
     return {
         /**
          * Call the `/auth` api.
@@ -278,8 +278,8 @@ export function KomodoClient(url, options) {
          */
         connect_terminal,
         /**
-         * Executes a command on a given Server / terminal,
-         * and gives a callback to handle the output as it comes in.
+         * Executes a command on a given target / terminal,
+         * and gives callbacks to handle the output as it comes in.
          *
          * ```ts
          * await komodo.execute_terminal(
@@ -306,7 +306,7 @@ export function KomodoClient(url, options) {
          */
         execute_terminal,
         /**
-         * Executes a command on a given Server / terminal,
+         * Executes a command on a given target / terminal,
          * and returns a stream to process the output as it comes in.
          *
          * Note. The final line of the stream will usually be
@@ -338,5 +338,99 @@ export function KomodoClient(url, options) {
          * ```
          */
         execute_terminal_stream,
+        /**
+         * Executes a command on a given Server / terminal,
+         * and gives callbacks to handle the output as it comes in.
+         *
+         * ```ts
+         * await komodo.execute_server_terminal(
+         *   {
+         *     server: "my-server",
+         *     terminal: "name",
+         *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+         *     init: {
+         *       command: "bash",
+         *       recreate: Types.TerminalRecreateMode.Always
+         *     }
+         *   },
+         *   {
+         *     onLine: (line) => console.log(line),
+         *     onFinish: (code) => console.log("Finished:", code),
+         *   }
+         * );
+         * ```
+         */
+        execute_server_terminal,
+        /**
+         * Executes a command on a given Server / Container / terminal,
+         * and gives callbacks to handle the output as it comes in.
+         *
+         * ```ts
+         * await komodo.execute_container_terminal(
+         *   {
+         *     server: "my-server",
+         *     container: "my-container",
+         *     terminal: "name",
+         *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+         *     init: {
+         *       command: "bash",
+         *       recreate: Types.TerminalRecreateMode.Always
+         *     }
+         *   },
+         *   {
+         *     onLine: (line) => console.log(line),
+         *     onFinish: (code) => console.log("Finished:", code),
+         *   }
+         * );
+         * ```
+         */
+        execute_container_terminal,
+        /**
+         * Executes a command on a given Stack / service / terminal,
+         * and gives callbacks to handle the output as it comes in.
+         *
+         * ```ts
+         * await komodo.execute_stack_service_terminal(
+         *   {
+         *     stack: "my-stack",
+         *     service: "my-service",
+         *     terminal: "name",
+         *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+         *     init: {
+         *       command: "bash",
+         *       recreate: Types.TerminalRecreateMode.Always
+         *     }
+         *   },
+         *   {
+         *     onLine: (line) => console.log(line),
+         *     onFinish: (code) => console.log("Finished:", code),
+         *   }
+         * );
+         * ```
+         */
+        execute_stack_service_terminal,
+        /**
+         * Executes a command on a given Deployment / terminal,
+         * and gives callbacks to handle the output as it comes in.
+         *
+         * ```ts
+         * await komodo.execute_deployment_terminal(
+         *   {
+         *     deployment: "my-deployemnt",
+         *     terminal: "name",
+         *     command: 'for i in {1..3}; do echo "$i"; sleep 1; done',
+         *     init: {
+         *       command: "bash",
+         *       recreate: Types.TerminalRecreateMode.Always
+         *     }
+         *   },
+         *   {
+         *     onLine: (line) => console.log(line),
+         *     onFinish: (code) => console.log("Finished:", code),
+         *   }
+         * );
+         * ```
+         */
+        execute_deployment_terminal,
     };
 }

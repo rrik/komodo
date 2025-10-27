@@ -225,7 +225,7 @@ const StackServicePageInner = ({
   );
 };
 
-type StackServiceTabsView = "Log" | "Inspect" | "Terminal";
+type StackServiceTabsView = "Log" | "Inspect" | "Terminals";
 
 const StackServiceTabs = ({
   stack,
@@ -237,7 +237,7 @@ const StackServiceTabs = ({
   container_state: Types.ContainerStateStatusEnum;
 }) => {
   const [_view, setView] = useLocalStorage<StackServiceTabsView>(
-    `stack-${stack.id}-${service}-tabs-v1`,
+    `stack-${stack.id}-${service}-tabs-v2`,
     "Log"
   );
   const { specificLogs, specificInspect, specificTerminal } = usePermissions({
@@ -257,7 +257,7 @@ const StackServiceTabs = ({
     container_state !== Types.ContainerStateStatusEnum.Running;
   const view =
     (inspectDisabled && _view === "Inspect") ||
-    (terminalDisabled && _view === "Terminal")
+    (terminalDisabled && _view === "Terminals")
       ? "Log"
       : _view;
 
@@ -274,7 +274,7 @@ const StackServiceTabs = ({
         disabled: inspectDisabled,
       },
       {
-        value: "Terminal",
+        value: "Terminals",
         hidden: !specificTerminal,
         disabled: terminalDisabled,
       },
@@ -327,7 +327,7 @@ const StackServiceTabs = ({
           titleOther={Selector}
         />
       );
-    case "Terminal":
+    case "Terminals":
       return <ContainerTerminals target={target} titleOther={Selector} />;
   }
 };

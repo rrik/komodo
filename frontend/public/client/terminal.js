@@ -138,10 +138,39 @@ export const terminal_methods = (url, state) => {
             });
         }
     });
+    const execute_server_terminal = ({ server, terminal, command, init, }, callbacks) => execute_terminal({
+        target: { type: "Server", params: { server } },
+        terminal,
+        command,
+        init,
+    }, callbacks);
+    const execute_container_terminal = async ({ server, container, terminal, command, init, }, callbacks) => execute_terminal({
+        target: { type: "Container", params: { server, container } },
+        terminal,
+        command,
+        init,
+    }, callbacks);
+    const execute_stack_service_terminal = async ({ stack, service, terminal, command, init, }, callbacks) => execute_terminal({
+        target: { type: "Stack", params: { stack, service } },
+        terminal,
+        command,
+        init,
+    }, callbacks);
+    const execute_deployment_terminal = async ({ deployment, terminal, command, init, }, callbacks) => execute_terminal({
+        target: { type: "Deployment", params: { deployment } },
+        terminal,
+        command,
+        init,
+    }, callbacks);
     return {
         connect_terminal,
         execute_terminal,
         execute_terminal_stream,
+        // Convenience methods
+        execute_server_terminal,
+        execute_container_terminal,
+        execute_stack_service_terminal,
+        execute_deployment_terminal,
     };
 };
 const connect_terminal_target_query = (target) => {

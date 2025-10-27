@@ -1,5 +1,5 @@
 import { ClientState } from "./lib";
-import { ConnectTerminalQuery, ExecuteTerminalBody } from "./types";
+import { ConnectTerminalQuery, ExecuteTerminalBody, InitTerminal } from "./types";
 export type TerminalCallbacks = {
     on_message?: (e: MessageEvent<any>) => void;
     on_login?: () => void;
@@ -16,4 +16,30 @@ export declare const terminal_methods: (url: string, state: ClientState) => {
     } & TerminalCallbacks) => WebSocket;
     execute_terminal: (request: ExecuteTerminalBody, callbacks?: ExecuteCallbacks) => Promise<void>;
     execute_terminal_stream: (request: ExecuteTerminalBody) => Promise<AsyncIterable<string>>;
+    execute_server_terminal: ({ server, terminal, command, init, }: {
+        server: string;
+        terminal?: string;
+        command: string;
+        init?: InitTerminal;
+    }, callbacks?: ExecuteCallbacks) => Promise<void>;
+    execute_container_terminal: ({ server, container, terminal, command, init, }: {
+        server: string;
+        container: string;
+        terminal?: string;
+        command: string;
+        init?: InitTerminal;
+    }, callbacks?: ExecuteCallbacks) => Promise<void>;
+    execute_stack_service_terminal: ({ stack, service, terminal, command, init, }: {
+        stack: string;
+        service: string;
+        terminal?: string;
+        command: string;
+        init?: InitTerminal;
+    }, callbacks?: ExecuteCallbacks) => Promise<void>;
+    execute_deployment_terminal: ({ deployment, terminal, command, init, }: {
+        deployment: string;
+        terminal?: string;
+        command: string;
+        init?: InitTerminal;
+    }, callbacks?: ExecuteCallbacks) => Promise<void>;
 };

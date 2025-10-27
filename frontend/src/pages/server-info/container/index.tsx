@@ -214,7 +214,7 @@ const ContainerPageInner = ({
   );
 };
 
-type ContainerTabsView = "Log" | "Inspect" | "Terminal";
+type ContainerTabsView = "Log" | "Inspect" | "Terminals";
 
 const ContainerTabs = ({
   server,
@@ -226,7 +226,7 @@ const ContainerTabs = ({
   state: Types.ContainerStateStatusEnum;
 }) => {
   const [_view, setView] = useLocalStorage<ContainerTabsView>(
-    `server-${server}-${container}-tabs-v1`,
+    `server-${server}-${container}-tabs-v2`,
     "Log"
   );
   const { specificLogs, specificInspect, specificTerminal } = usePermissions({
@@ -245,7 +245,7 @@ const ContainerTabs = ({
     state !== Types.ContainerStateStatusEnum.Running;
   const view =
     (inspectDisabled && _view === "Inspect") ||
-    (terminalDisabled && _view === "Terminal")
+    (terminalDisabled && _view === "Terminals")
       ? "Log"
       : _view;
 
@@ -262,7 +262,7 @@ const ContainerTabs = ({
         disabled: inspectDisabled,
       },
       {
-        value: "Terminal",
+        value: "Terminals",
         hidden: !specificTerminal,
         disabled: terminalDisabled,
       },
@@ -315,7 +315,7 @@ const ContainerTabs = ({
           titleOther={Selector}
         />
       );
-    case "Terminal":
+    case "Terminals":
       return <ContainerTerminals target={target} titleOther={Selector} />;
   }
 };
