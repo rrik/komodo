@@ -43,6 +43,7 @@ async fn app() -> anyhow::Result<()> {
   logger::init(&config.logging)?;
 
   let startup_span = info_span!("CoreStartup");
+
   async {
     info!("Komodo Core version: v{}", env!("CARGO_PKG_VERSION"));
 
@@ -159,9 +160,13 @@ async fn app() -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+  command::spawn_process_reaper_if_pid1()
+    .context("Failed to spawn process reaper inside container. This may lead to unreaped processes on host.")?;
+
   let mut term_signal = tokio::signal::unix::signal(
     tokio::signal::unix::SignalKind::terminate(),
   )?;
+  
   tokio::select! {
     res = tokio::spawn(app()) => res?,
     _ = term_signal.recv() => Ok(()),

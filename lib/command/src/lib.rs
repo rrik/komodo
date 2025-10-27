@@ -8,6 +8,11 @@ use komodo_client::{
   entities::{komodo_timestamp, update::Log},
   parsers::parse_multiline_command,
 };
+use nix::{
+  sys::wait::{WaitPidFlag, WaitStatus, waitpid},
+  unistd::Pid,
+};
+use tokio::signal::unix::{SignalKind, signal};
 
 mod output;
 
@@ -134,10 +139,9 @@ pub async fn run_standard_command(
   {
     lexed
   } else {
-    return CommandOutput::from_err(
-      std::io::Error::other("Command lexed into empty args"),
-      None,
-    );
+    return CommandOutput::from_err(std::io::Error::other(
+      "Command lexed into empty args",
+    ));
   };
 
   let mut cmd = Command::new(&lexed[0]);
@@ -154,20 +158,11 @@ pub async fn run_standard_command(
       Ok(path) => {
         cmd.current_dir(path);
       }
-      Err(e) => return CommandOutput::from(Err(e), None),
+      Err(e) => return CommandOutput::from_err(e),
     }
   }
 
-  let child = match cmd.spawn() {
-    Ok(child) => child,
-    Err(e) => return CommandOutput::from_err(e, None),
-  };
-
-  let pid = child.id();
-
-  println!("[{}] {command}", pid.clone().unwrap_or_default());
-
-  CommandOutput::from(child.wait_with_output().await, pid)
+  CommandOutput::from(cmd.output().await)
 }
 
 fn shell() -> &'static str {
@@ -200,16 +195,30 @@ pub async fn run_shell_command(
       Ok(path) => {
         cmd.current_dir(path);
       }
-      Err(e) => return CommandOutput::from(Err(e), None),
+      Err(e) => return CommandOutput::from_err(e),
     }
   }
 
-  let child = match cmd.spawn() {
-    Ok(child) => child,
-    Err(e) => return CommandOutput::from_err(e, None),
-  };
+  CommandOutput::from(cmd.output().await)
+}
 
-  let pid = child.id();
-
-  CommandOutput::from(child.wait_with_output().await, pid)
+pub fn spawn_process_reaper_if_pid1() -> std::io::Result<()> {
+  if std::process::id() != 1 {
+    return Ok(());
+  }
+  let mut sig = signal(SignalKind::child())?;
+  tokio::spawn(async move {
+    loop {
+      let _ = sig.recv().await;
+      loop {
+        match waitpid(Pid::from_raw(-1), Some(WaitPidFlag::WNOHANG)) {
+          Ok(WaitStatus::StillAlive) => break,
+          Ok(_status) => continue, // Exited/Signaled/… — all reaped
+          Err(nix::errno::Errno::ECHILD) => break, // none left
+          Err(_) => break,
+        }
+      }
+    }
+  });
+  Ok(())
 }

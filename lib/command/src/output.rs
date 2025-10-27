@@ -6,30 +6,27 @@ use std::{
 
 #[derive(Debug, Clone)]
 pub struct CommandOutput {
-  pub pid: Option<u32>,
   pub status: ExitStatus,
   pub stdout: String,
   pub stderr: String,
 }
 
 impl CommandOutput {
-  pub fn from(output: io::Result<Output>, pid: Option<u32>) -> Self {
+  pub fn from(output: io::Result<Output>) -> Self {
     match output {
       Ok(output) => Self {
-        pid,
         status: output.status,
         stdout: String::from_utf8(output.stdout)
           .unwrap_or("failed to generate stdout".to_string()),
         stderr: String::from_utf8(output.stderr)
           .unwrap_or("failed to generate stderr".to_string()),
       },
-      Err(e) => CommandOutput::from_err(e, pid),
+      Err(e) => CommandOutput::from_err(e),
     }
   }
 
-  pub fn from_err(e: io::Error, pid: Option<u32>) -> Self {
+  pub fn from_err(e: io::Error) -> Self {
     Self {
-      pid,
       status: ExitStatus::from_raw(1),
       stdout: "".to_string(),
       stderr: format!("{e:#?}"),

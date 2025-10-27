@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use anyhow::{Context, anyhow};
-use jsonwebtoken::{DecodingKey, Validation, decode};
+use jsonwebtoken::dangerous::insecure_decode;
 use komodo_client::entities::{
   config::core::{CoreConfig, OauthCredentials},
   random_string,
@@ -138,15 +138,8 @@ impl GoogleOauthClient {
     &self,
     id_token: &str,
   ) -> anyhow::Result<GoogleUser> {
-    let mut v = Validation::new(Default::default());
-    v.insecure_disable_signature_validation();
-    v.validate_aud = false;
-    let res = decode::<GoogleUser>(
-      id_token,
-      &DecodingKey::from_secret(b""),
-      &v,
-    )
-    .context("failed to decode google id token")?;
+    let res = insecure_decode::<GoogleUser>(id_token)
+      .context("failed to decode google id token")?;
     Ok(res.claims)
   }
 
