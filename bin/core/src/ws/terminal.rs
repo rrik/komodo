@@ -1,21 +1,27 @@
+use anyhow::anyhow;
 use axum::{
-  extract::{WebSocketUpgrade, ws::Message},
+  extract::{FromRequestParts, WebSocketUpgrade, ws},
+  http::request,
   response::IntoResponse,
 };
-use futures_util::SinkExt;
+use bytes::Bytes;
+use futures_util::{SinkExt, StreamExt as _};
 use komodo_client::{
   api::terminal::ConnectTerminalQuery, entities::user::User,
 };
+use periphery_client::api::terminal::DisconnectTerminal;
+use serde::de::DeserializeOwned;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
   helpers::terminal::setup_target_for_user,
   periphery::{PeripheryClient, terminal::ConnectTerminalResponse},
-  ws::forward_ws_channel,
+  state::periphery_connections,
 };
 
 #[instrument("ConnectTerminal", skip(ws))]
 pub async fn handler(
-  super::Qs(query): super::Qs<ConnectTerminalQuery>,
+  Qs(query): Qs<ConnectTerminalQuery>,
   ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
   ws.on_upgrade(|socket| async move {
@@ -30,7 +36,7 @@ pub async fn handler(
         Ok(response) => response,
         Err(e) => {
           let _ = client_socket
-            .send(Message::text(format!("ERROR: {e:#}")))
+            .send(ws::Message::text(format!("ERROR: {e:#}")))
             .await;
           let _ = client_socket.close().await;
           return;
@@ -53,4 +59,143 @@ async fn setup_forwarding(
     setup_target_for_user(target, terminal, init, user).await?;
   let response = periphery.connect_terminal(terminal, target).await?;
   Ok((periphery, response))
+}
+
+async fn forward_ws_channel(
+  periphery: PeripheryClient,
+  client_socket: axum::extract::ws::WebSocket,
+  ConnectTerminalResponse {
+    channel,
+    sender: periphery_sender,
+    receiver: mut periphery_receiver,
+  }: ConnectTerminalResponse,
+) {
+  let (mut client_send, mut client_receive) = client_socket.split();
+  let cancel = CancellationToken::new();
+
+  periphery_receiver.set_cancel(cancel.clone());
+
+  trace!("starting ws exchange");
+
+  let core_to_periphery = async {
+    loop {
+      let client_recv_res = tokio::select! {
+        res = client_receive.next() => res,
+        _ = cancel.cancelled() => {
+          let _ = periphery_sender
+            .send_terminal(
+              channel,
+              Err(anyhow!("Client disconnected")),
+            )
+            .await;
+          break;
+        }
+      };
+      match client_recv_res {
+        Some(Ok(ws::Message::Binary(bytes))) => {
+          if let Err(_e) = periphery_sender
+            .send_terminal(channel, Ok(bytes.into()))
+            .await
+          {
+            cancel.cancel();
+            break;
+          };
+        }
+        Some(Ok(ws::Message::Text(text))) => {
+          let bytes: Bytes = text.into();
+          if let Err(_e) = periphery_sender
+            .send_terminal(channel, Ok(bytes.into()))
+            .await
+          {
+            cancel.cancel();
+            break;
+          };
+        }
+        Some(Ok(ws::Message::Close(_frame))) => {
+          cancel.cancel();
+          break;
+        }
+        Some(Err(_e)) => {
+          cancel.cancel();
+          break;
+        }
+        None => {
+          cancel.cancel();
+          break;
+        }
+        // Ignore
+        Some(Ok(_)) => {}
+      }
+    }
+  };
+
+  let periphery_to_core = async {
+    loop {
+      // Already adheres to cancellation token
+      match periphery_receiver.recv().await {
+        Ok(Ok(bytes)) => {
+          if let Err(e) =
+            client_send.send(ws::Message::Binary(bytes.into())).await
+          {
+            debug!("{e:?}");
+            cancel.cancel();
+            break;
+          };
+        }
+        Ok(Err(e)) => {
+          let _ = client_send
+            .send(ws::Message::Text(format!("{e:#}").into()))
+            .await;
+          let _ = client_send.close().await;
+          cancel.cancel();
+          break;
+        }
+        Err(_) => {
+          let _ =
+            client_send.send(ws::Message::text("STREAM EOF")).await;
+          cancel.cancel();
+          break;
+        }
+      }
+    }
+  };
+
+  tokio::join!(core_to_periphery, periphery_to_core);
+
+  // Cleanup
+  if let Err(e) =
+    periphery.request(DisconnectTerminal { channel }).await
+  {
+    warn!(
+      "Failed to disconnect Periphery terminal forwarding | {e:#}",
+    )
+  }
+  if let Some(connection) =
+    periphery_connections().get(&periphery.id).await
+  {
+    connection.terminals.remove(&channel).await;
+  }
+}
+
+pub struct Qs<T>(pub T);
+
+impl<S, T> FromRequestParts<S> for Qs<T>
+where
+  S: Send + Sync,
+  T: DeserializeOwned,
+{
+  type Rejection = axum::response::Response;
+
+  async fn from_request_parts(
+    parts: &mut request::Parts,
+    _state: &S,
+  ) -> Result<Self, Self::Rejection> {
+    let raw = parts.uri.query().unwrap_or_default();
+    serde_qs::from_str::<T>(raw).map(Qs).map_err(|e| {
+      axum::response::IntoResponse::into_response((
+        axum::http::StatusCode::BAD_REQUEST,
+        format!("Failed to parse request query: {e}"),
+      ))
+    })
+  }
 }

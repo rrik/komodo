@@ -9,11 +9,9 @@ use tokio_tungstenite::{
 };
 use typeshare::typeshare;
 
-use crate::{
-  KomodoClient, api::terminal::ConnectTerminalQuery,
-  entities::terminal::TerminalRecreateMode,
-};
+use crate::{KomodoClient, entities::terminal::TerminalRecreateMode};
 
+pub mod terminal;
 pub mod update;
 
 #[typeshare]
@@ -37,18 +35,6 @@ impl WsLoginMessage {
 }
 
 impl KomodoClient {
-  pub async fn connect_terminal_websocket(
-    &self,
-    query: &ConnectTerminalQuery,
-  ) -> anyhow::Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
-    self
-      .connect_login_user_websocket(
-        "/terminal",
-        Some(&serde_qs::to_string(query)?),
-      )
-      .await
-  }
-
   pub async fn connect_container_exec_websocket(
     &self,
     server: &str,
