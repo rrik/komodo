@@ -90,7 +90,8 @@ pub async fn create_terminal(
   if matches!(recreate, Never | DifferentCommand)
     && let Some(terminal) = terminals
       .find(|terminal| {
-        terminal.name == name && terminal.target == target
+        terminal.target.matches_on_server(&target)
+          && terminal.name == name
       })
       .await
   {
@@ -110,7 +111,10 @@ pub async fn create_terminal(
   );
   if let Some(prev) = terminals
     .insert(
-      |terminal| terminal.name == name && terminal.target == target,
+      |terminal| {
+        terminal.target.matches_on_server(&target)
+          && terminal.name == name
+      },
       terminal.clone(),
     )
     .await
@@ -124,7 +128,7 @@ pub async fn create_terminal(
 pub async fn delete_terminal(target: &TerminalTarget, name: &str) {
   if let Some(terminal) = terminals()
     .remove(|terminal| {
-      target.matches_on_server(&terminal.target)
+      terminal.target.matches_on_server(target)
         && name == terminal.name.as_str()
     })
     .await
@@ -195,7 +199,8 @@ pub async fn get_terminal(
 ) -> anyhow::Result<Arc<PeripheryTerminal>> {
   terminals()
     .find(|terminal| {
-      terminal.name.as_str() == name && &terminal.target == target
+      terminal.target.matches_on_server(target)
+        && terminal.name.as_str() == name
     })
     .await
     .with_context(|| format!("No terminal for {target:?} at {name}"))

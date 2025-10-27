@@ -20,16 +20,8 @@ import {
 import { filterBySplit } from "@lib/utils";
 import { Button } from "@ui/button";
 import { DataTable, SortableHeader } from "@ui/data-table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@ui/dialog";
 import { Input } from "@ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@ui/popover";
 import {
   Select,
   SelectContent,
@@ -188,7 +180,6 @@ const TerminalTargetResourceLink = ({
 }: {
   target: Types.TerminalTarget;
 }) => {
-  console.log(target);
   switch (target.type) {
     case "Server":
       return <ResourceLink type="Server" id={target.params.server!} />;
@@ -228,13 +219,17 @@ const CreateTerminal = () => {
   const Selector = <CreateTerminalTypeSelector type={type} setType={setType} />;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button className="items-center gap-2" variant="secondary">
           New Terminal <PlusCircle className="w-4 h-4" />
         </Button>
-      </DialogTrigger>
-      <DialogContent>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={14}
+        className="w-[90vw] max-w-[500px]"
+      >
         {type === "Server" ? (
           <CreateServerTerminal
             open={open}
@@ -254,8 +249,8 @@ const CreateTerminal = () => {
         ) : (
           <></>
         )}
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 };
 
@@ -282,6 +277,28 @@ const CreateTerminalTypeSelector = ({
         </SelectContent>
       </Select>
     </>
+  );
+};
+
+const CreateTerminalLayout = ({
+  children,
+  onConfirm,
+  isPending,
+}: {
+  children: ReactNode;
+  onConfirm: () => void;
+  isPending: boolean;
+}) => {
+  return (
+    <div className="flex flex-col gap-6 items-end">
+      <div className="w-full grid md:grid-cols-[2fr_3fr] gap-6 items-center">
+        {children}
+      </div>
+
+      <Button variant="secondary" onClick={onConfirm}>
+        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+      </Button>
+    </div>
   );
 };
 
@@ -328,68 +345,53 @@ const CreateServerTerminal = ({
     mutate(request);
   };
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>New Server Terminal</DialogTitle>
-        <DialogDescription>
-          Choose the Server and Command for the new Terminal.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="grid md:grid-cols-2 gap-6 items-center">
-        {Selector}
-        Server
-        <ResourceSelector
-          targetClassName="w-full justify-between"
-          type="Server"
-          state={Types.ServerState.Ok}
-          selected={server}
-          onSelect={(server) =>
-            setRequest((req) => ({
-              ...req,
-              target: {
-                ...req.target,
-                params: { ...req.target.params, server } as any,
-              },
-            }))
+    <CreateTerminalLayout onConfirm={onConfirm} isPending={isPending}>
+      {Selector}
+      Server
+      <ResourceSelector
+        targetClassName="w-full justify-between"
+        type="Server"
+        state={Types.ServerState.Ok}
+        selected={server}
+        onSelect={(server) =>
+          setRequest((req) => ({
+            ...req,
+            target: {
+              ...req.target,
+              params: { ...req.target.params, server } as any,
+            },
+          }))
+        }
+        align="end"
+      />
+      Terminal Name
+      <Input
+        autoFocus
+        placeholder="terminal-name"
+        value={request.name}
+        onChange={(e) =>
+          setRequest((req) => ({ ...req, name: e.target.value }))
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onConfirm();
           }
-          align="end"
-        />
-        Terminal Name
-        <Input
-          autoFocus
-          placeholder="terminal-name"
-          value={request.name}
-          onChange={(e) =>
-            setRequest((req) => ({ ...req, name: e.target.value }))
+        }}
+      />
+      Command
+      <Input
+        placeholder="bash (Optional)"
+        value={request.command}
+        onChange={(e) =>
+          setRequest((req) => ({ ...req, command: e.target.value }))
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onConfirm();
           }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onConfirm();
-            }
-          }}
-        />
-        Command
-        <Input
-          placeholder="bash (Optional)"
-          value={request.command}
-          onChange={(e) =>
-            setRequest((req) => ({ ...req, command: e.target.value }))
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onConfirm();
-            }
-          }}
-        />
-      </div>
-
-      <DialogFooter>
-        <Button variant="secondary" onClick={onConfirm}>
-          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-        </Button>
-      </DialogFooter>
-    </>
+        }}
+      />
+    </CreateTerminalLayout>
   );
 };
 
@@ -453,94 +455,79 @@ const CreateContainerTerminal = ({
     mutate(request);
   };
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>New Container Terminal</DialogTitle>
-        <DialogDescription>
-          Choose the Server and Container for the new Terminal.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="grid md:grid-cols-2 gap-6 items-center">
-        {Selector}
-        Server
-        <ResourceSelector
-          targetClassName="w-full justify-between"
-          type="Server"
-          state={Types.ServerState.Ok}
-          selected={server}
-          onSelect={(server) =>
-            setRequest((req) => ({
-              ...req,
-              target: {
-                ...req.target,
-                params: { ...req.target.params, server } as any,
-              },
-            }))
+    <CreateTerminalLayout onConfirm={onConfirm} isPending={isPending}>
+      {Selector}
+      Server
+      <ResourceSelector
+        targetClassName="w-full justify-between"
+        type="Server"
+        state={Types.ServerState.Ok}
+        selected={server}
+        onSelect={(server) =>
+          setRequest((req) => ({
+            ...req,
+            target: {
+              ...req.target,
+              params: { ...req.target.params, server } as any,
+            },
+          }))
+        }
+        align="end"
+      />
+      Container
+      <ServerContainerSelector
+        targetClassName="w-full justify-between"
+        server_id={server}
+        state={Types.ContainerStateStatusEnum.Running}
+        selected={container}
+        onSelect={(container) =>
+          setRequest((req) => ({
+            ...req,
+            target: {
+              ...req.target,
+              params: { ...req.target.params, container } as any,
+            },
+          }))
+        }
+        align="end"
+      />
+      Terminal Name
+      <Input
+        autoFocus
+        placeholder="terminal-name"
+        value={request.name}
+        onChange={(e) =>
+          setRequest((req) => ({ ...req, name: e.target.value }))
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onConfirm();
           }
-          align="end"
-        />
-        Container
-        <ServerContainerSelector
-          targetClassName="w-full justify-between"
-          server_id={server}
-          state={Types.ContainerStateStatusEnum.Running}
-          selected={container}
-          onSelect={(container) =>
-            setRequest((req) => ({
-              ...req,
-              target: {
-                ...req.target,
-                params: { ...req.target.params, container } as any,
-              },
-            }))
-          }
-          align="end"
-        />
-        Terminal Name
-        <Input
-          autoFocus
-          placeholder="terminal-name"
-          value={request.name}
-          onChange={(e) =>
-            setRequest((req) => ({ ...req, name: e.target.value }))
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onConfirm();
+        }}
+      />
+      Mode
+      <ContainerTerminalModeSelector
+        mode={request.mode!}
+        setMode={(mode) => setRequest({ ...request, mode })}
+      />
+      {request.mode !== Types.ContainerTerminalMode.Attach && (
+        <>
+          Command
+          <Input
+            placeholder="sh (Optional)"
+            value={request.command}
+            onChange={(e) =>
+              setRequest((req) => ({ ...req, command: e.target.value }))
             }
-          }}
-        />
-        Mode
-        <ContainerTerminalModeSelector
-          mode={request.mode!}
-          setMode={(mode) => setRequest({ ...request, mode })}
-        />
-        {request.mode !== Types.ContainerTerminalMode.Attach && (
-          <>
-            Command
-            <Input
-              placeholder="sh (Optional)"
-              value={request.command}
-              onChange={(e) =>
-                setRequest((req) => ({ ...req, command: e.target.value }))
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onConfirm();
               }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onConfirm();
-                }
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      <DialogFooter>
-        <Button variant="secondary" onClick={onConfirm}>
-          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-        </Button>
-      </DialogFooter>
-    </>
+            }}
+          />
+        </>
+      )}
+    </CreateTerminalLayout>
   );
 };
 
@@ -606,94 +593,79 @@ const CreateStackServiceTerminal = ({
     mutate(request);
   };
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>New Stack Terminal</DialogTitle>
-        <DialogDescription>
-          Choose the Stack and Service for the new Terminal.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="grid md:grid-cols-2 gap-6 items-center">
-        {Selector}
-        Stack
-        <ResourceSelector
-          targetClassName="w-full justify-between"
-          type="Stack"
-          state={Types.StackState.Running || Types.StackState.Unhealthy}
-          selected={stack}
-          onSelect={(stack) =>
-            setRequest((req) => ({
-              ...req,
-              target: {
-                ...req.target,
-                params: { ...req.target.params, stack } as any,
-              },
-            }))
+    <CreateTerminalLayout onConfirm={onConfirm} isPending={isPending}>
+      {Selector}
+      Stack
+      <ResourceSelector
+        targetClassName="w-full justify-between"
+        type="Stack"
+        state={Types.StackState.Running || Types.StackState.Unhealthy}
+        selected={stack}
+        onSelect={(stack) =>
+          setRequest((req) => ({
+            ...req,
+            target: {
+              ...req.target,
+              params: { ...req.target.params, stack } as any,
+            },
+          }))
+        }
+        align="end"
+      />
+      Service
+      <StackServiceSelector
+        targetClassName="w-full justify-between"
+        stack_id={stack}
+        state={Types.ContainerStateStatusEnum.Running}
+        selected={service}
+        onSelect={(service) =>
+          setRequest((req) => ({
+            ...req,
+            target: {
+              ...req.target,
+              params: { ...req.target.params, service } as any,
+            },
+          }))
+        }
+        align="end"
+      />
+      Terminal Name
+      <Input
+        autoFocus
+        placeholder="terminal-name"
+        value={request.name}
+        onChange={(e) =>
+          setRequest((req) => ({ ...req, name: e.target.value }))
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onConfirm();
           }
-          align="end"
-        />
-        Service
-        <StackServiceSelector
-          targetClassName="w-full justify-between"
-          stack_id={stack}
-          state={Types.ContainerStateStatusEnum.Running}
-          selected={service}
-          onSelect={(service) =>
-            setRequest((req) => ({
-              ...req,
-              target: {
-                ...req.target,
-                params: { ...req.target.params, service } as any,
-              },
-            }))
-          }
-          align="end"
-        />
-        Terminal Name
-        <Input
-          autoFocus
-          placeholder="terminal-name"
-          value={request.name}
-          onChange={(e) =>
-            setRequest((req) => ({ ...req, name: e.target.value }))
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onConfirm();
+        }}
+      />
+      Mode
+      <ContainerTerminalModeSelector
+        mode={request.mode!}
+        setMode={(mode) => setRequest({ ...request, mode })}
+      />
+      {request.mode !== Types.ContainerTerminalMode.Attach && (
+        <>
+          Command
+          <Input
+            placeholder="sh (Optional)"
+            value={request.command}
+            onChange={(e) =>
+              setRequest((req) => ({ ...req, command: e.target.value }))
             }
-          }}
-        />
-        Mode
-        <ContainerTerminalModeSelector
-          mode={request.mode!}
-          setMode={(mode) => setRequest({ ...request, mode })}
-        />
-        {request.mode !== Types.ContainerTerminalMode.Attach && (
-          <>
-            Command
-            <Input
-              placeholder="sh (Optional)"
-              value={request.command}
-              onChange={(e) =>
-                setRequest((req) => ({ ...req, command: e.target.value }))
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onConfirm();
               }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onConfirm();
-                }
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      <DialogFooter>
-        <Button variant="secondary" onClick={onConfirm}>
-          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-        </Button>
-      </DialogFooter>
-    </>
+            }}
+          />
+        </>
+      )}
+    </CreateTerminalLayout>
   );
 };
 
@@ -756,77 +728,62 @@ const CreateDeploymentTerminal = ({
     mutate(request);
   };
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>New Deployment Terminal</DialogTitle>
-        <DialogDescription>
-          Choose the Deployment for the new Terminal.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="grid md:grid-cols-2 gap-6 items-center">
-        {Selector}
-        Deployment
-        <ResourceSelector
-          targetClassName="w-full justify-between"
-          type="Deployment"
-          state={Types.DeploymentState.Running}
-          selected={deployment}
-          onSelect={(deployment) =>
-            setRequest((req) => ({
-              ...req,
-              target: {
-                ...req.target,
-                params: { ...req.target.params, deployment } as any,
-              },
-            }))
+    <CreateTerminalLayout onConfirm={onConfirm} isPending={isPending}>
+      {Selector}
+      Deployment
+      <ResourceSelector
+        targetClassName="w-full justify-between"
+        type="Deployment"
+        state={Types.DeploymentState.Running}
+        selected={deployment}
+        onSelect={(deployment) =>
+          setRequest((req) => ({
+            ...req,
+            target: {
+              ...req.target,
+              params: { ...req.target.params, deployment } as any,
+            },
+          }))
+        }
+        align="end"
+      />
+      Terminal Name
+      <Input
+        autoFocus
+        placeholder="terminal-name"
+        value={request.name}
+        onChange={(e) =>
+          setRequest((req) => ({ ...req, name: e.target.value }))
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onConfirm();
           }
-          align="end"
-        />
-        Terminal Name
-        <Input
-          autoFocus
-          placeholder="terminal-name"
-          value={request.name}
-          onChange={(e) =>
-            setRequest((req) => ({ ...req, name: e.target.value }))
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onConfirm();
+        }}
+      />
+      Mode
+      <ContainerTerminalModeSelector
+        mode={request.mode!}
+        setMode={(mode) => setRequest({ ...request, mode })}
+      />
+      {request.mode !== Types.ContainerTerminalMode.Attach && (
+        <>
+          Command
+          <Input
+            placeholder="sh (Optional)"
+            value={request.command}
+            onChange={(e) =>
+              setRequest((req) => ({ ...req, command: e.target.value }))
             }
-          }}
-        />
-        Mode
-        <ContainerTerminalModeSelector
-          mode={request.mode!}
-          setMode={(mode) => setRequest({ ...request, mode })}
-        />
-        {request.mode !== Types.ContainerTerminalMode.Attach && (
-          <>
-            Command
-            <Input
-              placeholder="sh (Optional)"
-              value={request.command}
-              onChange={(e) =>
-                setRequest((req) => ({ ...req, command: e.target.value }))
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onConfirm();
               }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onConfirm();
-                }
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      <DialogFooter>
-        <Button variant="secondary" onClick={onConfirm}>
-          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
-        </Button>
-      </DialogFooter>
-    </>
+            }}
+          />
+        </>
+      )}
+    </CreateTerminalLayout>
   );
 };
 
