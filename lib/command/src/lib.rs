@@ -202,6 +202,8 @@ pub async fn run_shell_command(
   CommandOutput::from(cmd.output().await)
 }
 
+/// When running inside docker container as PID 1,
+/// need this to reap processes / prevent zombies.
 pub fn spawn_process_reaper_if_pid1() {
   if std::process::id() != 1 {
     return;
