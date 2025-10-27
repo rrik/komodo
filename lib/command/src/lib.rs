@@ -134,25 +134,40 @@ pub async fn run_standard_command(
   {
     lexed
   } else {
-    return CommandOutput::from(Err(std::io::Error::other(
-      "Command lexed into empty args",
-    )));
+    return CommandOutput::from_err(
+      std::io::Error::other("Command lexed into empty args"),
+      None,
+    );
   };
+
   let mut cmd = Command::new(&lexed[0]);
+
   cmd
     .args(&lexed[1..])
     .kill_on_drop(true)
-    .stdin(Stdio::null());
+    .stdin(Stdio::null())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped());
+
   if let Some(path) = path.into() {
     match path.canonicalize() {
       Ok(path) => {
         cmd.current_dir(path);
       }
-      Err(e) => return CommandOutput::from(Err(e)),
+      Err(e) => return CommandOutput::from(Err(e), None),
     }
   }
-  let output = cmd.output().await;
-  CommandOutput::from(output)
+
+  let child = match cmd.spawn() {
+    Ok(child) => child,
+    Err(e) => return CommandOutput::from_err(e, None),
+  };
+
+  let pid = child.id();
+
+  println!("[{}] {command}", pid.clone().unwrap_or_default());
+
+  CommandOutput::from(child.wait_with_output().await, pid)
 }
 
 fn shell() -> &'static str {
@@ -174,18 +189,27 @@ pub async fn run_shell_command(
   path: impl Into<Option<&Path>>,
 ) -> CommandOutput {
   let mut cmd = Command::new(shell());
+
   cmd
     .args(["-c", command])
     .kill_on_drop(true)
     .stdin(Stdio::null());
+
   if let Some(path) = path.into() {
     match path.canonicalize() {
       Ok(path) => {
         cmd.current_dir(path);
       }
-      Err(e) => return CommandOutput::from(Err(e)),
+      Err(e) => return CommandOutput::from(Err(e), None),
     }
   }
-  let output = cmd.output().await;
-  CommandOutput::from(output)
+
+  let child = match cmd.spawn() {
+    Ok(child) => child,
+    Err(e) => return CommandOutput::from_err(e, None),
+  };
+
+  let pid = child.id();
+
+  CommandOutput::from(child.wait_with_output().await, pid)
 }

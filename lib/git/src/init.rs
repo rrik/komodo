@@ -12,7 +12,6 @@ pub async fn init_folder_as_repo(
   access_token: Option<&str>,
   logs: &mut Vec<Log>,
 ) {
-  // let folder_path = args.path(repo_dir);
   // Initialize the folder as a git repo
   let init_repo =
     run_komodo_standard_command("Git Init", folder_path, "git init")
