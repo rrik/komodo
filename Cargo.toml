@@ -94,7 +94,7 @@ opentelemetry = "0.31.0"
 tracing = "0.1.41"
 
 # CONFIG
-clap = { version = "4.5.49", features = ["derive"] }
+clap = { version = "4.5.50", features = ["derive"] }
 dotenvy = "0.15.7"
 envy = "0.4.2"
 
