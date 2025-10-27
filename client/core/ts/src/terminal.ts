@@ -2,6 +2,7 @@ import { ClientState, Types } from "./lib";
 import {
   ConnectTerminalQuery,
   ExecuteTerminalBody,
+  InitTerminal,
   TerminalTarget,
   WsLoginMessage,
 } from "./types";
@@ -174,10 +175,115 @@ export const terminal_methods = (url: string, state: ClientState) => {
       }
     });
 
+  const execute_server_terminal = (
+    {
+      server,
+      terminal,
+      command,
+      init,
+    }: {
+      server: string;
+      terminal?: string;
+      command: string;
+      init?: InitTerminal;
+    },
+    callbacks?: ExecuteCallbacks
+  ) =>
+    execute_terminal(
+      {
+        target: { type: "Server", params: { server } },
+        terminal,
+        command,
+        init,
+      },
+      callbacks
+    );
+
+  const execute_container_terminal = async (
+    {
+      server,
+      container,
+      terminal,
+      command,
+      init,
+    }: {
+      server: string;
+      container: string;
+      terminal?: string;
+      command: string;
+      init?: InitTerminal;
+    },
+    callbacks?: ExecuteCallbacks
+  ) =>
+    execute_terminal(
+      {
+        target: { type: "Container", params: { server, container } },
+        terminal,
+        command,
+        init,
+      },
+      callbacks
+    );
+
+  const execute_stack_service_terminal = async (
+    {
+      stack,
+      service,
+      terminal,
+      command,
+      init,
+    }: {
+      stack: string;
+      service: string;
+      terminal?: string;
+      command: string;
+      init?: InitTerminal;
+    },
+    callbacks?: ExecuteCallbacks
+  ) =>
+    execute_terminal(
+      {
+        target: { type: "Stack", params: { stack, service } },
+        terminal,
+        command,
+        init,
+      },
+      callbacks
+    );
+
+  const execute_deployment_terminal = async (
+    {
+      deployment,
+      terminal,
+      command,
+      init,
+    }: {
+      deployment: string;
+      terminal?: string;
+      command: string;
+      init?: InitTerminal;
+    },
+    callbacks?: ExecuteCallbacks
+  ) =>
+    execute_terminal(
+      {
+        target: { type: "Deployment", params: { deployment } },
+        terminal,
+        command,
+        init,
+      },
+      callbacks
+    );
+
   return {
     connect_terminal,
     execute_terminal,
     execute_terminal_stream,
+    // Convenience methods
+    execute_server_terminal,
+    execute_container_terminal,
+    execute_stack_service_terminal,
+    execute_deployment_terminal,
   };
 };
 
