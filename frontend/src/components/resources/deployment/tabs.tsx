@@ -3,10 +3,7 @@ import { useDeployment } from ".";
 import { useLocalStorage, usePermissions } from "@lib/hooks";
 import { useServer } from "../server";
 import { useMemo } from "react";
-import {
-  MobileFriendlyTabsSelector,
-  TabNoContent,
-} from "@ui/mobile-friendly-tabs";
+import { MobileFriendlyTabsSelector } from "@ui/mobile-friendly-tabs";
 import { DeploymentConfig } from "./config";
 import { DeploymentLogs } from "./log";
 import { DeploymentInspect } from "./inspect";
@@ -58,44 +55,32 @@ const DeploymentTabsInner = ({
       ? "Config"
       : _view;
 
-  const tabsNoContent = useMemo<TabNoContent<DeploymentTabsView>[]>(
-    () => [
-      {
-        value: "Config",
-      },
-      {
-        value: "Log",
-        hidden: !specificLogs,
-        disabled: logsDisabled,
-      },
-      {
-        value: "Inspect",
-        hidden: !specificInspect,
-        disabled: inspectDisabled,
-      },
-      {
-        value: "Terminals",
-        hidden: !specificTerminal,
-        disabled: terminalDisabled,
-      },
-    ],
-    [
-      specificLogs,
-      logsDisabled,
-      specificInspect,
-      inspectDisabled,
-      specificTerminal,
-      terminalDisabled,
-    ]
-  );
-
-  const Selector = (
-    <MobileFriendlyTabsSelector
-      tabs={tabsNoContent}
-      value={view}
-      onValueChange={setView as any}
-      tabsTriggerClassname="w-[110px]"
-    />
+  const Selector = useMemo(
+    () => (
+      <MobileFriendlyTabsSelector
+        tabs={[
+          {
+            value: "Config",
+          },
+          {
+            value: "Log",
+            disabled: logsDisabled,
+          },
+          {
+            value: "Inspect",
+            disabled: inspectDisabled,
+          },
+          {
+            value: "Terminals",
+            disabled: terminalDisabled,
+          },
+        ]}
+        value={view}
+        onValueChange={setView as any}
+        tabsTriggerClassname="w-[110px]"
+      />
+    ),
+    [logsDisabled, inspectDisabled, terminalDisabled]
   );
 
   const target: Types.TerminalTarget = useMemo(

@@ -1,10 +1,7 @@
 import { useLocalStorage, usePermissions, useRead, useUser } from "@lib/hooks";
 import { useServer } from ".";
 import { ReactNode, useMemo } from "react";
-import {
-  MobileFriendlyTabsSelector,
-  TabNoContent,
-} from "@ui/mobile-friendly-tabs";
+import { MobileFriendlyTabsSelector } from "@ui/mobile-friendly-tabs";
 import { ServerStats } from "./stats";
 import { ServerInfo } from "./info";
 import { ServerConfig } from "./config";
@@ -27,9 +24,8 @@ export const ServerTabs = ({ id }: { id: string }) => {
 
   const { specificTerminal } = usePermissions({ type: "Server", id });
   const server_info = useServer(id)?.info;
-  const terminals_disabled = server_info?.terminals_disabled ?? true;
-  const container_terminals_disabled =
-    server_info?.container_terminals_disabled ?? true;
+  const terminalDisabled =
+    !specificTerminal || (server_info?.terminals_disabled ?? true);
 
   const deployments =
     useRead("ListDeployments", {}).data?.filter(
@@ -49,43 +45,34 @@ export const ServerTabs = ({ id }: { id: string }) => {
 
   const noResources = noDeployments && noRepos && noStacks;
 
-  const tabsNoContent = useMemo<TabNoContent<ServerTabView>[]>(
-    () => [
-      {
-        value: "Config",
-      },
-      {
-        value: "Stats",
-      },
-      {
-        value: "Docker",
-      },
-      {
-        value: "Resources",
-        disabled: noResources,
-      },
-      {
-        value: "Terminals",
-        disabled:
-          !specificTerminal ||
-          (terminals_disabled && container_terminals_disabled),
-      },
-    ],
-    [
-      noResources,
-      specificTerminal,
-      terminals_disabled,
-      container_terminals_disabled,
-    ]
-  );
-
-  const Selector = (
-    <MobileFriendlyTabsSelector
-      tabs={tabsNoContent}
-      value={view}
-      onValueChange={setView as any}
-      tabsTriggerClassname="w-[110px]"
-    />
+  const Selector = useMemo(
+    () => (
+      <MobileFriendlyTabsSelector
+        tabs={[
+          {
+            value: "Config",
+          },
+          {
+            value: "Stats",
+          },
+          {
+            value: "Docker",
+          },
+          {
+            value: "Resources",
+            disabled: noResources,
+          },
+          {
+            value: "Terminals",
+            disabled: terminalDisabled,
+          },
+        ]}
+        value={view}
+        onValueChange={setView as any}
+        tabsTriggerClassname="w-[110px]"
+      />
+    ),
+    [noResources, terminalDisabled]
   );
 
   switch (view) {

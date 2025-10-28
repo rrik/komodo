@@ -19,7 +19,7 @@ export const StackTabs = ({ id }: { id: string }) => {
     "Config"
   );
   const info = useStack(id)?.info;
-  const { specific, specificLogs } = usePermissions({ type: "Stack", id });
+  const { specificLogs } = usePermissions({ type: "Stack", id });
 
   const state = info?.state;
   const hideInfo = !info?.files_on_host && !info?.repo && !info?.linked_repo;
@@ -27,8 +27,7 @@ export const StackTabs = ({ id }: { id: string }) => {
     state === undefined ||
     state === Types.StackState.Unknown ||
     state === Types.StackState.Down;
-  const hideLogs =
-    hideServices || !specific.includes(Types.SpecificPermission.Logs);
+  const hideLogs = hideServices || !specificLogs;
 
   const view =
     (_view === "Info" && hideInfo) ||
@@ -52,7 +51,6 @@ export const StackTabs = ({ id }: { id: string }) => {
       },
       {
         value: "Log",
-        hidden: !specificLogs,
         disabled: hideLogs,
       },
     ],

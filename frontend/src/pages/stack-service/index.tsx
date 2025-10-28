@@ -19,7 +19,6 @@ import {
 } from "@lib/color";
 import {
   usePermissions,
-  useLocalStorage,
   useRead,
   useSetTitle,
   useContainerPortsMap,
@@ -28,20 +27,12 @@ import { cn } from "@lib/utils";
 import { Types } from "komodo_client";
 import { ChevronLeft, Clapperboard, Layers2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { StackServiceLogs } from "./log";
 import { Button } from "@ui/button";
 import { ExportButton } from "@components/export";
 import { ContainerPortLink, DockerResourceLink } from "@components/util";
 import { ResourceNotifications } from "@pages/resource-notifications";
 import { Fragment } from "react/jsx-runtime";
-import { ContainerTerminals } from "@components/terminal/container";
-import { useServer } from "@components/resources/server";
-import { StackServiceInspect } from "./inspect";
-import { useMemo } from "react";
-import {
-  MobileFriendlyTabsSelector,
-  TabNoContent,
-} from "@ui/mobile-friendly-tabs";
+import { StackServiceTabs } from "./tabs";
 
 type IdServiceComponent = React.FC<{ id: string; service?: string }>;
 
@@ -223,111 +214,4 @@ const StackServicePageInner = ({
       </div>
     </div>
   );
-};
-
-type StackServiceTabsView = "Log" | "Inspect" | "Terminals";
-
-const StackServiceTabs = ({
-  stack,
-  service,
-  container_state,
-}: {
-  stack: Types.StackListItem;
-  service: string;
-  container_state: Types.ContainerStateStatusEnum;
-}) => {
-  const [_view, setView] = useLocalStorage<StackServiceTabsView>(
-    `stack-${stack.id}-${service}-tabs-v2`,
-    "Log"
-  );
-  const { specificLogs, specificInspect, specificTerminal } = usePermissions({
-    type: "Stack",
-    id: stack.id,
-  });
-  const container_terminals_disabled =
-    useServer(stack.info.server_id)?.info.container_terminals_disabled ?? true;
-  const logDisabled =
-    !specificLogs || container_state === Types.ContainerStateStatusEnum.Empty;
-  const inspectDisabled =
-    !specificInspect ||
-    container_state === Types.ContainerStateStatusEnum.Empty;
-  const terminalDisabled =
-    !specificTerminal ||
-    container_terminals_disabled ||
-    container_state !== Types.ContainerStateStatusEnum.Running;
-  const view =
-    (inspectDisabled && _view === "Inspect") ||
-    (terminalDisabled && _view === "Terminals")
-      ? "Log"
-      : _view;
-
-  const tabsNoContent = useMemo<TabNoContent<StackServiceTabsView>[]>(
-    () => [
-      {
-        value: "Log",
-        hidden: !specificLogs,
-        disabled: logDisabled,
-      },
-      {
-        value: "Inspect",
-        hidden: !specificInspect,
-        disabled: inspectDisabled,
-      },
-      {
-        value: "Terminals",
-        hidden: !specificTerminal,
-        disabled: terminalDisabled,
-      },
-    ],
-    [
-      specificLogs,
-      logDisabled,
-      specificInspect,
-      inspectDisabled,
-      specificTerminal,
-      terminalDisabled,
-    ]
-  );
-
-  const Selector = (
-    <MobileFriendlyTabsSelector
-      tabs={tabsNoContent}
-      value={view}
-      onValueChange={setView as any}
-      tabsTriggerClassname="w-[110px]"
-    />
-  );
-
-  const target: Types.TerminalTarget = useMemo(
-    () => ({
-      type: "Stack",
-      params: {
-        stack: stack.id,
-        service,
-      },
-    }),
-    [stack.id, service]
-  );
-
-  switch (view) {
-    case "Log":
-      return (
-        <StackServiceLogs
-          id={stack.id}
-          service={service}
-          titleOther={Selector}
-          disabled={logDisabled}
-        />
-      );
-    case "Inspect":
-      return (
-        <StackServiceInspect
-          id={stack.id}
-          service={service}
-          titleOther={Selector}
-        />
-      );
-    case "Terminals":
-      return <ContainerTerminals target={target} titleOther={Selector} />;
-  }
 };
