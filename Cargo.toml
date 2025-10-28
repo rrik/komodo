@@ -118,7 +118,6 @@ spki = "0.7.3"
 der = "0.7.10"
 
 # SYSTEM
-nix = { version = "0.30.1", features = ["process", "signal"] }
 hickory-resolver = "0.25.2"
 portable-pty = "0.9.0"
 shell-escape = "0.1.5"

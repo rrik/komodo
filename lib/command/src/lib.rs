@@ -8,11 +8,6 @@ use komodo_client::{
   entities::{komodo_timestamp, update::Log},
   parsers::parse_multiline_command,
 };
-use nix::{
-  sys::wait::{WaitPidFlag, WaitStatus, waitpid},
-  unistd::Pid,
-};
-use tokio::signal::unix::{SignalKind, signal};
 
 mod output;
 
@@ -200,35 +195,4 @@ pub async fn run_shell_command(
   }
 
   CommandOutput::from(cmd.output().await)
-}
-
-/// When running inside docker container as PID 1,
-/// need this to reap processes / prevent zombies.
-pub fn spawn_process_reaper_if_pid1() {
-  if std::process::id() != 1 {
-    return;
-  }
-  tracing::info!("Spawning process reaper");
-  let mut sig = match signal(SignalKind::child()) {
-    Ok(sig) => sig,
-    Err(e) => {
-      tracing::warn!(
-        "Failed to spawn process reaper inside container. This may lead to unreaped processes on host | {e:?}"
-      );
-      return;
-    }
-  };
-  tokio::spawn(async move {
-    loop {
-      let _ = sig.recv().await;
-      loop {
-        match waitpid(Pid::from_raw(-1), Some(WaitPidFlag::WNOHANG)) {
-          Ok(WaitStatus::StillAlive) => break,
-          Ok(_status) => continue, // Exited/Signaled/… — all reaped
-          Err(nix::errno::Errno::ECHILD) => break, // none left
-          Err(_) => break,
-        }
-      }
-    }
-  });
 }

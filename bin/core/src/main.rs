@@ -41,7 +41,6 @@ async fn app() -> anyhow::Result<()> {
   dotenvy::dotenv().ok();
   let config = core_config();
   logger::init(&config.logging)?;
-  command::spawn_process_reaper_if_pid1();
 
   let startup_span = info_span!("CoreStartup");
 
