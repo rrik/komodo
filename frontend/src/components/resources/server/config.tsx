@@ -105,7 +105,7 @@ export const ServerConfig = ({
               ),
               auto_rotate_keys: {
                 description:
-                  "Automatically rotate keys when 'RotateAllServerKeys' is called.",
+                  "Include in key rotation with 'RotateAllServerKeys'.",
               },
             },
           },
