@@ -7,7 +7,9 @@ use std::{
 use anyhow::Context;
 use cache::CloneCache;
 use futures_util::Stream;
-use komodo_client::entities::terminal::TerminalTarget;
+use komodo_client::entities::terminal::{
+  TerminalStdinMessageVariant, TerminalTarget,
+};
 use periphery_client::{
   api::terminal::{ConnectTerminal, END_OF_OUTPUT, ExecuteTerminal},
   transport::EncodedTransportMessage,
@@ -51,10 +53,13 @@ impl PeripheryClient {
 
     connection
       .sender
-      .send_terminal(channel, Ok(Vec::with_capacity(17))) // 16 bytes uuid + 1 EncodedResponse
+      .send_terminal(
+        channel,
+        Ok(vec![TerminalStdinMessageVariant::Begin.as_byte()]),
+      )
       .await
       .context(
-        "Failed to send TerminalTrigger to begin forwarding.",
+        "Failed to send TerminalMessage Begin byte to begin forwarding.",
       )?;
 
     Ok(ConnectTerminalResponse {
@@ -110,7 +115,10 @@ impl PeripheryClient {
 
     connection
       .sender
-      .send_terminal(channel, Ok(Vec::with_capacity(17)))
+      .send_terminal(
+        channel,
+        Ok(vec![TerminalStdinMessageVariant::Begin.as_byte()]),
+      )
       .await
       .context(
         "Failed to send TerminalTrigger to begin forwarding.",

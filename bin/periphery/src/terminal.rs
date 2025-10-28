@@ -6,7 +6,8 @@ use encoding::{Decode as _, WithChannel};
 use komodo_client::entities::{
   komodo_timestamp,
   terminal::{
-    ResizeDimensions, Terminal, TerminalRecreateMode, TerminalTarget,
+    Terminal, TerminalMessage, TerminalRecreateMode,
+    TerminalStdinMessage, TerminalTarget,
   },
 };
 use periphery_client::transport::EncodedTerminalMessage;
@@ -26,12 +27,14 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
   } = match message.decode() {
     Ok(res) => res,
     Err(e) => {
-      warn!("Received invalid Terminal bytes | {e:#}");
+      warn!(
+        "Received invalid Terminal bytes | Channel decode | {e:#}"
+      );
       return;
     }
   };
 
-  let mut data = match data {
+  let data = match data {
     Ok(data) => data,
     Err(_) => {
       // This means Core should disconnect.
@@ -40,25 +43,23 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
     }
   };
 
-  let msg = match data.first() {
-    Some(&0x00) => StdinMsg::Bytes(data.drain(1..).collect()),
-    Some(&0xFF) => {
-      if let Ok(dimensions) =
-        serde_json::from_slice::<ResizeDimensions>(&data[1..])
-      {
-        StdinMsg::Resize(dimensions)
-      } else {
-        return;
-      }
+  let message = match TerminalMessage::from_raw(data)
+    .into_stdin_message()
+  {
+    Err(e) => {
+      warn!(
+        "Received invalid Terminal bytes | TerminalMessage decode | {e:#}"
+      );
+      return;
     }
-    Some(_) => StdinMsg::Bytes(data),
-    // Empty bytes are the "begin" trigger for Terminal Executions
-    None => {
+    // Send 'beginn' trigger for Terminal Executions
+    Ok(TerminalStdinMessage::Begin) => {
       if let Err(e) = terminal_triggers().send(&channel_id).await {
         warn!("{e:#}")
       }
       return;
     }
+    Ok(message) => message,
   };
 
   let Some(channel) = terminal_channels().get(&channel_id).await
@@ -67,7 +68,7 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
     return;
   };
 
-  if let Err(e) = channel.sender.send(msg).await {
+  if let Err(e) = channel.sender.send(message).await {
     warn!("No receiver for {channel_id} | {e:?}");
   };
 }
@@ -224,13 +225,7 @@ pub async fn delete_all_terminals() {
   tokio::time::sleep(Duration::from_millis(500)).await;
 }
 
-#[derive(Clone)]
-pub enum StdinMsg {
-  Bytes(Vec<u8>),
-  Resize(ResizeDimensions),
-}
-
-pub type StdinSender = mpsc::Sender<StdinMsg>;
+pub type StdinSender = mpsc::Sender<TerminalStdinMessage>;
 pub type StdoutReceiver = broadcast::Receiver<Bytes>;
 
 pub struct PeripheryTerminal {
@@ -333,8 +328,7 @@ impl PeripheryTerminal {
 
     // WS (channel) -> STDIN TASK
     // Theres only one consumer here, so use mpsc
-    let (stdin, mut channel_read) =
-      tokio::sync::mpsc::channel::<StdinMsg>(8192);
+    let (stdin, mut channel_read) = tokio::sync::mpsc::channel(8192);
     let _cancel = cancel.clone();
     tokio::task::spawn_blocking(move || {
       loop {
@@ -343,14 +337,16 @@ impl PeripheryTerminal {
           break;
         }
         match channel_read.blocking_recv() {
-          Some(StdinMsg::Bytes(bytes)) => {
+          // Handled in self::handle_message
+          Some(TerminalStdinMessage::Begin) => {}
+          Some(TerminalStdinMessage::Forward(bytes)) => {
             if let Err(e) = terminal_write.write_all(&bytes) {
               debug!("Failed to write to PTY: {e:?}");
               _cancel.cancel();
               break;
             }
           }
-          Some(StdinMsg::Resize(dimensions)) => {
+          Some(TerminalStdinMessage::Resize(dimensions)) => {
             if let Err(e) = terminal.master.resize(PtySize {
               cols: dimensions.cols,
               rows: dimensions.rows,

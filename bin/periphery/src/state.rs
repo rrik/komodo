@@ -7,7 +7,9 @@ use std::{
 use anyhow::{Context, anyhow};
 use arc_swap::ArcSwap;
 use cache::{CloneCache, CloneVecCache};
-use komodo_client::entities::docker::container::ContainerStats;
+use komodo_client::entities::{
+  docker::container::ContainerStats, terminal::TerminalStdinMessage,
+};
 use noise::key::{RotatableKeyPair, SpkiPublicKey};
 use periphery_client::transport::EncodedTransportMessage;
 use tokio::sync::{Mutex, OnceCell, RwLock, mpsc, oneshot};
@@ -16,11 +18,9 @@ use transport::channel::BufferedChannel;
 use uuid::Uuid;
 
 use crate::{
-  config::periphery_config,
-  docker::DockerClient,
-  helpers::resolve_host_public_ip,
-  stats::StatsClient,
-  terminal::{PeripheryTerminal, StdinMsg},
+  config::periphery_config, docker::DockerClient,
+  helpers::resolve_host_public_ip, stats::StatsClient,
+  terminal::PeripheryTerminal,
 };
 
 /// Should call in startup to ensure Periphery errors without valid private key.
@@ -184,7 +184,7 @@ pub fn terminal_channels() -> &'static TerminalChannels {
 
 #[derive(Debug)]
 pub struct TerminalChannel {
-  pub sender: mpsc::Sender<StdinMsg>,
+  pub sender: mpsc::Sender<TerminalStdinMessage>,
   pub cancel: CancellationToken,
 }
 

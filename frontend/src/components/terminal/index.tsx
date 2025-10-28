@@ -45,8 +45,8 @@ export const Terminal = ({
           cols: term.cols,
         });
         const buf = new Uint8Array(json.length + 1);
-        buf[0] = 0xff; // resize prefix
-        for (let i = 0; i < json.length; i++) buf[i + 1] = json.charCodeAt(i);
+        for (let i = 0; i < json.length; i++) buf[i] = json.charCodeAt(i);
+        buf[json.length] = 0xFF; // resize postfix
         wsRef.current.send(buf);
       }
       term.focus();
@@ -58,8 +58,8 @@ export const Terminal = ({
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
     const buf = new Uint8Array(data.length + 1);
-    buf[0] = 0x00; // data prefix
-    for (let i = 0; i < data.length; i++) buf[i + 1] = data.charCodeAt(i);
+    for (let i = 0; i < data.length; i++) buf[i] = data.charCodeAt(i);
+    buf[data.length] = 0x01; // forward data postfix
     wsRef.current.send(buf);
   };
 

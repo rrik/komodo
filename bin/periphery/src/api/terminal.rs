@@ -5,7 +5,7 @@ use colored::Colorize;
 use futures_util::{Stream, StreamExt, TryStreamExt};
 use komodo_client::entities::{
   KOMODO_EXIT_CODE, NoData,
-  terminal::{Terminal, TerminalTarget},
+  terminal::{Terminal, TerminalStdinMessage, TerminalTarget},
 };
 use periphery_client::{
   api::terminal::*, transport::EncodedTransportMessage,
@@ -451,7 +451,7 @@ async fn setup_execute_command_on_terminal(
 
   terminal
     .stdin
-    .send(StdinMsg::Bytes(full_command.into()))
+    .send(TerminalStdinMessage::forward(full_command.into()))
     .await
     .context("Failed to send command to terminal stdin")?;
 
@@ -483,7 +483,7 @@ async fn forward_execute_command_on_terminal_response(
   channel: Uuid,
   mut stdout: impl Stream<Item = Result<String, LinesCodecError>> + Unpin,
 ) {
-  // This waits to begin forwarding until Core sends the None byte start trigger.
+  // This waits to begin forwarding until Core sends the Begin byte start trigger.
   // This ensures no messages are lost before channels on both sides are set up.
   if let Err(e) = terminal_triggers().recv(&channel).await {
     warn!("{e:#}");

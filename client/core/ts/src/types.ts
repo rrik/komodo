@@ -7519,12 +7519,6 @@ export interface RepoExecutionResponse {
 	commit_message?: string;
 }
 
-/** JSON structure to send new terminal window dimensions */
-export interface ResizeDimensions {
-	rows: number;
-	cols: number;
-}
-
 export interface ResourceToml<PartialConfig> {
 	/** The resource name. Required */
 	name: string;
@@ -8016,6 +8010,12 @@ export interface StopStack {
 	 * If empty, will stop all services.
 	 */
 	services?: string[];
+}
+
+/** JSON structure to send new terminal window dimensions */
+export interface TerminalResizeMessage {
+	rows: number;
+	cols: number;
 }
 
 export interface TerminationSignalLabel {

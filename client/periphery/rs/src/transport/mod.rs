@@ -85,7 +85,7 @@ impl TransportMessageVariant {
       3 => Terminal,
       other => {
         return Err(anyhow!(
-          "Got unrecognized MessageVariant byte: {other}"
+          "Got unrecognized TransportMessageVariant byte: {other}"
         ));
       }
     };

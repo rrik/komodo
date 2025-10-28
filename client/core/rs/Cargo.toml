@@ -40,6 +40,7 @@ serde_qs.workspace = true
 reqwest.workspace = true
 tracing.workspace = true
 anyhow.workspace = true
+bytes.workspace = true
 serde.workspace = true
 tokio.workspace = true
 strum.workspace = true

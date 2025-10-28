@@ -1,25 +1,21 @@
 use anyhow::{Context, anyhow};
-use bytes::Bytes;
 use colored::Colorize;
-use futures_util::{SinkExt, StreamExt};
 use komodo_client::{
   api::{
     read::{ListAllDockerContainers, ListServers},
-    terminal::{ConnectTerminalQuery, InitTerminal},
+    terminal::InitTerminal,
   },
   entities::{
     config::cli::args::terminal::{Attach, Connect, Exec},
     server::ServerQuery,
-    terminal::{TerminalRecreateMode, TerminalTarget},
+    terminal::{
+      ContainerTerminalMode, TerminalRecreateMode,
+      TerminalResizeMessage, TerminalStdinMessage,
+    },
   },
+  ws::terminal::TerminalWebsocket,
 };
-use tokio::{
-  io::{AsyncReadExt as _, AsyncWriteExt as _},
-  net::TcpStream,
-};
-use tokio_tungstenite::{
-  MaybeTlsStream, WebSocketStream, tungstenite,
-};
+use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 use tokio_util::sync::CancellationToken;
 
 pub async fn handle_connect(
@@ -33,12 +29,10 @@ pub async fn handle_connect(
   handle_terminal_forwarding(async {
     super::komodo_client()
       .await?
-      .connect_terminal_websocket(&ConnectTerminalQuery {
-        target: TerminalTarget::Server {
-          server: Some(server.to_string()),
-        },
-        terminal: Some(name.to_string()),
-        init: Some(InitTerminal {
+      .connect_server_terminal(
+        server.to_string(),
+        Some(name.to_string()),
+        Some(InitTerminal {
           command: command.clone(),
           recreate: if *recreate {
             TerminalRecreateMode::Always
@@ -47,7 +41,7 @@ pub async fn handle_connect(
           },
           mode: None,
         }),
-      })
+      )
       .await
   })
   .await
@@ -65,15 +59,19 @@ pub async fn handle_exec(
   handle_terminal_forwarding(async {
     super::komodo_client()
       .await?
-      .connect_container_exec_websocket(
-        &server,
-        container,
-        shell,
-        if *recreate {
-          TerminalRecreateMode::Always
-        } else {
-          TerminalRecreateMode::DifferentCommand
-        },
+      .connect_container_terminal(
+        server,
+        container.to_string(),
+        None,
+        Some(InitTerminal {
+          command: Some(shell.to_string()),
+          recreate: if *recreate {
+            TerminalRecreateMode::Always
+          } else {
+            TerminalRecreateMode::DifferentCommand
+          },
+          mode: Some(ContainerTerminalMode::Exec),
+        }),
       )
       .await
   })
@@ -91,14 +89,19 @@ pub async fn handle_attach(
   handle_terminal_forwarding(async {
     super::komodo_client()
       .await?
-      .connect_container_attach_websocket(
-        &server,
-        container,
-        if *recreate {
-          TerminalRecreateMode::Always
-        } else {
-          TerminalRecreateMode::DifferentCommand
-        },
+      .connect_container_terminal(
+        server,
+        container.to_string(),
+        None,
+        Some(InitTerminal {
+          command: None,
+          recreate: if *recreate {
+            TerminalRecreateMode::Always
+          } else {
+            TerminalRecreateMode::DifferentCommand
+          },
+          mode: Some(ContainerTerminalMode::Attach),
+        }),
       )
       .await
   })
@@ -157,16 +160,14 @@ async fn get_server(
   ))
 }
 
-type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
-
 async fn handle_terminal_forwarding<
-  C: Future<Output = anyhow::Result<WsStream>>,
+  C: Future<Output = anyhow::Result<TerminalWebsocket>>,
 >(
   connect: C,
 ) -> anyhow::Result<()> {
   // Need to forward multiple sources into ws write
   let (write_tx, mut write_rx) =
-    tokio::sync::mpsc::channel::<Bytes>(1024);
+    tokio::sync::mpsc::channel::<TerminalStdinMessage>(1024);
 
   // ================
   //  SETUP RESIZING
@@ -201,25 +202,23 @@ async fn handle_terminal_forwarding<
   let forward_stdin = async {
     let mut stdin = tokio::io::stdin();
     let mut buf = [0u8; 8192];
-    while let Some(Ok(n)) = future_or_cancel(
-      // Read into buffer starting from index 1,
-      // leaving first byte to represent 'data' message.
-      stdin.read(&mut buf[1..]),
-      &cancel,
-    )
-    .await
+    while let Some(Ok(n)) =
+      future_or_cancel(stdin.read(&mut buf), &cancel).await
     {
       // EOF
       if n == 0 {
         break;
       }
       // Check for disconnect sequence (alt + q)
-      if buf[1..(n + 1)] == [197, 147] {
+      if buf[..n] == [197, 147] {
         break;
       }
       // Forward bytes
-      let bytes = Bytes::copy_from_slice(&buf[..(n + 1)]);
-      if write_tx.send(bytes).await.is_err() {
+      if write_tx
+        .send(TerminalStdinMessage::Forward(buf.to_vec()))
+        .await
+        .is_err()
+      {
         break;
       };
     }
@@ -233,12 +232,10 @@ async fn handle_terminal_forwarding<
   let (mut ws_write, mut ws_read) = connect.await?.split();
 
   let forward_write = async {
-    while let Some(bytes) =
+    while let Some(message) =
       future_or_cancel(write_rx.recv(), &cancel).await.flatten()
     {
-      if let Err(e) =
-        ws_write.send(tungstenite::Message::Binary(bytes)).await
-      {
+      if let Err(e) = ws_write.send_stdin_message(message).await {
         cancel.cancel();
         return Some(e);
       };
@@ -250,19 +247,16 @@ async fn handle_terminal_forwarding<
   let forward_read = async {
     let mut stdout = tokio::io::stdout();
     while let Some(msg) =
-      future_or_cancel(ws_read.next(), &cancel).await.flatten()
+      future_or_cancel(ws_read.receive_stdout(), &cancel).await
     {
       let bytes = match msg {
-        Ok(tungstenite::Message::Binary(bytes)) => bytes,
-        Ok(tungstenite::Message::Text(text)) => text.into(),
+        Ok(bytes) => bytes,
         Err(e) => {
           cancel.cancel();
           return Some(
             anyhow::Error::from(e).context("Websocket read error"),
           );
         }
-        Ok(tungstenite::Message::Close(_)) => break,
-        _ => continue,
       };
       if let Err(e) = stdout
         .write_all(&bytes)
@@ -303,15 +297,13 @@ async fn handle_terminal_forwarding<
   std::process::exit(0)
 }
 
-fn resize_message() -> anyhow::Result<Bytes> {
+fn resize_message() -> anyhow::Result<TerminalStdinMessage> {
   let (cols, rows) = crossterm::terminal::size()
     .context("Failed to get terminal size")?;
-  let bytes: Vec<u8> =
-    format!(r#"{{"rows":{rows},"cols":{cols}}}"#).into();
-  let mut msg = Vec::with_capacity(bytes.len() + 1);
-  msg.push(0xff); // resize prefix
-  msg.extend(bytes);
-  Ok(msg.into())
+  Ok(TerminalStdinMessage::Resize(TerminalResizeMessage {
+    rows,
+    cols,
+  }))
 }
 
 struct RawModeGuard;
