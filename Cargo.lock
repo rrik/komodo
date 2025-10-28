@@ -902,7 +902,7 @@ dependencies = [
 
 [[package]]
 name = "cache"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "tokio",
@@ -1094,7 +1094,7 @@ dependencies = [
 
 [[package]]
 name = "command"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "komodo_client",
  "shlex",
@@ -1121,7 +1121,7 @@ checksum = "e47641d3deaf41fb1538ac1f54735925e275eaf3bf4d55c81b137fba797e5cbb"
 
 [[package]]
 name = "config"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "colored",
  "indexmap 2.12.0",
@@ -1443,7 +1443,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "database"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -1742,7 +1742,7 @@ dependencies = [
 
 [[package]]
 name = "encoding"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1784,7 +1784,7 @@ dependencies = [
 
 [[package]]
 name = "environment"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "formatting",
@@ -1794,7 +1794,7 @@ dependencies = [
 
 [[package]]
 name = "environment_file"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "thiserror 2.0.17",
 ]
@@ -1890,7 +1890,7 @@ dependencies = [
 
 [[package]]
 name = "formatting"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "serror",
 ]
@@ -2056,7 +2056,7 @@ dependencies = [
 
 [[package]]
 name = "git"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "cache",
@@ -2688,7 +2688,7 @@ dependencies = [
 
 [[package]]
 name = "interpolate"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "komodo_client",
@@ -2810,7 +2810,7 @@ dependencies = [
 
 [[package]]
 name = "komodo_cli"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2838,7 +2838,7 @@ dependencies = [
 
 [[package]]
 name = "komodo_client"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "async_timing_util",
@@ -2874,7 +2874,7 @@ dependencies = [
 
 [[package]]
 name = "komodo_core"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2948,7 +2948,7 @@ dependencies = [
 
 [[package]]
 name = "komodo_periphery"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3068,7 +3068,7 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
 name = "logger"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "komodo_client",
@@ -3360,7 +3360,7 @@ dependencies = [
 
 [[package]]
 name = "noise"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3775,7 +3775,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "periphery_client"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "derive_variants",
@@ -4256,7 +4256,7 @@ dependencies = [
 
 [[package]]
 name = "response"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "axum",
@@ -4526,7 +4526,7 @@ dependencies = [
 
 [[package]]
 name = "secret_file"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "tokio",
 ]
@@ -5559,7 +5559,7 @@ dependencies = [
 
 [[package]]
 name = "transport"
-version = "2.0.0-dev-83"
+version = "2.0.0-dev-84"
 dependencies = [
  "anyhow",
  "axum",
