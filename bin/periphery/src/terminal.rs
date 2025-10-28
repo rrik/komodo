@@ -256,13 +256,15 @@ impl PeripheryTerminal {
       .openpty(PtySize::default())
       .context("Failed to open terminal")?;
 
-    let mut command_split = command.split(' ').map(|arg| arg.trim());
-    let cmd =
-      command_split.next().context("Command cannot be empty")?;
+    let mut lexed = shlex::split(&command)
+      .context("Invalid command: empty")?
+      .into_iter();
+
+    let cmd = lexed.next().context("Command cannot be empty")?;
 
     let mut cmd = CommandBuilder::new(cmd);
 
-    for arg in command_split {
+    for arg in lexed {
       cmd.arg(arg);
     }
 
