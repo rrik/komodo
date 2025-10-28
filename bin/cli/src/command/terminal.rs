@@ -251,7 +251,8 @@ async fn handle_terminal_forwarding<
       future_or_cancel(ws_read.receive_stdout(), &cancel).await
     {
       let bytes = match msg {
-        Ok(bytes) => bytes,
+        Ok(Some(bytes)) => bytes,
+        Ok(None) => break,
         Err(e) => {
           cancel.cancel();
           return Some(e.context("Websocket read error"));

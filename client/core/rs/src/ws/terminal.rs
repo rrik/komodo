@@ -1,4 +1,4 @@
-use anyhow::{Context, anyhow};
+use anyhow::Context;
 use bytes::Bytes;
 use futures_util::{
   SinkExt, StreamExt, TryStreamExt,
@@ -146,17 +146,19 @@ impl TerminalWebsocket {
       .await
   }
 
-  pub async fn receive_stdout(&mut self) -> anyhow::Result<Bytes> {
+  pub async fn receive_stdout(
+    &mut self,
+  ) -> anyhow::Result<Option<Bytes>> {
     loop {
       match self.0.try_next().await.context("Websocket read error")? {
         Some(tungstenite::Message::Binary(bytes)) => {
-          return Ok(bytes);
+          return Ok(Some(bytes));
         }
         Some(tungstenite::Message::Text(text)) => {
-          return Ok(text.into());
+          return Ok(Some(text.into()));
         }
         Some(tungstenite::Message::Close(_)) | None => {
-          return Err(anyhow!("Websocket closed"));
+          return Ok(None);
         }
         // Can ignore these message types
         Some(tungstenite::Message::Ping(_))
@@ -212,17 +214,19 @@ pub type TerminalWebsocketStreamInner =
 pub struct TerminalWebsocketStream(TerminalWebsocketStreamInner);
 
 impl TerminalWebsocketStream {
-  pub async fn receive_stdout(&mut self) -> anyhow::Result<Bytes> {
+  pub async fn receive_stdout(
+    &mut self,
+  ) -> anyhow::Result<Option<Bytes>> {
     loop {
       match self.0.try_next().await.context("Websocket read error")? {
         Some(tungstenite::Message::Binary(bytes)) => {
-          return Ok(bytes);
+          return Ok(Some(bytes));
         }
         Some(tungstenite::Message::Text(text)) => {
-          return Ok(text.into());
+          return Ok(Some(text.into()));
         }
         Some(tungstenite::Message::Close(_)) | None => {
-          return Err(anyhow!("Websocket closed"));
+          return Ok(None);
         }
         // Can ignore these message types
         Some(tungstenite::Message::Ping(_))

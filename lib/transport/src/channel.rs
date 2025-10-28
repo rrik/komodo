@@ -1,4 +1,5 @@
 use anyhow::{Context, anyhow};
+use colored::Colorize as _;
 use encoding::{
   Encode, EncodedJsonMessage, EncodedResponse, JsonMessage,
 };
@@ -125,6 +126,18 @@ impl Sender<EncodedTransportMessage> {
     data: anyhow::Result<Vec<u8>>,
   ) -> anyhow::Result<()> {
     self.send_message(TerminalMessage::new(channel, data)).await
+  }
+
+  pub async fn send_terminal_exited(
+    &self,
+    channel: Uuid,
+  ) -> anyhow::Result<()> {
+    self
+      .send_message(TerminalMessage::new(
+        channel,
+        Err(anyhow!("\n{} {}", "pty".bold(), "exited".red().bold())),
+      ))
+      .await
   }
 }
 

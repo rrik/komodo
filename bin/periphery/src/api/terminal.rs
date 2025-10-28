@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::{Context, anyhow};
-use colored::Colorize;
 use futures_util::{Stream, StreamExt, TryStreamExt};
 use komodo_client::entities::{
   KOMODO_EXIT_CODE, NoData,
@@ -372,10 +371,12 @@ async fn handle_terminal_forwarding(
 
   // Forward stdout -> WS
   let mut stdout = terminal.stdout.resubscribe();
+
   loop {
     let res = tokio::select! {
       res = stdout.recv() => res,
       _ = terminal.cancel.cancelled() => {
+        let _ = sender.send_terminal_exited(channel).await;
         break
       },
       _ = cancel.cancelled() => {
@@ -386,17 +387,7 @@ async fn handle_terminal_forwarding(
     let bytes = match res {
       Ok(bytes) => bytes,
       Err(_e) => {
-        terminal.cancel();
-        let _ = sender
-          .send_terminal(
-            channel,
-            Err(anyhow!(
-              "\n{} {}",
-              "pty".bold(),
-              "exited".red().bold()
-            )),
-          )
-          .await;
+        let _ = sender.send_terminal_exited(channel).await;
         break;
       }
     };
