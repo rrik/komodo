@@ -253,9 +253,7 @@ async fn handle_terminal_forwarding<
         Ok(bytes) => bytes,
         Err(e) => {
           cancel.cancel();
-          return Some(
-            anyhow::Error::from(e).context("Websocket read error"),
-          );
+          return Some(e.context("Websocket read error"));
         }
       };
       if let Err(e) = stdout
