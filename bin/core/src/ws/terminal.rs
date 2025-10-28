@@ -81,52 +81,36 @@ async fn forward_ws_channel(
     loop {
       let client_recv_res = tokio::select! {
         res = client_receive.next() => res,
-        _ = cancel.cancelled() => {
-          let _ = periphery_sender
-            .send_terminal(
-              channel,
-              Err(anyhow!("Client disconnected")),
-            )
-            .await;
-          break;
-        }
+        _ = cancel.cancelled() => break,
       };
-      match client_recv_res {
-        Some(Ok(ws::Message::Binary(bytes))) => {
-          if let Err(_e) = periphery_sender
-            .send_terminal(channel, Ok(bytes.into()))
-            .await
-          {
-            cancel.cancel();
-            break;
-          };
-        }
+      let bytes = match client_recv_res {
+        Some(Ok(ws::Message::Binary(bytes))) => bytes.into(),
         Some(Ok(ws::Message::Text(text))) => {
           let bytes: Bytes = text.into();
-          if let Err(_e) = periphery_sender
-            .send_terminal(channel, Ok(bytes.into()))
-            .await
-          {
-            cancel.cancel();
-            break;
-          };
+          bytes.into()
         }
         Some(Ok(ws::Message::Close(_frame))) => {
-          cancel.cancel();
           break;
         }
         Some(Err(_e)) => {
-          cancel.cancel();
           break;
         }
         None => {
-          cancel.cancel();
           break;
         }
         // Ignore
-        Some(Ok(_)) => {}
-      }
+        Some(Ok(_)) => continue,
+      };
+      if let Err(_e) =
+        periphery_sender.send_terminal(channel, Ok(bytes)).await
+      {
+        break;
+      };
     }
+    cancel.cancel();
+    let _ = periphery_sender
+      .send_terminal(channel, Err(anyhow!("Client disconnected")))
+      .await;
   };
 
   let periphery_to_core = async {
@@ -138,26 +122,24 @@ async fn forward_ws_channel(
             client_send.send(ws::Message::Binary(bytes.into())).await
           {
             debug!("{e:?}");
-            cancel.cancel();
             break;
           };
         }
         Ok(Err(e)) => {
           let _ = client_send
-            .send(ws::Message::Text(format!("{e:#}").into()))
+            .send(ws::Message::text(format!("{e:#}")))
             .await;
-          let _ = client_send.close().await;
-          cancel.cancel();
           break;
         }
         Err(_) => {
           let _ =
             client_send.send(ws::Message::text("STREAM EOF")).await;
-          cancel.cancel();
           break;
         }
       }
     }
+    let _ = client_send.close().await;
+    cancel.cancel();
   };
 
   tokio::join!(core_to_periphery, periphery_to_core);

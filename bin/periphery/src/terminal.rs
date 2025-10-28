@@ -52,7 +52,7 @@ pub async fn handle_message(message: EncodedTerminalMessage) {
       );
       return;
     }
-    // Send 'beginn' trigger for Terminal Executions
+    // Send 'begin' trigger for Terminal Executions
     Ok(TerminalStdinMessage::Begin) => {
       if let Err(e) = terminal_triggers().send(&channel_id).await {
         warn!("{e:#}")
@@ -309,26 +309,27 @@ impl PeripheryTerminal {
           break;
         }
         match child.try_wait() {
+          Ok(None) => {
+            // Continue
+            std::thread::sleep(Duration::from_millis(500));
+          }
           Ok(Some(code)) => {
             debug!("child exited with code {code}");
-            _cancel.cancel();
             break;
-          }
-          Ok(None) => {
-            std::thread::sleep(Duration::from_millis(500));
           }
           Err(e) => {
             debug!("failed to wait for child | {e:?}");
-            _cancel.cancel();
             break;
           }
         }
       }
+      // Cancel if loop broken
+      _cancel.cancel();
     });
 
     // WS (channel) -> STDIN TASK
     // Theres only one consumer here, so use mpsc
-    let (stdin, mut channel_read) = tokio::sync::mpsc::channel(8192);
+    let (stdin, mut stdin_read) = tokio::sync::mpsc::channel(8192);
     let _cancel = cancel.clone();
     tokio::task::spawn_blocking(move || {
       loop {
@@ -336,13 +337,12 @@ impl PeripheryTerminal {
           trace!("terminal write: cancelled from outside");
           break;
         }
-        match channel_read.blocking_recv() {
+        match stdin_read.blocking_recv() {
           // Handled in self::handle_message
           Some(TerminalStdinMessage::Begin) => {}
           Some(TerminalStdinMessage::Forward(bytes)) => {
             if let Err(e) = terminal_write.write_all(&bytes) {
               debug!("Failed to write to PTY: {e:?}");
-              _cancel.cancel();
               break;
             }
           }
@@ -354,24 +354,24 @@ impl PeripheryTerminal {
               pixel_height: 0,
             }) {
               debug!("Failed to resize | {e:?}");
-              _cancel.cancel();
               break;
             };
           }
           None => {
             debug!("WS -> PTY channel read error: Disconnected");
-            _cancel.cancel();
             break;
           }
         }
       }
+      // Cancel if loop broken
+      _cancel.cancel();
     });
 
     let history = Arc::new(History::default());
 
     // PTY -> WS (channel) TASK
     // Uses broadcast to output to multiple client simultaneously
-    let (write, stdout) =
+    let (write_stdout, stdout) =
       tokio::sync::broadcast::channel::<Bytes>(8192);
     let _cancel = cancel.clone();
     let _history = history.clone();
@@ -383,29 +383,25 @@ impl PeripheryTerminal {
           break;
         }
         match terminal_read.read(&mut buf) {
-          Ok(0) => {
-            // EOF
-            trace!("Got PTY read EOF");
-            _cancel.cancel();
-            break;
-          }
+          Ok(0) => break, // EOF
           Ok(n) => {
-            _history.push(&buf[..n]);
+            let slice = &buf[..n];
+            _history.push(slice);
             if let Err(e) =
-              write.send(Bytes::copy_from_slice(&buf[..n]))
+              write_stdout.send(Bytes::copy_from_slice(slice))
             {
               debug!("PTY -> WS channel send error: {e:?}");
-              _cancel.cancel();
               break;
             }
           }
           Err(e) => {
             debug!("Failed to read for PTY: {e:?}");
-            _cancel.cancel();
             break;
           }
         }
       }
+      // Cancel if loop broken
+      _cancel.cancel();
     });
 
     trace!("terminal tasks spawned");

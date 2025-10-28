@@ -209,13 +209,14 @@ async fn handle_terminal_forwarding<
       if n == 0 {
         break;
       }
+      let bytes = &buf[..n];
       // Check for disconnect sequence (alt + q)
-      if buf[..n] == [197, 147] {
+      if bytes == [197, 147] {
         break;
       }
       // Forward bytes
       if write_tx
-        .send(TerminalStdinMessage::Forward(buf.to_vec()))
+        .send(TerminalStdinMessage::Forward(bytes.to_vec()))
         .await
         .is_err()
       {

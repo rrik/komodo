@@ -174,7 +174,32 @@ pub fn terminals() -> &'static CloneVecCache<Arc<PeripheryTerminal>> {
   TERMINALS.get_or_init(Default::default)
 }
 
-pub type TerminalChannels = CloneCache<Uuid, Arc<TerminalChannel>>;
+#[derive(Default)]
+pub struct TerminalChannels(CloneCache<Uuid, Arc<TerminalChannel>>);
+
+impl TerminalChannels {
+  pub async fn get(
+    &self,
+    channel: &Uuid,
+  ) -> Option<Arc<TerminalChannel>> {
+    self.0.get(channel).await
+  }
+
+  pub async fn insert(
+    &self,
+    channel: Uuid,
+    terminal: Arc<TerminalChannel>,
+  ) -> Option<Arc<TerminalChannel>> {
+    self.0.insert(channel, terminal).await
+  }
+
+  pub async fn remove(&self, channel: &Uuid) {
+    let Some(channel) = self.0.remove(channel).await else {
+      return;
+    };
+    channel.cancel.cancel();
+  }
+}
 
 pub fn terminal_channels() -> &'static TerminalChannels {
   static TERMINAL_CHANNELS: OnceLock<TerminalChannels> =

@@ -249,11 +249,7 @@ impl Resolve<super::Args> for DisconnectTerminal {
     self,
     args: &super::Args,
   ) -> anyhow::Result<NoData> {
-    if let Some(channel) =
-      terminal_channels().remove(&self.channel).await
-    {
-      channel.cancel.cancel();
-    }
+    terminal_channels().remove(&self.channel).await;
     Ok(NoData {})
   }
 }
@@ -415,12 +411,7 @@ async fn handle_terminal_forwarding(
   }
 
   // Clean up
-  if let Some(terminal_channel) =
-    terminal_channels().remove(&channel).await
-  {
-    trace!("Cancel called for {channel}");
-    terminal_channel.cancel.cancel();
-  }
+  terminal_channels().remove(&channel).await;
   clean_up_terminals().await;
 }
 
