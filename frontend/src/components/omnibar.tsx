@@ -272,25 +272,28 @@ const OmniContainers = ({
     <>
       <CommandSeparator />
       <CommandGroup heading="Containers">
-        {containers?.map((container) => (
-          <CommandItem
-            key={container.id}
-            value={container.name}
-            className="flex items-center gap-2 cursor-pointer"
-            onSelect={() => {
-              closeSearch();
-              navigate(
-                `/servers/${container.server_id!}/container/${container.name}`
-              );
-            }}
-          >
-            <DOCKER_LINK_ICONS.container
-              server_id={container.server_id!}
-              name={container.name}
-            />
-            {container.name}
-          </CommandItem>
-        ))}
+        {containers?.map((container) => {
+          const key = container.server_id + container.name;
+          return (
+            <CommandItem
+              key={key}
+              value={key}
+              className="flex items-center gap-2 cursor-pointer"
+              onSelect={() => {
+                closeSearch();
+                navigate(
+                  `/servers/${container.server_id!}/container/${container.name}`
+                );
+              }}
+            >
+              <DOCKER_LINK_ICONS.container
+                server_id={container.server_id!}
+                name={container.name}
+              />
+              {container.name}
+            </CommandItem>
+          );
+        })}
       </CommandGroup>
     </>
   );
@@ -323,20 +326,23 @@ const OmniTerminals = ({
     <>
       <CommandSeparator />
       <CommandGroup heading="Terminals">
-        {terminals?.map((terminal) => (
-          <CommandItem
-            key={JSON.stringify(terminal.target) + terminal.name}
-            value={JSON.stringify(terminal.target) + terminal.name}
-            className="flex items-center gap-2 cursor-pointer"
-            onSelect={() => {
-              closeSearch();
-              navigate(terminalLink(terminal));
-            }}
-          >
-            <Terminal className="w-4 h-4" />
-            {terminal.name}
-          </CommandItem>
-        ))}
+        {terminals?.map((terminal) => {
+          const key = JSON.stringify(terminal.target) + terminal.name;
+          return (
+            <CommandItem
+              key={key}
+              value={key}
+              className="flex items-center gap-2 cursor-pointer"
+              onSelect={() => {
+                closeSearch();
+                navigate(terminalLink(terminal));
+              }}
+            >
+              <Terminal className="w-4 h-4" />
+              {terminal.name}
+            </CommandItem>
+          );
+        })}
       </CommandGroup>
     </>
   );
