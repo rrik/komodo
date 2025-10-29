@@ -17,7 +17,7 @@ import {
   useTerminalTargetPermissions,
   useWrite,
 } from "@lib/hooks";
-import { filterBySplit } from "@lib/utils";
+import { filterBySplit, terminalLink } from "@lib/utils";
 import { Button } from "@ui/button";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Input } from "@ui/input";
@@ -86,7 +86,7 @@ export default function TerminalsPage() {
               ),
               cell: ({ row }) => (
                 <Link
-                  to={terminal_link(row.original.name, row.original.target)}
+                  to={terminalLink(row.original)}
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
@@ -161,19 +161,6 @@ export default function TerminalsPage() {
     </Page>
   );
 }
-
-const terminal_link = (name: string, target: Types.TerminalTarget) => {
-  switch (target.type) {
-    case "Server":
-      return `/servers/${target.params.server}/terminal/${name}`;
-    case "Container":
-      return `/servers/${target.params.server}/container/${target.params.container}/terminal/${name}`;
-    case "Stack":
-      return `/stacks/${target.params.stack}/service/${target.params.service}/terminal/${name}`;
-    case "Deployment":
-      return `/deployments/${target.params.deployment}/terminal/${name}`;
-  }
-};
 
 const TerminalTargetResourceLink = ({
   target,

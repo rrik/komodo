@@ -284,3 +284,22 @@ export const resourceTargetFromTerminalTarget = (
       return { type: "Deployment", id: target.params.deployment };
   }
 };
+
+export const terminalLink = ({
+  target,
+  name,
+}: {
+  target: Types.TerminalTarget;
+  name: string;
+}) => {
+  switch (target.type) {
+    case "Server":
+      return `/servers/${target.params.server}/terminal/${name}`;
+    case "Container":
+      return `/servers/${target.params.server}/container/${target.params.container}/terminal/${name}`;
+    case "Stack":
+      return `/stacks/${target.params.stack}/service/${target.params.service}/terminal/${name}`;
+    case "Deployment":
+      return `/deployments/${target.params.deployment}/terminal/${name}`;
+  }
+};

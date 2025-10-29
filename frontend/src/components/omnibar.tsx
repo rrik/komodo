@@ -18,7 +18,12 @@ import {
 import { Box, CalendarDays, Home, Search, Terminal, User } from "lucide-react";
 import { Fragment, ReactNode, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { cn, RESOURCE_TARGETS, usableResourcePath } from "@lib/utils";
+import {
+  cn,
+  RESOURCE_TARGETS,
+  terminalLink,
+  usableResourcePath,
+} from "@lib/utils";
 import { Badge } from "@ui/badge";
 import { ResourceComponents } from "./resources";
 import { Switch } from "@ui/switch";
@@ -121,6 +126,8 @@ export const OmniDialog = ({
         {showContainers && (
           <OmniContainers search={search} closeSearch={() => setOpen(false)} />
         )}
+
+        <OmniTerminals search={search} closeSearch={() => setOpen(false)} />
       </CommandList>
     </CommandDialog>
   );
@@ -282,6 +289,52 @@ const OmniContainers = ({
               name={container.name}
             />
             {container.name}
+          </CommandItem>
+        ))}
+      </CommandGroup>
+    </>
+  );
+};
+
+const OmniTerminals = ({
+  search,
+  closeSearch,
+}: {
+  search: string;
+  closeSearch: () => void;
+}) => {
+  const _terminals = useRead("ListTerminals", {}).data;
+  const terminals = useMemo(() => {
+    return _terminals?.filter((c) => {
+      const searchTerms = search
+        .toLowerCase()
+        .split(" ")
+        .filter((term) => term);
+      if (searchTerms.length === 0) return true;
+      const lower = c.name.toLowerCase();
+      return searchTerms.every(
+        (term) => lower.includes(term) || "terminals".includes(term)
+      );
+    });
+  }, [_terminals, search]);
+  const navigate = useNavigate();
+  if ((terminals?.length ?? 0) < 1) return null;
+  return (
+    <>
+      <CommandSeparator />
+      <CommandGroup heading="Terminals">
+        {terminals?.map((terminal) => (
+          <CommandItem
+            key={JSON.stringify(terminal.target) + terminal.name}
+            value={JSON.stringify(terminal.target) + terminal.name}
+            className="flex items-center gap-2 cursor-pointer"
+            onSelect={() => {
+              closeSearch();
+              navigate(terminalLink(terminal));
+            }}
+          >
+            <Terminal className="w-4 h-4" />
+            {terminal.name}
           </CommandItem>
         ))}
       </CommandGroup>
