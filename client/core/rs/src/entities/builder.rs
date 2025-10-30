@@ -327,7 +327,7 @@ pub struct UrlBuilderConfig {
   /// The address of the Periphery agent
   #[serde(default = "default_address")]
   #[builder(default = default_address())]
-  #[partial(default(default_address()))]
+  #[partial_default(default_address())]
   pub address: String,
   /// An expected public key associated with Periphery private key.
   /// If empty, doesn't validate Periphery public key.
@@ -337,7 +337,7 @@ pub struct UrlBuilderConfig {
   /// Whether to validate the Periphery tls certificates.
   #[serde(default = "default_insecure_tls")]
   #[builder(default = default_insecure_tls())]
-  #[partial(default(default_insecure_tls()))]
+  #[partial_default(default_insecure_tls())]
   pub insecure_tls: bool,
   /// Deprecated. Use private / public keys instead.
   /// An optional override passkey to use
@@ -477,10 +477,11 @@ pub struct AwsBuilderConfig {
   /// If empty, doesn't validate Periphery public key.
   #[serde(default)]
   pub periphery_public_key: String,
+
   /// Whether to validate the Periphery tls certificates.
   #[serde(default = "default_insecure_tls")]
   #[builder(default = default_insecure_tls())]
-  #[partial(default(default_insecure_tls()))]
+  #[partial_default(default_insecure_tls())]
   pub insecure_tls: bool,
 
   /// Which git providers are available on the AMI
