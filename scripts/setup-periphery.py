@@ -241,5 +241,7 @@ def main():
 	print("Finished Periphery setup.\n")
 	print(f'Note. Use "systemctl{user} status periphery" to make sure Periphery is running')
 	print(f'Note. Use "systemctl{user} enable periphery" to have Periphery start on system boot')
+	if args.user:
+		print(f'Note. Use "sudo loginctl enable-linger $USER" to make sure Periphery keeps runnning after user logs out')
 
 main()
