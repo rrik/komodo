@@ -186,7 +186,7 @@ impl Resolve<ExecuteArgs> for RunBuild {
             update.finalize();
             let id = update.id.clone();
             if let Err(e) = update_update(update).await {
-              warn!("failed to modify Update {id} on db | {e:#}");
+              warn!("Failed to modify Update {id} on db | {e:#}");
             }
             if !is_server_builder {
               cancel_clone.cancel();
@@ -215,12 +215,12 @@ impl Resolve<ExecuteArgs> for RunBuild {
       Ok(builder) => builder,
       Err(e) => {
         warn!(
-          "failed to get builder for build {} | {e:#}",
+          "Failed to get Builder for Build {} | {e:#}",
           build.name
         );
         update.logs.push(Log::error(
-          "get builder",
-          format_serror(&e.context("failed to get builder").into()),
+          "Get Builder",
+          format_serror(&e.context("Failed to get Builder").into()),
         ));
         return handle_early_return(
           update, build.id, build.name, false,
@@ -276,7 +276,7 @@ impl Resolve<ExecuteArgs> for RunBuild {
 
       let commit_message = match res {
         Ok(res) => {
-          debug!("finished repo clone");
+          debug!("Finished repo clone");
           update.logs.extend(res.res.logs);
           update.commit_hash =
             res.res.commit_hash.unwrap_or_default().to_string();
@@ -312,10 +312,10 @@ impl Resolve<ExecuteArgs> for RunBuild {
             commit_hash: optional_string(&update.commit_hash),
             // Unused for now
             additional_tags: Default::default(),
-          }) => res.context("failed at call to periphery to build"),
+          }) => res.context("Failed at call to Periphery to build"),
         _ = cancel.cancelled() => {
           info!("Build cancelled during build, cleaning up builder");
-          update.push_error_log("Build cancelled", String::from("user cancelled build during docker build"));
+          update.push_error_log("Build cancelled", String::from("User cancelled build during docker build"));
           cleanup_builder_instance(periphery, cleanup_data, &mut update)
             .await;
           return handle_early_return(update, build.id, build.name, true).await
@@ -328,10 +328,10 @@ impl Resolve<ExecuteArgs> for RunBuild {
           update.logs.extend(logs);
         }
         Err(e) => {
-          warn!("error in build | {e:#}");
+          warn!("Error in build | {e:#}");
           update.push_error_log(
             "Build Error",
-            format_serror(&e.context("failed to build").into()),
+            format_serror(&e.context("Failed to build").into()),
           )
         }
       };
@@ -565,7 +565,7 @@ impl Resolve<ExecuteArgs> for CancelBuild {
       .await
       {
         warn!(
-          "failed to set CancelBuild Update status Complete after timeout | {e:#}"
+          "Failed to set CancelBuild Update status Complete after timeout | {e:#}"
         )
       }
     });
