@@ -17,9 +17,12 @@ use formatting::format_serror;
 use futures_util::future::join_all;
 use interpolate::Interpolator;
 use komodo_client::{
-  api::execute::{
-    BatchExecutionResponse, BatchRunBuild, CancelBuild, Deploy,
-    RunBuild,
+  api::{
+    execute::{
+      BatchExecutionResponse, BatchRunBuild, CancelBuild, Deploy,
+      RunBuild,
+    },
+    write::RefreshBuildCache,
   },
   entities::{
     alert::{Alert, AlertData, SeverityLevel},
@@ -41,6 +44,7 @@ use uuid::Uuid;
 
 use crate::{
   alert::send_alerts,
+  api::write::WriteArgs,
   helpers::{
     build_git_token,
     builder::{cleanup_builder_instance, connect_builder_periphery},
@@ -382,12 +386,15 @@ impl Resolve<ExecuteArgs> for RunBuild {
 
     update_update(update.clone()).await?;
 
+    let Build { id, name, .. } = build;
+
     if update.success {
       // don't hold response up for user
       tokio::spawn(async move {
-        handle_post_build_redeploy(&build.id).await;
+        handle_post_build_redeploy(&id).await;
       });
     } else {
+      let name = name.clone();
       let target = update.target.clone();
       let version = update.version;
       tokio::spawn(async move {
@@ -398,14 +405,20 @@ impl Resolve<ExecuteArgs> for RunBuild {
           resolved_ts: Some(komodo_timestamp()),
           resolved: true,
           level: SeverityLevel::Warning,
-          data: AlertData::BuildFailed {
-            id: build.id,
-            name: build.name,
-            version,
-          },
+          data: AlertData::BuildFailed { id, name, version },
         };
         send_alerts(&[alert]).await
       });
+    }
+
+    if let Err(e) = (RefreshBuildCache { build: name })
+      .resolve(&WriteArgs { user: user.clone() })
+      .await
+    {
+      update.push_error_log(
+        "Refresh build cache",
+        format_serror(&e.error.into()),
+      );
     }
 
     Ok(update.clone())
