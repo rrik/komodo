@@ -423,18 +423,6 @@ pub struct AwsBuilderConfig {
   #[partial_default(aws_default_volume_gb())]
   pub volume_gb: i32,
 
-  /// The port periphery will be running on.
-  /// Default: `8120`
-  #[serde(default = "default_port")]
-  #[builder(default = "default_port()")]
-  #[partial_default(default_port())]
-  pub port: i32,
-
-  #[serde(default = "default_use_https")]
-  #[builder(default = "default_use_https()")]
-  #[partial_default(default_use_https())]
-  pub use_https: bool,
-
   /// The EC2 ami id to create.
   /// The ami should have the periphery client configured to start on startup,
   /// and should have the necessary github / dockerhub accounts configured.
@@ -472,6 +460,18 @@ pub struct AwsBuilderConfig {
   #[serde(default)]
   #[builder(default)]
   pub user_data: String,
+
+  /// The port periphery will be running on.
+  /// Default: `8120`
+  #[serde(default = "default_port")]
+  #[builder(default = "default_port()")]
+  #[partial_default(default_port())]
+  pub port: i32,
+
+  #[serde(default = "default_use_https")]
+  #[builder(default = "default_use_https()")]
+  #[partial_default(default_use_https())]
+  pub use_https: bool,
 
   /// An expected public key associated with Periphery private key.
   /// If empty, doesn't validate Periphery public key.

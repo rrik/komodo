@@ -104,13 +104,6 @@ const AwsBuilderConfig = ({ id }: { id: string }) => {
                 description:
                   "Whether to connect to the instance over the public IP. Otherwise, will use the internal IP.",
               },
-              port: {
-                description: "Configure the port to connect to Periphery on.",
-                placeholder: "Input port",
-              },
-              use_https: {
-                description: "Whether to connect to Periphery using HTTPS.",
-              },
             },
           },
           {
@@ -132,17 +125,24 @@ const AwsBuilderConfig = ({ id }: { id: string }) => {
         ],
         additional: [
           {
-            label: "Auth",
+            label: "Connection",
             labelHidden: true,
             components: {
               periphery_public_key: {
                 label: "Periphery Public Key",
                 description:
-                  "If provided, the associated private key must be set as Periphery 'private_key'. For Periphery -> Core connection, either this or using 'periphery_public_key' in Core config is required for Periphery to be able to connect.",
+                  "If provided, the associated private key must be set as Periphery 'private_key'.",
                 placeholder: "custom-public-key",
               },
+              port: {
+                description: "Configure the port to connect to Periphery on.",
+                placeholder: "Input port",
+              },
+              use_https: {
+                description: "Whether to connect to Periphery using HTTPS.",
+              },
               insecure_tls: {
-                description: "Skip Periphery TLS certificate validation.",
+                description: "Skip Periphery TLS certificate validation when HTTPS is enabled.",
               },
             },
           },
@@ -352,7 +352,7 @@ const UrlBuilderConfig = ({ id }: { id: string }) => {
             },
           },
           {
-            label: "Auth",
+            label: "Connection",
             labelHidden: true,
             components: {
               periphery_public_key: {
