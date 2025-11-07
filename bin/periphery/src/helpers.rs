@@ -1,5 +1,6 @@
 use std::{
   net::IpAddr, path::PathBuf, str::FromStr as _, sync::OnceLock,
+  time::Duration,
 };
 
 use anyhow::Context;
@@ -221,12 +222,10 @@ fn opendns_resolver() -> &'static OpenDNSResolver {
   static OPENDNS_RESOLVER: OnceLock<OpenDNSResolver> =
     OnceLock::new();
   OPENDNS_RESOLVER.get_or_init(|| {
-    // OpenDNS resolver ips
+    // OpenDNS resolver ipv4s
     let ips = [
-      IpAddr::from_str("208.67.222.222").unwrap(),
       IpAddr::from_str("208.67.220.220").unwrap(),
-      IpAddr::from_str("2620:119:35::35").unwrap(),
-      IpAddr::from_str("2620:119:53::53").unwrap(),
+      IpAddr::from_str("208.67.222.222").unwrap(),
     ];
 
     // trust_negative_responses=true means NXDOMAIN/empty NOERROR from an
@@ -249,15 +248,23 @@ fn opendns_resolver() -> &'static OpenDNSResolver {
   })
 }
 
+/// Includes 1s timeout
 pub async fn resolve_host_public_ip() -> anyhow::Result<String> {
-  opendns_resolver()
-    .lookup_ip("myip.opendns.com.")
-    .await
-    .context("Failed to query OpenDNS resolvers for host public IP")?
-    .into_iter()
-    .map(|ip| ip.to_string())
-    .next()
-    .context("OpenDNS call for public IP didn't return anything")
+  tokio::time::timeout(Duration::from_secs(1), async {
+    opendns_resolver()
+      .lookup_ip("myip.opendns.com.")
+      .await
+      .context(
+        "Failed to query OpenDNS resolvers for host public IP",
+      )?
+      .into_iter()
+      .map(|ip| ip.to_string())
+      .next()
+      .context("OpenDNS call for public IP didn't return anything")
+  })
+  .await
+  .context("OpenDNS call for public IP timed out")
+  .flatten()
 }
 
 // =====
