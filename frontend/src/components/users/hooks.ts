@@ -1,4 +1,4 @@
-import { useRead } from "@lib/hooks";
+import { useAllResources, useRead } from "@lib/hooks";
 import { Types } from "komodo_client";
 import { UsableResource } from "@types";
 
@@ -6,25 +6,17 @@ export const useUserTargetPermissions = (user_target: Types.UserTarget) => {
   const permissions = useRead("ListUserTargetPermissions", {
     user_target,
   }).data;
-  const servers = useRead("ListServers", {}).data;
-  const stacks = useRead("ListStacks", {}).data;
-  const deployments = useRead("ListDeployments", {}).data;
-  const builds = useRead("ListBuilds", {}).data;
-  const repos = useRead("ListRepos", {}).data;
-  const procedures = useRead("ListProcedures", {}).data;
-  const builders = useRead("ListBuilders", {}).data;
-  const alerters = useRead("ListAlerters", {}).data;
-  const syncs = useRead("ListResourceSyncs", {}).data;
+  const allResources = useAllResources();
   const perms: (Types.Permission & { name: string })[] = [];
-  addPerms(user_target, permissions, "Server", servers, perms);
-  addPerms(user_target, permissions, "Stack", stacks, perms);
-  addPerms(user_target, permissions, "Deployment", deployments, perms);
-  addPerms(user_target, permissions, "Build", builds, perms);
-  addPerms(user_target, permissions, "Repo", repos, perms);
-  addPerms(user_target, permissions, "Procedure", procedures, perms);
-  addPerms(user_target, permissions, "Builder", builders, perms);
-  addPerms(user_target, permissions, "Alerter", alerters, perms);
-  addPerms(user_target, permissions, "ResourceSync", syncs, perms);
+  for (const [resource_type, resources] of Object.entries(allResources)) {
+    addPerms(
+      user_target,
+      permissions,
+      resource_type as UsableResource,
+      resources,
+      perms
+    );
+  }
   return perms;
 };
 
