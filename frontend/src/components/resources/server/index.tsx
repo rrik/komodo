@@ -23,7 +23,7 @@ import {
 import { ServerTable } from "./table";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
 import { ActionWithDialog, ConfirmButton, StatusBadge } from "@components/util";
-import { DashboardPieChart } from "@pages/dashboard";
+import { DashboardPieChart } from "@components/util";
 import { ServerStatsMini } from "./stats-mini";
 import { GroupActions } from "@components/group-actions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";

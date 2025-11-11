@@ -11,11 +11,8 @@ import { Eye, EyeOff, Settings, Table } from "lucide-react";
 import {
   action_state_intention,
   build_state_intention,
-  ColorIntention,
-  hex_color_by_intention,
   procedure_state_intention,
   repo_state_intention,
-  text_color_class_by_intention,
 } from "@lib/color";
 import {
   useFilterResources,
@@ -28,7 +25,6 @@ import { Types } from "komodo_client";
 import { RequiredResourceComponents, UsableResource } from "@types";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { AlertTriangle, Box, Circle, History } from "lucide-react";
-import { PieChart } from "react-minimal-pie-chart";
 import { Link } from "react-router-dom";
 import { UpdateAvailable as StackUpdateAvailable } from "@components/resources/stack";
 import { UpdateAvailable as DeploymentUpdateAvailable } from "@components/resources/deployment";
@@ -269,49 +265,6 @@ const RecentCard = ({
         <TagsWithBadge tag_ids={tags} />
       </div>
     </Link>
-  );
-};
-
-export type DashboardPieChartItem = {
-  title: string;
-  intention: ColorIntention;
-  value: number;
-};
-
-export const DashboardPieChart = ({
-  data: _data,
-}: {
-  data: Array<DashboardPieChartItem | false | undefined>;
-}) => {
-  const data = _data.filter((d) => d) as Array<DashboardPieChartItem>;
-  return (
-    <div className="flex items-center gap-8">
-      <div className="flex flex-col gap-2 w-28">
-        {data.map(({ title, value, intention }) => (
-          <p key={title} className="flex gap-2 text-xs text-muted-foreground">
-            <span
-              className={cn(
-                "font-bold",
-                text_color_class_by_intention(intention)
-              )}
-            >
-              {value}
-            </span>
-            {title}
-          </p>
-        ))}
-      </div>
-      <PieChart
-        className="w-32 h-32"
-        radius={42}
-        lineWidth={30}
-        data={data.map(({ title, value, intention }) => ({
-          title,
-          value,
-          color: hex_color_by_intention(intention),
-        }))}
-      />
-    </div>
   );
 };
 

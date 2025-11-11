@@ -18,7 +18,7 @@ import {
 import { cn } from "@lib/utils";
 import { useServer } from "../server";
 import { Types } from "komodo_client";
-import { DashboardPieChart } from "@pages/dashboard";
+import { DashboardPieChart } from "@components/util";
 import { RepoLink, StatusBadge } from "@components/util";
 import { Badge } from "@ui/badge";
 import { useToast } from "@ui/use-toast";

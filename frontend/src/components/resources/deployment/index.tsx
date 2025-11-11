@@ -24,7 +24,7 @@ import {
   ResourcePageHeader,
 } from "../common";
 import { RunBuild } from "../build/actions";
-import { DashboardPieChart } from "@pages/dashboard";
+import { DashboardPieChart } from "@components/util";
 import {
   ContainerPortsTableView,
   DockerResourceLink,
