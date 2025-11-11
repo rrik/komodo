@@ -65,9 +65,10 @@ pub fn env_file_args(
   let mut res = String::new();
 
   // Add additional env files (except komodo's own, which comes last)
-  for file in additional_env_files.iter().filter(|f| {
-    env_file_path.map_or(true, |komodo_path| f.path.as_str() != komodo_path)
-  }) {
+  for file in additional_env_files
+    .iter()
+    .filter(|f| env_file_path != Some(f.path.as_str()))
+  {
     let path = &file.path;
     write!(res, " --env-file {path}").with_context(|| {
       format!("Failed to write --env-file arg for {path}")
