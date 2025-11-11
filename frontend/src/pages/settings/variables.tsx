@@ -7,6 +7,7 @@ import {
   useInvalidate,
   useRead,
   useSetTitle,
+  useShiftKeyListener,
   useUser,
   useWrite,
 } from "@lib/hooks";
@@ -237,6 +238,7 @@ const CreateVariable = () => {
   const user = useUser().data;
   const disabled = !user?.admin;
   const submit = () => mutate({ name });
+  useShiftKeyListener("N", () => !open && setOpen(true));
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
