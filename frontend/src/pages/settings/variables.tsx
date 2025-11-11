@@ -261,6 +261,11 @@ const CreateVariable = () => {
               onChange={(e) =>
                 setName(e.target.value.toUpperCase().replaceAll(" ", "_"))
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && name) {
+                  submit();
+                }
+              }}
               placeholder="Input variable name"
             />
           </div>
