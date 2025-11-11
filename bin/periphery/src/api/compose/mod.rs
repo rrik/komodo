@@ -8,14 +8,18 @@ use command::{
 use formatting::format_serror;
 use git::write_commit_file;
 use interpolate::Interpolator;
-use komodo_client::entities::{
-  FileContents, RepoExecutionResponse, all_logs_success,
-  stack::{
-    ComposeFile, ComposeProject, ComposeService,
-    ComposeServiceDeploy, StackRemoteFileContents, StackServiceNames,
+use komodo_client::{
+  entities::{
+    FileContents, RepoExecutionResponse, all_logs_success,
+    stack::{
+      ComposeFile, ComposeProject, ComposeService,
+      ComposeServiceDeploy, StackRemoteFileContents,
+      StackServiceNames,
+    },
+    to_path_compatible_name,
+    update::Log,
   },
-  to_path_compatible_name,
-  update::Log,
+  parsers::parse_multiline_command,
 };
 use periphery_client::api::compose::*;
 use resolver_api::Resolve;
@@ -661,10 +665,13 @@ impl Resolve<super::Args> for ComposeUp {
     let mut command = format!(
       "{docker_compose} -p {project_name} -f {file_args}{env_file_args} up -d{extra_args}{service_args}",
     );
-    
-    // Apply wrapper if configured
-    if !stack.config.compose_cmd_wrapper.is_empty() {
-      command = stack.config.compose_cmd_wrapper.replace("[[COMPOSE_COMMAND]]", &command);
+
+    // Apply compose cmd wrapper if configured
+    let compose_cmd_wrapper =
+      parse_multiline_command(&stack.config.compose_cmd_wrapper);
+    if !compose_cmd_wrapper.is_empty() {
+      command =
+        compose_cmd_wrapper.replace("[[COMPOSE_COMMAND]]", &command);
     }
 
     let span = info_span!("RunComposeUp");

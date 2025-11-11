@@ -445,8 +445,8 @@ export const StackConfig = ({
         compose_cmd_wrapper: (value, set) => (
           <MonacoEditor
             value={
-              value ||
-              "# Example: sops exec-env .encrypted.env '[[COMPOSE_COMMAND]]'\n# [[COMPOSE_COMMAND]] is a placeholder for the full compose command\n"
+              value ??
+              "# sops exec-env .encrypted.env '[[COMPOSE_COMMAND]]'\n"
             }
             language="shell"
             onValueChange={(compose_cmd_wrapper) =>
