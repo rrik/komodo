@@ -1,7 +1,10 @@
 import { useLocalStorage, usePermissions, useRead, useUser } from "@lib/hooks";
 import { useServer } from ".";
 import { ReactNode, useMemo } from "react";
-import { MobileFriendlyTabsSelector } from "@ui/mobile-friendly-tabs";
+import {
+  MobileFriendlyTabsSelector,
+  TabNoContent,
+} from "@ui/mobile-friendly-tabs";
 import { ServerStats } from "./stats";
 import { ServerInfo } from "./info";
 import { ServerConfig } from "./config";
@@ -14,10 +17,10 @@ import { ServerTerminals } from "@components/terminal/server";
 import { Card, CardHeader, CardTitle } from "@ui/card";
 import { Types } from "komodo_client";
 
-type ServerTabView = "Config" | "Stats" | "Docker" | "Resources" | "Terminals";
+type ServerTabsView = "Config" | "Stats" | "Docker" | "Resources" | "Terminals";
 
 export const ServerTabs = ({ id }: { id: string }) => {
-  const [view, setView] = useLocalStorage<ServerTabView>(
+  const [view, setView] = useLocalStorage<ServerTabsView>(
     `server-${id}-tab`,
     "Config"
   );
@@ -45,34 +48,36 @@ export const ServerTabs = ({ id }: { id: string }) => {
 
   const noResources = noDeployments && noRepos && noStacks;
 
-  const Selector = useMemo(
-    () => (
-      <MobileFriendlyTabsSelector
-        tabs={[
-          {
-            value: "Config",
-          },
-          {
-            value: "Stats",
-          },
-          {
-            value: "Docker",
-          },
-          {
-            value: "Resources",
-            disabled: noResources,
-          },
-          {
-            value: "Terminals",
-            disabled: terminalDisabled,
-          },
-        ]}
-        value={view}
-        onValueChange={setView as any}
-        tabsTriggerClassname="w-[110px]"
-      />
-    ),
+  const tabs = useMemo<TabNoContent<ServerTabsView>[]>(
+    () => [
+      {
+        value: "Config",
+      },
+      {
+        value: "Stats",
+      },
+      {
+        value: "Docker",
+      },
+      {
+        value: "Resources",
+        disabled: noResources,
+      },
+      {
+        value: "Terminals",
+        disabled: terminalDisabled,
+      },
+    ],
     [noResources, terminalDisabled]
+  );
+
+  const Selector = (
+    <MobileFriendlyTabsSelector
+      tabs={tabs}
+      value={view}
+      onValueChange={setView as any}
+      tabsTriggerClassname="w-[110px]"
+    />
   );
 
   switch (view) {

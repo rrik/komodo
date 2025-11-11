@@ -43,29 +43,31 @@ export const StackServiceTabs = ({
       ? "Log"
       : _view;
 
-  const Selector = useMemo(
-    () => (
-      <MobileFriendlyTabsSelector
-        tabs={[
-          {
-            value: "Log",
-            disabled: logDisabled,
-          },
-          {
-            value: "Inspect",
-            disabled: inspectDisabled,
-          },
-          {
-            value: "Terminals",
-            disabled: terminalDisabled,
-          },
-        ]}
-        value={view}
-        onValueChange={setView as any}
-        tabsTriggerClassname="w-[110px]"
-      />
-    ),
+  const tabs = useMemo(
+    () => [
+      {
+        value: "Log",
+        disabled: logDisabled,
+      },
+      {
+        value: "Inspect",
+        disabled: inspectDisabled,
+      },
+      {
+        value: "Terminals",
+        disabled: terminalDisabled,
+      },
+    ],
     [logDisabled, inspectDisabled, terminalDisabled]
+  );
+
+  const Selector = (
+    <MobileFriendlyTabsSelector
+      tabs={tabs}
+      value={view}
+      onValueChange={setView as any}
+      tabsTriggerClassname="w-[110px]"
+    />
   );
 
   const target: Types.TerminalTarget = useMemo(

@@ -36,7 +36,7 @@ export const StackTabs = ({ id }: { id: string }) => {
       ? "Config"
       : _view;
 
-  const tabsNoContent = useMemo<TabNoContent<StackTabsView>[]>(
+  const tabs = useMemo<TabNoContent<StackTabsView>[]>(
     () => [
       {
         value: "Config",
@@ -59,7 +59,7 @@ export const StackTabs = ({ id }: { id: string }) => {
 
   const Selector = (
     <MobileFriendlyTabsSelector
-      tabs={tabsNoContent}
+      tabs={tabs}
       value={view}
       onValueChange={setView as any}
       tabsTriggerClassname="w-[110px]"

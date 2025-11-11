@@ -3,7 +3,7 @@ import { useDeployment } from ".";
 import { useLocalStorage, usePermissions } from "@lib/hooks";
 import { useServer } from "../server";
 import { useMemo } from "react";
-import { MobileFriendlyTabsSelector } from "@ui/mobile-friendly-tabs";
+import { MobileFriendlyTabsSelector, TabNoContent } from "@ui/mobile-friendly-tabs";
 import { DeploymentConfig } from "./config";
 import { DeploymentLogs } from "./log";
 import { DeploymentInspect } from "./inspect";
@@ -34,16 +34,12 @@ const DeploymentTabsInner = ({
     useServer(deployment.info.server_id)?.info.container_terminals_disabled ??
     true;
   const state = deployment.info.state;
-  const logsDisabled =
-    !specificLogs ||
+  const downOrUnknown =
     state === undefined ||
     state === Types.DeploymentState.Unknown ||
     state === Types.DeploymentState.NotDeployed;
-  const inspectDisabled =
-    !specificInspect ||
-    state === undefined ||
-    state === Types.DeploymentState.Unknown ||
-    state === Types.DeploymentState.NotDeployed;
+  const logsDisabled = !specificLogs || downOrUnknown;
+  const inspectDisabled = !specificInspect || downOrUnknown;
   const terminalDisabled =
     !specificTerminal ||
     container_terminals_disabled ||
@@ -55,32 +51,34 @@ const DeploymentTabsInner = ({
       ? "Config"
       : _view;
 
-  const Selector = useMemo(
-    () => (
-      <MobileFriendlyTabsSelector
-        tabs={[
-          {
-            value: "Config",
-          },
-          {
-            value: "Log",
-            disabled: logsDisabled,
-          },
-          {
-            value: "Inspect",
-            disabled: inspectDisabled,
-          },
-          {
-            value: "Terminals",
-            disabled: terminalDisabled,
-          },
-        ]}
-        value={view}
-        onValueChange={setView as any}
-        tabsTriggerClassname="w-[110px]"
-      />
-    ),
+  const tabs = useMemo<TabNoContent<DeploymentTabsView>[]>(
+    () => [
+      {
+        value: "Config",
+      },
+      {
+        value: "Log",
+        disabled: logsDisabled,
+      },
+      {
+        value: "Inspect",
+        disabled: inspectDisabled,
+      },
+      {
+        value: "Terminals",
+        disabled: terminalDisabled,
+      },
+    ],
     [logsDisabled, inspectDisabled, terminalDisabled]
+  );
+
+  const Selector = (
+    <MobileFriendlyTabsSelector
+      tabs={tabs}
+      value={view}
+      onValueChange={setView as any}
+      tabsTriggerClassname="w-[110px]"
+    />
   );
 
   const target: Types.TerminalTarget = useMemo(
