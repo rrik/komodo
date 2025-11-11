@@ -18,6 +18,7 @@ import {
   useFilterResources,
   useNoResources,
   useRead,
+  useSetTitle,
   useUser,
 } from "@lib/hooks";
 import { cn, usableResourcePath } from "@lib/utils";
@@ -33,6 +34,7 @@ import { Input } from "@ui/input";
 
 export default function Dashboard() {
   const { preferences } = useDashboardPreferences();
+  useSetTitle(undefined);
   return (
     <>
       <ActiveResources />
