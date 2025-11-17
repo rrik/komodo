@@ -99,7 +99,11 @@ impl<T: CastBytes> Decode<Option<T>> for EncodedResponse<T> {
       bytes.pop().context("ResultWrapper bytes cannot be empty")?;
     match result_byte {
       0 => Ok(Some(T::from_vec(bytes))),
-      1 => Err(deserialize_error_bytes(&bytes)),
+      1 => {
+        Err(deserialize_error_bytes(&bytes).context(
+          "Decoded error message over Core-Periphery communication channel",
+        ))
+      }
       _ => Ok(None),
     }
   }

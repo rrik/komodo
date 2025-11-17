@@ -171,7 +171,8 @@ async fn handle_onboarding(
     public_key_validator: core_public_keys(),
     socket: &mut socket,
   })
-  .await?;
+  .await
+  .context("Onboarding failed")?;
 
   // Post onboarding login 1: Send public key
   socket
