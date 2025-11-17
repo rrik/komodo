@@ -3,7 +3,10 @@ import { useDeployment } from ".";
 import { useLocalStorage, usePermissions } from "@lib/hooks";
 import { useServer } from "../server";
 import { useMemo } from "react";
-import { MobileFriendlyTabsSelector, TabNoContent } from "@ui/mobile-friendly-tabs";
+import {
+  MobileFriendlyTabsSelector,
+  TabNoContent,
+} from "@ui/mobile-friendly-tabs";
 import { DeploymentConfig } from "./config";
 import { DeploymentLogs } from "./log";
 import { DeploymentInspect } from "./inspect";
@@ -32,7 +35,7 @@ const DeploymentTabsInner = ({
   });
   const container_terminals_disabled =
     useServer(deployment.info.server_id)?.info.container_terminals_disabled ??
-    true;
+    false;
   const state = deployment.info.state;
   const downOrUnknown =
     state === undefined ||

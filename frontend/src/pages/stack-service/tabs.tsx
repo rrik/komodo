@@ -27,7 +27,7 @@ export const StackServiceTabs = ({
     id: stack.id,
   });
   const container_terminals_disabled =
-    useServer(stack.info.server_id)?.info.container_terminals_disabled ?? true;
+    useServer(stack.info.server_id)?.info.container_terminals_disabled ?? false;
   const logDisabled =
     !specificLogs || container_state === Types.ContainerStateStatusEnum.Empty;
   const inspectDisabled =
