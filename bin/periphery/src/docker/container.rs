@@ -4,14 +4,14 @@ use anyhow::Context;
 use bollard::query_parameters::{
   InspectContainerOptions, ListContainersOptions,
 };
-use komodo_client::entities::docker::{
-  ContainerConfig, GraphDriverData, HealthConfig, PortBinding,
-  container::*,
-};
+use komodo_client::entities::docker::{container::*, *};
 
 use crate::state::container_stats;
 
-use super::DockerClient;
+use super::{
+  DockerClient, convert_health_config, convert_mount,
+  convert_mount_point_type, convert_resources_ulimits,
+};
 
 impl DockerClient {
   pub async fn list_containers(
@@ -257,11 +257,7 @@ impl DockerClient {
           .ulimits
           .unwrap_or_default()
           .into_iter()
-          .map(|ulimit| ResourcesUlimits {
-            name: ulimit.name,
-            soft: ulimit.soft,
-            hard: ulimit.hard,
-          })
+          .map(convert_resources_ulimits)
           .collect(),
         cpu_count: config.cpu_count,
         cpu_percent: config.cpu_percent,
@@ -309,49 +305,7 @@ impl DockerClient {
           .mounts
           .unwrap_or_default()
           .into_iter()
-          .map(|mount| ContainerMount {
-            target: mount.target,
-            source: mount.source,
-            typ: mount
-              .typ
-              .map(convert_mount_type)
-              .unwrap_or_default(),
-            read_only: mount.read_only,
-            consistency: mount.consistency,
-            bind_options: mount.bind_options.map(|options| {
-              MountBindOptions {
-                propagation: options
-                  .propagation
-                  .map(convert_mount_propogation)
-                  .unwrap_or_default(),
-                non_recursive: options.non_recursive,
-                create_mountpoint: options.create_mountpoint,
-                read_only_non_recursive: options
-                  .read_only_non_recursive,
-                read_only_force_recursive: options
-                  .read_only_force_recursive,
-              }
-            }),
-            volume_options: mount.volume_options.map(|options| {
-              MountVolumeOptions {
-                no_copy: options.no_copy,
-                labels: options.labels.unwrap_or_default(),
-                driver_config: options.driver_config.map(|config| {
-                  MountVolumeOptionsDriverConfig {
-                    name: config.name,
-                    options: config.options.unwrap_or_default(),
-                  }
-                }),
-                subpath: options.subpath,
-              }
-            }),
-            tmpfs_options: mount.tmpfs_options.map(|options| {
-              MountTmpfsOptions {
-                size_bytes: options.size_bytes,
-                mode: options.mode,
-              }
-            }),
-          })
+          .map(convert_mount)
           .collect(),
         console_size: config
           .console_size
@@ -435,14 +389,7 @@ impl DockerClient {
         stdin_once: config.stdin_once,
         env: config.env.unwrap_or_default(),
         cmd: config.cmd.unwrap_or_default(),
-        healthcheck: config.healthcheck.map(|health| HealthConfig {
-          test: health.test.unwrap_or_default(),
-          interval: health.interval,
-          timeout: health.timeout,
-          retries: health.retries,
-          start_period: health.start_period,
-          start_interval: health.start_interval,
-        }),
+        healthcheck: config.healthcheck.map(convert_health_config),
         args_escaped: config.args_escaped,
         image: config.image,
         volumes: config
@@ -653,74 +600,6 @@ fn convert_restart_policy(
     }
     bollard::secret::RestartPolicyNameEnum::ON_FAILURE => {
       RestartPolicyNameEnum::OnFailure
-    }
-  }
-}
-
-fn convert_mount_type(
-  typ: bollard::secret::MountTypeEnum,
-) -> MountTypeEnum {
-  match typ {
-    bollard::secret::MountTypeEnum::EMPTY => MountTypeEnum::Empty,
-    bollard::secret::MountTypeEnum::BIND => MountTypeEnum::Bind,
-    bollard::secret::MountTypeEnum::VOLUME => MountTypeEnum::Volume,
-    bollard::secret::MountTypeEnum::IMAGE => MountTypeEnum::Image,
-    bollard::secret::MountTypeEnum::TMPFS => MountTypeEnum::Tmpfs,
-    bollard::secret::MountTypeEnum::NPIPE => MountTypeEnum::Npipe,
-    bollard::secret::MountTypeEnum::CLUSTER => MountTypeEnum::Cluster,
-  }
-}
-
-fn convert_mount_point_type(
-  typ: bollard::secret::MountPointTypeEnum,
-) -> MountTypeEnum {
-  match typ {
-    bollard::secret::MountPointTypeEnum::EMPTY => {
-      MountTypeEnum::Empty
-    }
-    bollard::secret::MountPointTypeEnum::BIND => MountTypeEnum::Bind,
-    bollard::secret::MountPointTypeEnum::VOLUME => {
-      MountTypeEnum::Volume
-    }
-    bollard::secret::MountPointTypeEnum::IMAGE => {
-      MountTypeEnum::Image
-    }
-    bollard::secret::MountPointTypeEnum::TMPFS => {
-      MountTypeEnum::Tmpfs
-    }
-    bollard::secret::MountPointTypeEnum::NPIPE => {
-      MountTypeEnum::Npipe
-    }
-    bollard::secret::MountPointTypeEnum::CLUSTER => {
-      MountTypeEnum::Cluster
-    }
-  }
-}
-
-fn convert_mount_propogation(
-  propogation: bollard::secret::MountBindOptionsPropagationEnum,
-) -> MountBindOptionsPropagationEnum {
-  match propogation {
-    bollard::secret::MountBindOptionsPropagationEnum::EMPTY => {
-      MountBindOptionsPropagationEnum::Empty
-    }
-    bollard::secret::MountBindOptionsPropagationEnum::PRIVATE => {
-      MountBindOptionsPropagationEnum::Private
-    }
-    bollard::secret::MountBindOptionsPropagationEnum::RPRIVATE => {
-      MountBindOptionsPropagationEnum::Rprivate
-    }
-    bollard::secret::MountBindOptionsPropagationEnum::SHARED => {
-      MountBindOptionsPropagationEnum::Shared
-    }
-    bollard::secret::MountBindOptionsPropagationEnum::RSHARED => {
-      MountBindOptionsPropagationEnum::Rshared
-    }
-    bollard::secret::MountBindOptionsPropagationEnum::SLAVE => {
-      MountBindOptionsPropagationEnum::Slave
-    }
-    bollard::secret::MountBindOptionsPropagationEnum::RSLAVE => {
-      MountBindOptionsPropagationEnum::Rslave
     }
   }
 }

@@ -65,6 +65,10 @@ export var MaintenanceScheduleType;
 export var Operation;
 (function (Operation) {
     Operation["None"] = "None";
+    Operation["CreateSwarm"] = "CreateSwarm";
+    Operation["UpdateSwarm"] = "UpdateSwarm";
+    Operation["RenameSwarm"] = "RenameSwarm";
+    Operation["DeleteSwarm"] = "DeleteSwarm";
     Operation["CreateServer"] = "CreateServer";
     Operation["UpdateServer"] = "UpdateServer";
     Operation["UpdateServerKey"] = "UpdateServerKey";
@@ -152,6 +156,13 @@ export var Operation;
     Operation["RenameAction"] = "RenameAction";
     Operation["DeleteAction"] = "DeleteAction";
     Operation["RunAction"] = "RunAction";
+    Operation["CreateResourceSync"] = "CreateResourceSync";
+    Operation["UpdateResourceSync"] = "UpdateResourceSync";
+    Operation["RenameResourceSync"] = "RenameResourceSync";
+    Operation["DeleteResourceSync"] = "DeleteResourceSync";
+    Operation["WriteSyncContents"] = "WriteSyncContents";
+    Operation["CommitSync"] = "CommitSync";
+    Operation["RunSync"] = "RunSync";
     Operation["CreateBuilder"] = "CreateBuilder";
     Operation["UpdateBuilder"] = "UpdateBuilder";
     Operation["RenameBuilder"] = "RenameBuilder";
@@ -162,13 +173,6 @@ export var Operation;
     Operation["DeleteAlerter"] = "DeleteAlerter";
     Operation["TestAlerter"] = "TestAlerter";
     Operation["SendAlert"] = "SendAlert";
-    Operation["CreateResourceSync"] = "CreateResourceSync";
-    Operation["UpdateResourceSync"] = "UpdateResourceSync";
-    Operation["RenameResourceSync"] = "RenameResourceSync";
-    Operation["DeleteResourceSync"] = "DeleteResourceSync";
-    Operation["WriteSyncContents"] = "WriteSyncContents";
-    Operation["CommitSync"] = "CommitSync";
-    Operation["RunSync"] = "RunSync";
     Operation["ClearRepoCache"] = "ClearRepoCache";
     Operation["BackupCoreDatabase"] = "BackupCoreDatabase";
     Operation["GlobalAutoUpdate"] = "GlobalAutoUpdate";
@@ -568,6 +572,17 @@ export var StackState;
     /** Server not reachable for status */
     StackState["Unknown"] = "unknown";
 })(StackState || (StackState = {}));
+export var SwarmState;
+(function (SwarmState) {
+    /** Unknown case */
+    SwarmState["Unknown"] = "Unknown";
+    /** The Swarm is healthy, all nodes OK */
+    SwarmState["Healthy"] = "Healthy";
+    /** The Swarm is unhealthy */
+    SwarmState["Unhealthy"] = "Unhealthy";
+    /** Servers are reachable, but Swarm is not running on any of them. */
+    SwarmState["Offline"] = "Offline";
+})(SwarmState || (SwarmState = {}));
 /**
  * Configures the behavior of [CreateTerminal] if the
  * specified terminal name already exists.
@@ -590,6 +605,53 @@ export var ContainerTerminalMode;
     ContainerTerminalMode["Exec"] = "exec";
     ContainerTerminalMode["Attach"] = "attach";
 })(ContainerTerminalMode || (ContainerTerminalMode = {}));
+export var EndpointPortConfigProtocolEnum;
+(function (EndpointPortConfigProtocolEnum) {
+    EndpointPortConfigProtocolEnum["EMPTY"] = "";
+    EndpointPortConfigProtocolEnum["TCP"] = "tcp";
+    EndpointPortConfigProtocolEnum["UDP"] = "udp";
+    EndpointPortConfigProtocolEnum["SCTP"] = "sctp";
+})(EndpointPortConfigProtocolEnum || (EndpointPortConfigProtocolEnum = {}));
+export var EndpointPortConfigPublishModeEnum;
+(function (EndpointPortConfigPublishModeEnum) {
+    EndpointPortConfigPublishModeEnum["EMPTY"] = "";
+    EndpointPortConfigPublishModeEnum["INGRESS"] = "ingress";
+    EndpointPortConfigPublishModeEnum["HOST"] = "host";
+})(EndpointPortConfigPublishModeEnum || (EndpointPortConfigPublishModeEnum = {}));
+export var EndpointSpecModeEnum;
+(function (EndpointSpecModeEnum) {
+    EndpointSpecModeEnum["EMPTY"] = "";
+    EndpointSpecModeEnum["VIP"] = "vip";
+    EndpointSpecModeEnum["DNSRR"] = "dnsrr";
+})(EndpointSpecModeEnum || (EndpointSpecModeEnum = {}));
+/** Reachability represents the reachability of a node. */
+export var NodeReachability;
+(function (NodeReachability) {
+    NodeReachability["UNKNOWN"] = "unknown";
+    NodeReachability["UNREACHABLE"] = "unreachable";
+    NodeReachability["REACHABLE"] = "reachable";
+})(NodeReachability || (NodeReachability = {}));
+export var NodeSpecRoleEnum;
+(function (NodeSpecRoleEnum) {
+    NodeSpecRoleEnum["EMPTY"] = "";
+    NodeSpecRoleEnum["WORKER"] = "worker";
+    NodeSpecRoleEnum["MANAGER"] = "manager";
+})(NodeSpecRoleEnum || (NodeSpecRoleEnum = {}));
+export var NodeSpecAvailabilityEnum;
+(function (NodeSpecAvailabilityEnum) {
+    NodeSpecAvailabilityEnum["EMPTY"] = "";
+    NodeSpecAvailabilityEnum["ACTIVE"] = "active";
+    NodeSpecAvailabilityEnum["PAUSE"] = "pause";
+    NodeSpecAvailabilityEnum["DRAIN"] = "drain";
+})(NodeSpecAvailabilityEnum || (NodeSpecAvailabilityEnum = {}));
+/** NodeState represents the state of a node. */
+export var NodeState;
+(function (NodeState) {
+    NodeState["UNKNOWN"] = "unknown";
+    NodeState["DOWN"] = "down";
+    NodeState["READY"] = "ready";
+    NodeState["DISCONNECTED"] = "disconnected";
+})(NodeState || (NodeState = {}));
 export var DefaultRepoFolder;
 (function (DefaultRepoFolder) {
     /** /${root_directory}/stacks */
@@ -610,6 +672,86 @@ export var SearchCombinator;
     SearchCombinator["Or"] = "Or";
     SearchCombinator["And"] = "And";
 })(SearchCombinator || (SearchCombinator = {}));
+export var TaskSpecContainerSpecPrivilegesSeccompModeEnum;
+(function (TaskSpecContainerSpecPrivilegesSeccompModeEnum) {
+    TaskSpecContainerSpecPrivilegesSeccompModeEnum["EMPTY"] = "";
+    TaskSpecContainerSpecPrivilegesSeccompModeEnum["DEFAULT"] = "default";
+    TaskSpecContainerSpecPrivilegesSeccompModeEnum["UNCONFINED"] = "unconfined";
+    TaskSpecContainerSpecPrivilegesSeccompModeEnum["CUSTOM"] = "custom";
+})(TaskSpecContainerSpecPrivilegesSeccompModeEnum || (TaskSpecContainerSpecPrivilegesSeccompModeEnum = {}));
+export var TaskSpecContainerSpecPrivilegesAppArmorModeEnum;
+(function (TaskSpecContainerSpecPrivilegesAppArmorModeEnum) {
+    TaskSpecContainerSpecPrivilegesAppArmorModeEnum["EMPTY"] = "";
+    TaskSpecContainerSpecPrivilegesAppArmorModeEnum["DEFAULT"] = "default";
+    TaskSpecContainerSpecPrivilegesAppArmorModeEnum["DISABLED"] = "disabled";
+})(TaskSpecContainerSpecPrivilegesAppArmorModeEnum || (TaskSpecContainerSpecPrivilegesAppArmorModeEnum = {}));
+export var TaskSpecContainerSpecIsolationEnum;
+(function (TaskSpecContainerSpecIsolationEnum) {
+    TaskSpecContainerSpecIsolationEnum["DEFAULT"] = "default";
+    TaskSpecContainerSpecIsolationEnum["PROCESS"] = "process";
+    TaskSpecContainerSpecIsolationEnum["HYPERV"] = "hyperv";
+    TaskSpecContainerSpecIsolationEnum["EMPTY"] = "";
+})(TaskSpecContainerSpecIsolationEnum || (TaskSpecContainerSpecIsolationEnum = {}));
+export var TaskSpecRestartPolicyConditionEnum;
+(function (TaskSpecRestartPolicyConditionEnum) {
+    TaskSpecRestartPolicyConditionEnum["EMPTY"] = "";
+    TaskSpecRestartPolicyConditionEnum["NONE"] = "none";
+    TaskSpecRestartPolicyConditionEnum["ON_FAILURE"] = "on-failure";
+    TaskSpecRestartPolicyConditionEnum["ANY"] = "any";
+})(TaskSpecRestartPolicyConditionEnum || (TaskSpecRestartPolicyConditionEnum = {}));
+export var ServiceSpecUpdateConfigFailureActionEnum;
+(function (ServiceSpecUpdateConfigFailureActionEnum) {
+    ServiceSpecUpdateConfigFailureActionEnum["EMPTY"] = "";
+    ServiceSpecUpdateConfigFailureActionEnum["CONTINUE"] = "continue";
+    ServiceSpecUpdateConfigFailureActionEnum["PAUSE"] = "pause";
+    ServiceSpecUpdateConfigFailureActionEnum["ROLLBACK"] = "rollback";
+})(ServiceSpecUpdateConfigFailureActionEnum || (ServiceSpecUpdateConfigFailureActionEnum = {}));
+export var ServiceSpecUpdateConfigOrderEnum;
+(function (ServiceSpecUpdateConfigOrderEnum) {
+    ServiceSpecUpdateConfigOrderEnum["EMPTY"] = "";
+    ServiceSpecUpdateConfigOrderEnum["STOP_FIRST"] = "stop-first";
+    ServiceSpecUpdateConfigOrderEnum["START_FIRST"] = "start-first";
+})(ServiceSpecUpdateConfigOrderEnum || (ServiceSpecUpdateConfigOrderEnum = {}));
+export var ServiceSpecRollbackConfigFailureActionEnum;
+(function (ServiceSpecRollbackConfigFailureActionEnum) {
+    ServiceSpecRollbackConfigFailureActionEnum["EMPTY"] = "";
+    ServiceSpecRollbackConfigFailureActionEnum["CONTINUE"] = "continue";
+    ServiceSpecRollbackConfigFailureActionEnum["PAUSE"] = "pause";
+})(ServiceSpecRollbackConfigFailureActionEnum || (ServiceSpecRollbackConfigFailureActionEnum = {}));
+export var ServiceSpecRollbackConfigOrderEnum;
+(function (ServiceSpecRollbackConfigOrderEnum) {
+    ServiceSpecRollbackConfigOrderEnum["EMPTY"] = "";
+    ServiceSpecRollbackConfigOrderEnum["STOP_FIRST"] = "stop-first";
+    ServiceSpecRollbackConfigOrderEnum["START_FIRST"] = "start-first";
+})(ServiceSpecRollbackConfigOrderEnum || (ServiceSpecRollbackConfigOrderEnum = {}));
+export var ServiceUpdateStatusStateEnum;
+(function (ServiceUpdateStatusStateEnum) {
+    ServiceUpdateStatusStateEnum["EMPTY"] = "";
+    ServiceUpdateStatusStateEnum["UPDATING"] = "updating";
+    ServiceUpdateStatusStateEnum["PAUSED"] = "paused";
+    ServiceUpdateStatusStateEnum["COMPLETED"] = "completed";
+    ServiceUpdateStatusStateEnum["ROLLBACK_STARTED"] = "rollback_started";
+    ServiceUpdateStatusStateEnum["ROLLBACK_PAUSED"] = "rollback_paused";
+    ServiceUpdateStatusStateEnum["ROLLBACK_COMPLETED"] = "rollback_completed";
+})(ServiceUpdateStatusStateEnum || (ServiceUpdateStatusStateEnum = {}));
+export var TaskState;
+(function (TaskState) {
+    TaskState["NEW"] = "new";
+    TaskState["ALLOCATED"] = "allocated";
+    TaskState["PENDING"] = "pending";
+    TaskState["ASSIGNED"] = "assigned";
+    TaskState["ACCEPTED"] = "accepted";
+    TaskState["PREPARING"] = "preparing";
+    TaskState["READY"] = "ready";
+    TaskState["STARTING"] = "starting";
+    TaskState["RUNNING"] = "running";
+    TaskState["COMPLETE"] = "complete";
+    TaskState["SHUTDOWN"] = "shutdown";
+    TaskState["FAILED"] = "failed";
+    TaskState["REJECTED"] = "rejected";
+    TaskState["REMOVE"] = "remove";
+    TaskState["ORPHANED"] = "orphaned";
+})(TaskState || (TaskState = {}));
 /** Days of the week */
 export var DayOfWeek;
 (function (DayOfWeek) {

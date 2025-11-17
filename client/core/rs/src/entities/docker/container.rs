@@ -7,7 +7,10 @@ use typeshare::typeshare;
 
 use crate::entities::{I64, Usize};
 
-use super::{ContainerConfig, GraphDriverData, PortBinding};
+use super::{
+  ContainerConfig, GraphDriverData, Mount, MountTypeEnum,
+  PortBinding, ResourcesUlimits,
+};
 
 /// Container summary returned by container list apis.
 #[typeshare]
@@ -543,7 +546,7 @@ pub struct HostConfig {
 
   /// Specification for mounts to be added to the container.
   #[serde(default, rename = "Mounts")]
-  pub mounts: Vec<ContainerMount>,
+  pub mounts: Vec<Mount>,
 
   /// Initial console size, as an `[height, width]` array.
   #[serde(default, rename = "ConsoleSize")]
@@ -730,24 +733,6 @@ pub struct DeviceRequest {
 
 #[typeshare]
 #[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct ResourcesUlimits {
-  /// Name of ulimit
-  #[serde(rename = "Name")]
-  pub name: Option<String>,
-
-  /// Soft limit
-  #[serde(rename = "Soft")]
-  pub soft: Option<I64>,
-
-  /// Hard limit
-  #[serde(rename = "Hard")]
-  pub hard: Option<I64>,
-}
-
-#[typeshare]
-#[derive(
   Debug,
   Clone,
   Copy,
@@ -824,182 +809,6 @@ pub enum RestartPolicyNameEnum {
   UnlessStopped,
   #[serde(rename = "on-failure")]
   OnFailure,
-}
-
-#[typeshare]
-#[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct ContainerMount {
-  /// Container path.
-  #[serde(rename = "Target")]
-  pub target: Option<String>,
-
-  /// Mount source (e.g. a volume name, a host path).
-  #[serde(rename = "Source")]
-  pub source: Option<String>,
-
-  /// The mount type. Available types:  - `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container. - `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed. - `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs. - `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container. - `cluster` a Swarm cluster volume
-  #[serde(default, rename = "Type")]
-  pub typ: MountTypeEnum,
-
-  /// Whether the mount should be read-only.
-  #[serde(rename = "ReadOnly")]
-  pub read_only: Option<bool>,
-
-  /// The consistency requirement for the mount: `default`, `consistent`, `cached`, or `delegated`.
-  #[serde(rename = "Consistency")]
-  pub consistency: Option<String>,
-
-  #[serde(rename = "BindOptions")]
-  pub bind_options: Option<MountBindOptions>,
-
-  #[serde(rename = "VolumeOptions")]
-  pub volume_options: Option<MountVolumeOptions>,
-
-  #[serde(rename = "TmpfsOptions")]
-  pub tmpfs_options: Option<MountTmpfsOptions>,
-}
-
-#[typeshare]
-#[derive(
-  Debug,
-  Clone,
-  Copy,
-  PartialEq,
-  PartialOrd,
-  Serialize,
-  Deserialize,
-  Eq,
-  Ord,
-  Default,
-)]
-pub enum MountTypeEnum {
-  #[default]
-  #[serde(rename = "")]
-  Empty,
-  #[serde(rename = "bind")]
-  Bind,
-  #[serde(rename = "volume")]
-  Volume,
-  #[serde(rename = "image")]
-  Image,
-  #[serde(rename = "tmpfs")]
-  Tmpfs,
-  #[serde(rename = "npipe")]
-  Npipe,
-  #[serde(rename = "cluster")]
-  Cluster,
-}
-
-/// Optional configuration for the `bind` type.
-#[typeshare]
-#[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct MountBindOptions {
-  /// A propagation mode with the value `[r]private`, `[r]shared`, or `[r]slave`.
-  #[serde(default, rename = "Propagation")]
-  pub propagation: MountBindOptionsPropagationEnum,
-
-  /// Disable recursive bind mount.
-  #[serde(rename = "NonRecursive")]
-  pub non_recursive: Option<bool>,
-
-  /// Create mount point on host if missing
-  #[serde(rename = "CreateMountpoint")]
-  pub create_mountpoint: Option<bool>,
-
-  /// Make the mount non-recursively read-only, but still leave the mount recursive (unless NonRecursive is set to `true` in conjunction).  Addded in v1.44, before that version all read-only mounts were non-recursive by default. To match the previous behaviour this will default to `true` for clients on versions prior to v1.44.
-  #[serde(rename = "ReadOnlyNonRecursive")]
-  pub read_only_non_recursive: Option<bool>,
-
-  /// Raise an error if the mount cannot be made recursively read-only.
-  #[serde(rename = "ReadOnlyForceRecursive")]
-  pub read_only_force_recursive: Option<bool>,
-}
-
-#[typeshare]
-#[derive(
-  Debug,
-  Clone,
-  Copy,
-  PartialEq,
-  PartialOrd,
-  Serialize,
-  Deserialize,
-  Eq,
-  Ord,
-  Default,
-)]
-pub enum MountBindOptionsPropagationEnum {
-  #[default]
-  #[serde(rename = "")]
-  Empty,
-  #[serde(rename = "private")]
-  Private,
-  #[serde(rename = "rprivate")]
-  Rprivate,
-  #[serde(rename = "shared")]
-  Shared,
-  #[serde(rename = "rshared")]
-  Rshared,
-  #[serde(rename = "slave")]
-  Slave,
-  #[serde(rename = "rslave")]
-  Rslave,
-}
-
-/// Optional configuration for the `volume` type.
-#[typeshare]
-#[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct MountVolumeOptions {
-  /// Populate volume with data from the target.
-  #[serde(rename = "NoCopy")]
-  pub no_copy: Option<bool>,
-
-  /// User-defined key/value metadata.
-  #[serde(default, rename = "Labels")]
-  pub labels: HashMap<String, String>,
-
-  #[serde(rename = "DriverConfig")]
-  pub driver_config: Option<MountVolumeOptionsDriverConfig>,
-
-  /// Source path inside the volume. Must be relative without any back traversals.
-  #[serde(rename = "Subpath")]
-  pub subpath: Option<String>,
-}
-
-/// Map of driver specific options
-#[typeshare]
-#[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct MountVolumeOptionsDriverConfig {
-  /// Name of the driver to use to create the volume.
-  #[serde(rename = "Name")]
-  pub name: Option<String>,
-
-  /// key/value map of driver specific options.
-  #[serde(default, rename = "Options")]
-  pub options: HashMap<String, String>,
-}
-
-/// Optional configuration for the `tmpfs` type.
-#[typeshare]
-#[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct MountTmpfsOptions {
-  /// The size for the tmpfs mount in bytes.
-  #[serde(rename = "SizeBytes")]
-  pub size_bytes: Option<I64>,
-
-  /// The permission mode for the tmpfs mount in an integer.
-  #[serde(rename = "Mode")]
-  pub mode: Option<I64>,
 }
 
 #[typeshare]

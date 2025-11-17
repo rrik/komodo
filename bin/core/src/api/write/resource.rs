@@ -5,7 +5,8 @@ use komodo_client::{
   entities::{
     ResourceTarget, action::Action, alerter::Alerter, build::Build,
     builder::Builder, deployment::Deployment, procedure::Procedure,
-    repo::Repo, server::Server, stack::Stack, sync::ResourceSync,
+    repo::Repo, server::Server, stack::Stack, swarm::Swarm,
+    sync::ResourceSync,
   },
 };
 use reqwest::StatusCode;
@@ -45,8 +46,14 @@ impl Resolve<WriteArgs> for UpdateResourceMeta {
             .status_code(StatusCode::BAD_REQUEST),
         );
       }
+      ResourceTarget::Swarm(id) => {
+        resource::update_meta::<Swarm>(&id, meta, args).await?;
+      }
       ResourceTarget::Server(id) => {
         resource::update_meta::<Server>(&id, meta, args).await?;
+      }
+      ResourceTarget::Stack(id) => {
+        resource::update_meta::<Stack>(&id, meta, args).await?;
       }
       ResourceTarget::Deployment(id) => {
         resource::update_meta::<Deployment>(&id, meta, args).await?;
@@ -56,12 +63,6 @@ impl Resolve<WriteArgs> for UpdateResourceMeta {
       }
       ResourceTarget::Repo(id) => {
         resource::update_meta::<Repo>(&id, meta, args).await?;
-      }
-      ResourceTarget::Builder(id) => {
-        resource::update_meta::<Builder>(&id, meta, args).await?;
-      }
-      ResourceTarget::Alerter(id) => {
-        resource::update_meta::<Alerter>(&id, meta, args).await?;
       }
       ResourceTarget::Procedure(id) => {
         resource::update_meta::<Procedure>(&id, meta, args).await?;
@@ -73,8 +74,11 @@ impl Resolve<WriteArgs> for UpdateResourceMeta {
         resource::update_meta::<ResourceSync>(&id, meta, args)
           .await?;
       }
-      ResourceTarget::Stack(id) => {
-        resource::update_meta::<Stack>(&id, meta, args).await?;
+      ResourceTarget::Builder(id) => {
+        resource::update_meta::<Builder>(&id, meta, args).await?;
+      }
+      ResourceTarget::Alerter(id) => {
+        resource::update_meta::<Alerter>(&id, meta, args).await?;
       }
     }
     Ok(UpdateResourceMetaResponse {})

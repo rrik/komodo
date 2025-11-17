@@ -2,6 +2,8 @@ use indexmap::{IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::entities::swarm::_PartialSwarmConfig;
+
 use super::{
   ResourceTarget, ResourceTargetVariant,
   action::_PartialActionConfig,
@@ -24,6 +26,13 @@ use super::{
 #[typeshare]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ResourcesToml {
+  #[serde(
+    default,
+    alias = "swarm",
+    skip_serializing_if = "Vec::is_empty"
+  )]
+  pub swarms: Vec<ResourceToml<_PartialSwarmConfig>>,
+
   #[serde(
     default,
     alias = "server",

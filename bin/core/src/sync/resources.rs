@@ -14,6 +14,7 @@ use komodo_client::{
     repo::Repo,
     server::Server,
     stack::Stack,
+    swarm::Swarm,
     sync::ResourceSync,
     tag::Tag,
     update::Log,
@@ -33,6 +34,17 @@ use super::{
   include_resource_by_resource_type_and_name,
   include_resource_by_tags,
 };
+
+impl ResourceSyncTrait for Swarm {
+  fn get_diff(
+    original: Self::Config,
+    update: Self::PartialConfig,
+  ) -> anyhow::Result<Self::ConfigDiff> {
+    Ok(original.partial_diff(update))
+  }
+}
+
+impl ExecuteResourceSync for Swarm {}
 
 impl ResourceSyncTrait for Server {
   fn get_diff(

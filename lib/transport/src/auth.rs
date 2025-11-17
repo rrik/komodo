@@ -65,7 +65,7 @@ impl LoginFlow for ServerLoginFlow {
         // The prologue must be the same on both sides of connection.
         &identifiers.hash(&nonce),
       )
-      .context("Failed to inialize handshake")?;
+      .context("Failed to initialize handshake")?;
 
       // Receive and read handshake_m1
       let handshake_m1 = socket
@@ -154,7 +154,7 @@ impl LoginFlow for ClientLoginFlow {
         // The prologue must be the same on both sides of connection.
         &identifiers.hash(&nonce),
       )
-      .context("Failed to inialize handshake")?;
+      .context("Failed to initialize handshake")?;
 
       // Send handshake_m1
       let handshake_m1 = handshake

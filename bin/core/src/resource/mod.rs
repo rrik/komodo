@@ -60,6 +60,7 @@ mod refresh;
 mod repo;
 mod server;
 mod stack;
+mod swarm;
 mod sync;
 
 pub use action::{
@@ -647,20 +648,21 @@ pub async fn update<T: KomodoResource>(
 fn resource_target<T: KomodoResource>(id: String) -> ResourceTarget {
   match T::resource_type() {
     ResourceTargetVariant::System => ResourceTarget::System(id),
-    ResourceTargetVariant::Build => ResourceTarget::Build(id),
-    ResourceTargetVariant::Builder => ResourceTarget::Builder(id),
+    ResourceTargetVariant::Swarm => ResourceTarget::Swarm(id),
+    ResourceTargetVariant::Server => ResourceTarget::Server(id),
+    ResourceTargetVariant::Stack => ResourceTarget::Stack(id),
     ResourceTargetVariant::Deployment => {
       ResourceTarget::Deployment(id)
     }
-    ResourceTargetVariant::Server => ResourceTarget::Server(id),
+    ResourceTargetVariant::Build => ResourceTarget::Build(id),
     ResourceTargetVariant::Repo => ResourceTarget::Repo(id),
-    ResourceTargetVariant::Alerter => ResourceTarget::Alerter(id),
     ResourceTargetVariant::Procedure => ResourceTarget::Procedure(id),
+    ResourceTargetVariant::Action => ResourceTarget::Action(id),
     ResourceTargetVariant::ResourceSync => {
       ResourceTarget::ResourceSync(id)
     }
-    ResourceTargetVariant::Stack => ResourceTarget::Stack(id),
-    ResourceTargetVariant::Action => ResourceTarget::Action(id),
+    ResourceTargetVariant::Builder => ResourceTarget::Builder(id),
+    ResourceTargetVariant::Alerter => ResourceTarget::Alerter(id),
   }
 }
 
@@ -929,16 +931,17 @@ where
 {
   let resource: ResourceTarget = resource.into();
   let (recent_field, id) = match resource {
+    ResourceTarget::Swarm(id) => ("recents.Swarm", id),
     ResourceTarget::Server(id) => ("recents.Server", id),
+    ResourceTarget::Stack(id) => ("recents.Stack", id),
     ResourceTarget::Deployment(id) => ("recents.Deployment", id),
     ResourceTarget::Build(id) => ("recents.Build", id),
     ResourceTarget::Repo(id) => ("recents.Repo", id),
     ResourceTarget::Procedure(id) => ("recents.Procedure", id),
     ResourceTarget::Action(id) => ("recents.Action", id),
-    ResourceTarget::Stack(id) => ("recents.Stack", id),
+    ResourceTarget::ResourceSync(id) => ("recents.ResourceSync", id),
     ResourceTarget::Builder(id) => ("recents.Builder", id),
     ResourceTarget::Alerter(id) => ("recents.Alerter", id),
-    ResourceTarget::ResourceSync(id) => ("recents.ResourceSync", id),
     ResourceTarget::System(_) => return,
   };
   if let Err(e) = db_client()

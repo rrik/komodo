@@ -18,6 +18,7 @@ use komodo_client::entities::{
   server::Server,
   stack::Stack,
   stats::SystemStatsRecord,
+  swarm::Swarm,
   sync::ResourceSync,
   tag::Tag,
   update::Update,
@@ -55,6 +56,7 @@ pub struct Client {
   pub alerts: Collection<Alert>,
   pub stats: Collection<SystemStatsRecord>,
   // RESOURCES
+  pub swarms: Collection<Swarm>,
   pub servers: Collection<Server>,
   pub deployments: Collection<Deployment>,
   pub builds: Collection<Build>,
@@ -92,6 +94,7 @@ impl Client {
       alerts: mongo_indexed::collection(&db, true).await?,
       stats: mongo_indexed::collection(&db, true).await?,
       // RESOURCES
+      swarms: resource_collection(&db, "Swarm").await?,
       servers: resource_collection(&db, "Server").await?,
       deployments: resource_collection(&db, "Deployment").await?,
       builds: resource_collection(&db, "Build").await?,

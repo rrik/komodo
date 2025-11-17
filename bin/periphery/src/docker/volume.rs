@@ -78,9 +78,7 @@ impl DockerClient {
       cluster_volume: volume.cluster_volume.map(|volume| {
         ClusterVolume {
           id: volume.id,
-          version: volume.version.map(|version| ObjectVersion {
-            index: version.index,
-          }),
+          version: volume.version.map(super::convert_object_version),
           created_at: volume.created_at,
           updated_at: volume.updated_at,
           spec: volume.spec.map(|spec| ClusterVolumeSpec {
@@ -100,8 +98,8 @@ impl DockerClient {
                   bollard::secret::ClusterVolumeSpecAccessModeSharingEnum::ALL => ClusterVolumeSpecAccessModeSharingEnum::All,
                 }).unwrap_or_default(),
                 secrets: mode.secrets.unwrap_or_default().into_iter().map(|secret| ClusterVolumeSpecAccessModeSecrets {
-                    key: secret.key,
-                    secret: secret.secret,
+                  key: secret.key,
+                  secret: secret.secret,
                 }).collect(),
                 accessibility_requirements: mode
                   .accessibility_requirements.map(|req| ClusterVolumeSpecAccessModeAccessibilityRequirements {

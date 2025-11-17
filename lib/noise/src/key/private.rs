@@ -99,7 +99,7 @@ impl Pkcs8PrivateKey {
       Self::from_raw_bytes(maybe_pkcs8_private_key.as_bytes())
     } else {
       Err(anyhow!(
-        "Private key must be less than 32 characters, or pkcs8 encoded."
+        "Private key must be 32 characters or less, or pkcs8 encoded."
       ))
     }
   }
@@ -176,7 +176,7 @@ impl Pkcs8PrivateKey {
       Ok(maybe_pkcs8_private_key.as_bytes().to_vec())
     } else {
       Err(anyhow!(
-        "Private key must be less than 32 characters, or pkcs8 encoded."
+        "Private key must be 32 characters or less, or pkcs8 encoded."
       ))
     }
   }

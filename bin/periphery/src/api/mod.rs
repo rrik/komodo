@@ -10,7 +10,7 @@ use komodo_client::entities::{
 };
 use periphery_client::api::{
   build::*, compose::*, container::*, docker::*, git::*, keys::*,
-  stats::*, terminal::*, *,
+  stats::*, swarm::*, terminal::*, *,
 };
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
@@ -33,6 +33,7 @@ mod deploy;
 mod docker;
 mod git;
 mod keys;
+mod swarm;
 
 #[derive(Debug)]
 pub struct Args {
@@ -141,6 +142,12 @@ pub enum PeripheryRequest {
 
   // All in one (Write)
   PruneSystem(PruneSystem),
+
+  // Swarm
+  InspectSwarmNode(InspectSwarmNode),
+  InspectSwarmService(InspectSwarmService),
+  InspectSwarmTask(InspectSwarmTask),
+  InspectSwarmSecret(InspectSwarmSecret),
 
   // Terminal
   ListTerminals(ListTerminals),

@@ -11,7 +11,8 @@ use komodo_client::{
     builder::Builder, deployment::Deployment,
     permission::PermissionLevel, procedure::Procedure, repo::Repo,
     resource::ResourceQuery, server::Server, stack::Stack,
-    sync::ResourceSync, toml::ResourcesToml, user::User,
+    swarm::Swarm, sync::ResourceSync, toml::ResourcesToml,
+    user::User,
   },
 };
 use resolver_api::Resolve;
@@ -207,41 +208,20 @@ impl Resolve<ReadArgs> for ExportResourcesToToml {
     let ReadArgs { user } = args;
     for target in targets {
       match target {
-        ResourceTarget::Alerter(id) => {
-          let mut alerter = get_check_permissions::<Alerter>(
+        ResourceTarget::Swarm(id) => {
+          let mut swarm = get_check_permissions::<Swarm>(
             &id,
             user,
             PermissionLevel::Read.into(),
           )
           .await?;
-          Alerter::replace_ids(&mut alerter);
-          res.alerters.push(convert_resource::<Alerter>(
-            alerter,
+          Swarm::replace_ids(&mut swarm);
+          res.swarms.push(convert_resource::<Swarm>(
+            swarm,
             false,
             vec![],
             &id_to_tags,
           ))
-        }
-        ResourceTarget::ResourceSync(id) => {
-          let mut sync = get_check_permissions::<ResourceSync>(
-            &id,
-            user,
-            PermissionLevel::Read.into(),
-          )
-          .await?;
-          if sync.config.file_contents.is_empty()
-            && (sync.config.files_on_host
-              || !sync.config.repo.is_empty()
-              || !sync.config.linked_repo.is_empty())
-          {
-            ResourceSync::replace_ids(&mut sync);
-            res.resource_syncs.push(convert_resource::<ResourceSync>(
-              sync,
-              false,
-              vec![],
-              &id_to_tags,
-            ))
-          }
         }
         ResourceTarget::Server(id) => {
           let mut server = get_check_permissions::<Server>(
@@ -258,31 +238,16 @@ impl Resolve<ReadArgs> for ExportResourcesToToml {
             &id_to_tags,
           ))
         }
-        ResourceTarget::Builder(id) => {
-          let mut builder = get_check_permissions::<Builder>(
+        ResourceTarget::Stack(id) => {
+          let mut stack = get_check_permissions::<Stack>(
             &id,
             user,
             PermissionLevel::Read.into(),
           )
           .await?;
-          Builder::replace_ids(&mut builder);
-          res.builders.push(convert_resource::<Builder>(
-            builder,
-            false,
-            vec![],
-            &id_to_tags,
-          ))
-        }
-        ResourceTarget::Build(id) => {
-          let mut build = get_check_permissions::<Build>(
-            &id,
-            user,
-            PermissionLevel::Read.into(),
-          )
-          .await?;
-          Build::replace_ids(&mut build);
-          res.builds.push(convert_resource::<Build>(
-            build,
+          Stack::replace_ids(&mut stack);
+          res.stacks.push(convert_resource::<Stack>(
+            stack,
             false,
             vec![],
             &id_to_tags,
@@ -303,6 +268,21 @@ impl Resolve<ReadArgs> for ExportResourcesToToml {
             &id_to_tags,
           ))
         }
+        ResourceTarget::Build(id) => {
+          let mut build = get_check_permissions::<Build>(
+            &id,
+            user,
+            PermissionLevel::Read.into(),
+          )
+          .await?;
+          Build::replace_ids(&mut build);
+          res.builds.push(convert_resource::<Build>(
+            build,
+            false,
+            vec![],
+            &id_to_tags,
+          ))
+        }
         ResourceTarget::Repo(id) => {
           let mut repo = get_check_permissions::<Repo>(
             &id,
@@ -313,21 +293,6 @@ impl Resolve<ReadArgs> for ExportResourcesToToml {
           Repo::replace_ids(&mut repo);
           res.repos.push(convert_resource::<Repo>(
             repo,
-            false,
-            vec![],
-            &id_to_tags,
-          ))
-        }
-        ResourceTarget::Stack(id) => {
-          let mut stack = get_check_permissions::<Stack>(
-            &id,
-            user,
-            PermissionLevel::Read.into(),
-          )
-          .await?;
-          Stack::replace_ids(&mut stack);
-          res.stacks.push(convert_resource::<Stack>(
-            stack,
             false,
             vec![],
             &id_to_tags,
@@ -362,6 +327,57 @@ impl Resolve<ReadArgs> for ExportResourcesToToml {
             vec![],
             &id_to_tags,
           ));
+        }
+        ResourceTarget::ResourceSync(id) => {
+          let mut sync = get_check_permissions::<ResourceSync>(
+            &id,
+            user,
+            PermissionLevel::Read.into(),
+          )
+          .await?;
+          if sync.config.file_contents.is_empty()
+            && (sync.config.files_on_host
+              || !sync.config.repo.is_empty()
+              || !sync.config.linked_repo.is_empty())
+          {
+            ResourceSync::replace_ids(&mut sync);
+            res.resource_syncs.push(convert_resource::<ResourceSync>(
+              sync,
+              false,
+              vec![],
+              &id_to_tags,
+            ))
+          }
+        }
+        ResourceTarget::Builder(id) => {
+          let mut builder = get_check_permissions::<Builder>(
+            &id,
+            user,
+            PermissionLevel::Read.into(),
+          )
+          .await?;
+          Builder::replace_ids(&mut builder);
+          res.builders.push(convert_resource::<Builder>(
+            builder,
+            false,
+            vec![],
+            &id_to_tags,
+          ))
+        }
+        ResourceTarget::Alerter(id) => {
+          let mut alerter = get_check_permissions::<Alerter>(
+            &id,
+            user,
+            PermissionLevel::Read.into(),
+          )
+          .await?;
+          Alerter::replace_ids(&mut alerter);
+          res.alerters.push(convert_resource::<Alerter>(
+            alerter,
+            false,
+            vec![],
+            &id_to_tags,
+          ))
         }
         ResourceTarget::System(_) => continue,
       };

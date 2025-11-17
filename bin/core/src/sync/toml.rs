@@ -15,6 +15,7 @@ use komodo_client::{
     resource::Resource,
     server::Server,
     stack::Stack,
+    swarm::Swarm,
     sync::ResourceSync,
     tag::Tag,
     toml::ResourceToml,
@@ -171,6 +172,40 @@ impl ToToml for ResourceSync {
         .map(|r| &r.name)
         .unwrap_or(&String::new()),
     );
+  }
+}
+
+impl ToToml for Swarm {
+  fn replace_ids(resource: &mut Resource<Self::Config, Self::Info>) {
+    let all = all_resources_cache().load();
+    let mut res =
+      Vec::with_capacity(resource.config.server_ids.capacity());
+    for server_id in &resource.config.server_ids {
+      res.push(
+        all
+          .servers
+          .get(server_id)
+          .map(|s| s.name.clone())
+          .unwrap_or(String::new()),
+      );
+    }
+  }
+
+  fn edit_config_object(
+    _resource: &ResourceToml<Self::PartialConfig>,
+    config: IndexMap<String, serde_json::Value>,
+  ) -> anyhow::Result<IndexMap<String, serde_json::Value>> {
+    config
+      .into_iter()
+      .map(|(key, value)| {
+        #[allow(clippy::single_match)]
+        match key.as_str() {
+          "server_ids" => return Ok((String::from("servers"), value)),
+          _ => {}
+        }
+        Ok((key, value))
+      })
+      .collect()
   }
 }
 

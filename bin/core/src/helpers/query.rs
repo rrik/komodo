@@ -25,6 +25,7 @@ use komodo_client::{
     repo::Repo,
     server::{Server, ServerState},
     stack::{Stack, StackServiceNames, StackState},
+    swarm::Swarm,
     sync::ResourceSync,
     tag::Tag,
     update::Update,
@@ -287,23 +288,23 @@ pub async fn get_user_permission_on_target(
 ) -> anyhow::Result<PermissionLevelAndSpecifics> {
   match target {
     ResourceTarget::System(_) => Ok(PermissionLevel::None.into()),
-    ResourceTarget::Build(id) => {
-      get_user_permission_on_resource::<Build>(user, id).await
-    }
-    ResourceTarget::Builder(id) => {
-      get_user_permission_on_resource::<Builder>(user, id).await
-    }
-    ResourceTarget::Deployment(id) => {
-      get_user_permission_on_resource::<Deployment>(user, id).await
+    ResourceTarget::Swarm(id) => {
+      get_user_permission_on_resource::<Swarm>(user, id).await
     }
     ResourceTarget::Server(id) => {
       get_user_permission_on_resource::<Server>(user, id).await
     }
+    ResourceTarget::Stack(id) => {
+      get_user_permission_on_resource::<Stack>(user, id).await
+    }
+    ResourceTarget::Deployment(id) => {
+      get_user_permission_on_resource::<Deployment>(user, id).await
+    }
+    ResourceTarget::Build(id) => {
+      get_user_permission_on_resource::<Build>(user, id).await
+    }
     ResourceTarget::Repo(id) => {
       get_user_permission_on_resource::<Repo>(user, id).await
-    }
-    ResourceTarget::Alerter(id) => {
-      get_user_permission_on_resource::<Alerter>(user, id).await
     }
     ResourceTarget::Procedure(id) => {
       get_user_permission_on_resource::<Procedure>(user, id).await
@@ -314,8 +315,11 @@ pub async fn get_user_permission_on_target(
     ResourceTarget::ResourceSync(id) => {
       get_user_permission_on_resource::<ResourceSync>(user, id).await
     }
-    ResourceTarget::Stack(id) => {
-      get_user_permission_on_resource::<Stack>(user, id).await
+    ResourceTarget::Builder(id) => {
+      get_user_permission_on_resource::<Builder>(user, id).await
+    }
+    ResourceTarget::Alerter(id) => {
+      get_user_permission_on_resource::<Alerter>(user, id).await
     }
   }
 }

@@ -136,34 +136,10 @@ impl Resolve<ExecuteArgs> for RunSync {
           };
           match ObjectId::from_str(&name_or_id) {
             Ok(_) => match resource_type {
-              ResourceTargetVariant::Alerter => all_resources
-                .alerters
+              ResourceTargetVariant::Swarm => all_resources
+                .swarms
                 .get(&name_or_id)
-                .map(|a| a.name.clone()),
-              ResourceTargetVariant::Build => all_resources
-                .builds
-                .get(&name_or_id)
-                .map(|b| b.name.clone()),
-              ResourceTargetVariant::Builder => all_resources
-                .builders
-                .get(&name_or_id)
-                .map(|b| b.name.clone()),
-              ResourceTargetVariant::Deployment => all_resources
-                .deployments
-                .get(&name_or_id)
-                .map(|d| d.name.clone()),
-              ResourceTargetVariant::Procedure => all_resources
-                .procedures
-                .get(&name_or_id)
-                .map(|p| p.name.clone()),
-              ResourceTargetVariant::Action => all_resources
-                .actions
-                .get(&name_or_id)
-                .map(|p| p.name.clone()),
-              ResourceTargetVariant::Repo => all_resources
-                .repos
-                .get(&name_or_id)
-                .map(|r| r.name.clone()),
+                .map(|s| s.name.clone()),
               ResourceTargetVariant::Server => all_resources
                 .servers
                 .get(&name_or_id)
@@ -172,10 +148,38 @@ impl Resolve<ExecuteArgs> for RunSync {
                 .stacks
                 .get(&name_or_id)
                 .map(|s| s.name.clone()),
+              ResourceTargetVariant::Deployment => all_resources
+                .deployments
+                .get(&name_or_id)
+                .map(|d| d.name.clone()),
+              ResourceTargetVariant::Build => all_resources
+                .builds
+                .get(&name_or_id)
+                .map(|b| b.name.clone()),
+              ResourceTargetVariant::Repo => all_resources
+                .repos
+                .get(&name_or_id)
+                .map(|r| r.name.clone()),
+              ResourceTargetVariant::Procedure => all_resources
+                .procedures
+                .get(&name_or_id)
+                .map(|p| p.name.clone()),
+              ResourceTargetVariant::Action => all_resources
+                .actions
+                .get(&name_or_id)
+                .map(|p| p.name.clone()),
               ResourceTargetVariant::ResourceSync => all_resources
                 .syncs
                 .get(&name_or_id)
                 .map(|s| s.name.clone()),
+              ResourceTargetVariant::Builder => all_resources
+                .builders
+                .get(&name_or_id)
+                .map(|b| b.name.clone()),
+              ResourceTargetVariant::Alerter => all_resources
+                .alerters
+                .get(&name_or_id)
+                .map(|a| a.name.clone()),
               ResourceTargetVariant::System => None,
             },
             Err(_) => Some(name_or_id),

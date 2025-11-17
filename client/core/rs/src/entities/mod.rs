@@ -62,6 +62,8 @@ pub mod server;
 pub mod stack;
 /// Subtypes for server stats reporting.
 pub mod stats;
+/// Subtypes of [Swarm][swarm::Swarm].
+pub mod swarm;
 /// Subtypes of [ResourceSync][sync::ResourceSync]
 pub mod sync;
 /// Subtypes of [Tag][tag::Tag].
@@ -1046,7 +1048,13 @@ pub enum Operation {
   #[default]
   None,
 
-  // server
+  // Swarm
+  CreateSwarm,
+  UpdateSwarm,
+  RenameSwarm,
+  DeleteSwarm,
+
+  // Server
   CreateServer,
   UpdateServer,
   UpdateServerKey,
@@ -1075,7 +1083,7 @@ pub enum Operation {
   PruneBuildx,
   PruneSystem,
 
-  // stack
+  // Stack
   CreateStack,
   UpdateStack,
   RenameStack,
@@ -1092,7 +1100,7 @@ pub enum Operation {
   DestroyStack,
   RunStackService,
 
-  // stack (service)
+  // Stack (Service)
   DeployStackService,
   PullStackService,
   StartStackService,
@@ -1102,7 +1110,7 @@ pub enum Operation {
   StopStackService,
   DestroyStackService,
 
-  // deployment
+  // Deployment
   CreateDeployment,
   UpdateDeployment,
   RenameDeployment,
@@ -1116,7 +1124,7 @@ pub enum Operation {
   StopDeployment,
   DestroyDeployment,
 
-  // build
+  // Build
   CreateBuild,
   UpdateBuild,
   RenameBuild,
@@ -1125,7 +1133,7 @@ pub enum Operation {
   CancelBuild,
   WriteDockerfile,
 
-  // repo
+  // Repo
   CreateRepo,
   UpdateRepo,
   RenameRepo,
@@ -1135,35 +1143,21 @@ pub enum Operation {
   BuildRepo,
   CancelRepoBuild,
 
-  // procedure
+  // Procedure
   CreateProcedure,
   UpdateProcedure,
   RenameProcedure,
   DeleteProcedure,
   RunProcedure,
 
-  // action
+  // Action
   CreateAction,
   UpdateAction,
   RenameAction,
   DeleteAction,
   RunAction,
 
-  // builder
-  CreateBuilder,
-  UpdateBuilder,
-  RenameBuilder,
-  DeleteBuilder,
-
-  // alerter
-  CreateAlerter,
-  UpdateAlerter,
-  RenameAlerter,
-  DeleteAlerter,
-  TestAlerter,
-  SendAlert,
-
-  // sync
+  // Sync
   CreateResourceSync,
   UpdateResourceSync,
   RenameResourceSync,
@@ -1172,24 +1166,38 @@ pub enum Operation {
   CommitSync,
   RunSync,
 
-  // maintenance
+  // Builder
+  CreateBuilder,
+  UpdateBuilder,
+  RenameBuilder,
+  DeleteBuilder,
+
+  // Alerter
+  CreateAlerter,
+  UpdateAlerter,
+  RenameAlerter,
+  DeleteAlerter,
+  TestAlerter,
+  SendAlert,
+
+  // Maintenance
   ClearRepoCache,
   BackupCoreDatabase,
   GlobalAutoUpdate,
   RotateAllServerKeys,
   RotateCoreKeys,
 
-  // variable
+  // Variable
   CreateVariable,
   UpdateVariableValue,
   DeleteVariable,
 
-  // git provider
+  // Git Provider
   CreateGitProviderAccount,
   UpdateGitProviderAccount,
   DeleteGitProviderAccount,
 
-  // docker registry
+  // Docker Registry
   CreateDockerRegistryAccount,
   UpdateDockerRegistryAccount,
   DeleteDockerRegistryAccount,
@@ -1273,6 +1281,7 @@ pub enum TerminationSignal {
 #[serde(tag = "type", content = "id")]
 pub enum ResourceTarget {
   System(String),
+  Swarm(String),
   Server(String),
   Stack(String),
   Deployment(String),
@@ -1301,6 +1310,7 @@ impl ResourceTarget {
   pub fn is_empty(&self) -> bool {
     match self {
       ResourceTarget::System(id) => id.is_empty(),
+      ResourceTarget::Swarm(id) => id.is_empty(),
       ResourceTarget::Server(id) => id.is_empty(),
       ResourceTarget::Stack(id) => id.is_empty(),
       ResourceTarget::Deployment(id) => id.is_empty(),
@@ -1319,6 +1329,7 @@ impl ResourceTarget {
   ) -> (ResourceTargetVariant, &String) {
     let id = match self {
       ResourceTarget::System(id) => id,
+      ResourceTarget::Swarm(id) => id,
       ResourceTarget::Server(id) => id,
       ResourceTarget::Stack(id) => id,
       ResourceTarget::Build(id) => id,
@@ -1334,9 +1345,15 @@ impl ResourceTarget {
   }
 }
 
-impl From<&build::Build> for ResourceTarget {
-  fn from(build: &build::Build) -> Self {
-    Self::Build(build.id.clone())
+impl From<&server::Server> for ResourceTarget {
+  fn from(server: &server::Server) -> Self {
+    Self::Server(server.id.clone())
+  }
+}
+
+impl From<&stack::Stack> for ResourceTarget {
+  fn from(stack: &stack::Stack) -> Self {
+    Self::Stack(stack.id.clone())
   }
 }
 
@@ -1346,15 +1363,33 @@ impl From<&deployment::Deployment> for ResourceTarget {
   }
 }
 
-impl From<&server::Server> for ResourceTarget {
-  fn from(server: &server::Server) -> Self {
-    Self::Server(server.id.clone())
+impl From<&build::Build> for ResourceTarget {
+  fn from(build: &build::Build) -> Self {
+    Self::Build(build.id.clone())
   }
 }
 
 impl From<&repo::Repo> for ResourceTarget {
   fn from(repo: &repo::Repo) -> Self {
     Self::Repo(repo.id.clone())
+  }
+}
+
+impl From<&procedure::Procedure> for ResourceTarget {
+  fn from(procedure: &procedure::Procedure) -> Self {
+    Self::Procedure(procedure.id.clone())
+  }
+}
+
+impl From<&action::Action> for ResourceTarget {
+  fn from(action: &action::Action) -> Self {
+    Self::Action(action.id.clone())
+  }
+}
+
+impl From<&sync::ResourceSync> for ResourceTarget {
+  fn from(resource_sync: &sync::ResourceSync) -> Self {
+    Self::ResourceSync(resource_sync.id.clone())
   }
 }
 
@@ -1370,45 +1405,22 @@ impl From<&alerter::Alerter> for ResourceTarget {
   }
 }
 
-impl From<&procedure::Procedure> for ResourceTarget {
-  fn from(procedure: &procedure::Procedure) -> Self {
-    Self::Procedure(procedure.id.clone())
-  }
-}
-
-impl From<&sync::ResourceSync> for ResourceTarget {
-  fn from(resource_sync: &sync::ResourceSync) -> Self {
-    Self::ResourceSync(resource_sync.id.clone())
-  }
-}
-
-impl From<&stack::Stack> for ResourceTarget {
-  fn from(stack: &stack::Stack) -> Self {
-    Self::Stack(stack.id.clone())
-  }
-}
-
-impl From<&action::Action> for ResourceTarget {
-  fn from(action: &action::Action) -> Self {
-    Self::Action(action.id.clone())
-  }
-}
-
 impl ResourceTargetVariant {
   /// These need to use snake case
   pub fn toml_header(&self) -> &'static str {
     match self {
       ResourceTargetVariant::System => "system",
-      ResourceTargetVariant::Build => "build",
-      ResourceTargetVariant::Builder => "builder",
-      ResourceTargetVariant::Deployment => "deployment",
+      ResourceTargetVariant::Swarm => "swarm",
       ResourceTargetVariant::Server => "server",
-      ResourceTargetVariant::Repo => "repo",
-      ResourceTargetVariant::Alerter => "alerter",
-      ResourceTargetVariant::Procedure => "procedure",
-      ResourceTargetVariant::ResourceSync => "resource_sync",
       ResourceTargetVariant::Stack => "stack",
+      ResourceTargetVariant::Deployment => "deployment",
+      ResourceTargetVariant::Build => "build",
+      ResourceTargetVariant::Repo => "repo",
+      ResourceTargetVariant::Procedure => "procedure",
       ResourceTargetVariant::Action => "action",
+      ResourceTargetVariant::ResourceSync => "resource_sync",
+      ResourceTargetVariant::Builder => "builder",
+      ResourceTargetVariant::Alerter => "alerter",
     }
   }
 }
@@ -1446,23 +1458,18 @@ pub fn resource_link(
 ) -> String {
   let path = match resource_type {
     ResourceTargetVariant::System => unreachable!(),
-    ResourceTargetVariant::Build => format!("/builds/{id}"),
-    ResourceTargetVariant::Builder => {
-      format!("/builders/{id}")
-    }
-    ResourceTargetVariant::Deployment => {
-      format!("/deployments/{id}")
+    ResourceTargetVariant::Swarm => format!("/swarms/{id}"),
+    ResourceTargetVariant::Server => {
+      format!("/servers/{id}")
     }
     ResourceTargetVariant::Stack => {
       format!("/stacks/{id}")
     }
-    ResourceTargetVariant::Server => {
-      format!("/servers/{id}")
+    ResourceTargetVariant::Deployment => {
+      format!("/deployments/{id}")
     }
+    ResourceTargetVariant::Build => format!("/builds/{id}"),
     ResourceTargetVariant::Repo => format!("/repos/{id}"),
-    ResourceTargetVariant::Alerter => {
-      format!("/alerters/{id}")
-    }
     ResourceTargetVariant::Procedure => {
       format!("/procedures/{id}")
     }
@@ -1471,6 +1478,12 @@ pub fn resource_link(
     }
     ResourceTargetVariant::ResourceSync => {
       format!("/resource-syncs/{id}")
+    }
+    ResourceTargetVariant::Builder => {
+      format!("/builders/{id}")
+    }
+    ResourceTargetVariant::Alerter => {
+      format!("/alerters/{id}")
     }
   };
   format!("{host}{path}")

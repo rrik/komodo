@@ -19,6 +19,7 @@ pub mod docker;
 pub mod git;
 pub mod keys;
 pub mod stats;
+pub mod swarm;
 pub mod terminal;
 
 //

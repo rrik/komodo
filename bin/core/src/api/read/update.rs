@@ -20,6 +20,7 @@ use komodo_client::{
     repo::Repo,
     server::Server,
     stack::Stack,
+    swarm::Swarm,
     sync::ResourceSync,
     update::{Update, UpdateListItem},
     user::User,
@@ -266,8 +267,24 @@ impl Resolve<ReadArgs> for GetUpdate {
           anyhow!("user must be admin to view system updates").into(),
         );
       }
+      ResourceTarget::Swarm(id) => {
+        get_check_permissions::<Swarm>(
+          id,
+          user,
+          PermissionLevel::Read.into(),
+        )
+        .await?;
+      }
       ResourceTarget::Server(id) => {
         get_check_permissions::<Server>(
+          id,
+          user,
+          PermissionLevel::Read.into(),
+        )
+        .await?;
+      }
+      ResourceTarget::Stack(id) => {
+        get_check_permissions::<Stack>(
           id,
           user,
           PermissionLevel::Read.into(),
@@ -298,22 +315,6 @@ impl Resolve<ReadArgs> for GetUpdate {
         )
         .await?;
       }
-      ResourceTarget::Builder(id) => {
-        get_check_permissions::<Builder>(
-          id,
-          user,
-          PermissionLevel::Read.into(),
-        )
-        .await?;
-      }
-      ResourceTarget::Alerter(id) => {
-        get_check_permissions::<Alerter>(
-          id,
-          user,
-          PermissionLevel::Read.into(),
-        )
-        .await?;
-      }
       ResourceTarget::Procedure(id) => {
         get_check_permissions::<Procedure>(
           id,
@@ -338,8 +339,16 @@ impl Resolve<ReadArgs> for GetUpdate {
         )
         .await?;
       }
-      ResourceTarget::Stack(id) => {
-        get_check_permissions::<Stack>(
+      ResourceTarget::Builder(id) => {
+        get_check_permissions::<Builder>(
+          id,
+          user,
+          PermissionLevel::Read.into(),
+        )
+        .await?;
+      }
+      ResourceTarget::Alerter(id) => {
+        get_check_permissions::<Alerter>(
           id,
           user,
           PermissionLevel::Read.into(),
