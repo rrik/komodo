@@ -15,6 +15,7 @@ mod network;
 mod node;
 mod secret;
 mod service;
+mod swarm;
 mod task;
 mod volume;
 
@@ -461,5 +462,13 @@ fn convert_task_spec_container_spec(
     capability_add: spec.capability_add,
     capability_drop: spec.capability_drop,
     ulimits: spec.ulimits.map(|ulimits| ulimits.into_iter().map(convert_resources_ulimits).collect()),
+  }
+}
+
+fn convert_tls_info(tls_info: bollard::models::TlsInfo) -> TlsInfo {
+  TlsInfo {
+    trust_root: tls_info.trust_root,
+    cert_issuer_subject: tls_info.cert_issuer_subject,
+    cert_issuer_public_key: tls_info.cert_issuer_public_key,
   }
 }

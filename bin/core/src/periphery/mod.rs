@@ -12,7 +12,6 @@ use uuid::Uuid;
 use crate::{
   connection::{
     PeripheryConnection, PeripheryConnectionArgs, ResponseChannels,
-    TerminalChannels,
   },
   state::periphery_connections,
 };
@@ -24,7 +23,6 @@ pub struct PeripheryClient {
   /// Usually the server id
   pub id: String,
   pub responses: Arc<ResponseChannels>,
-  pub terminals: Arc<TerminalChannels>,
 }
 
 impl PeripheryClient {
@@ -51,7 +49,6 @@ impl PeripheryClient {
       return Ok(PeripheryClient {
         id,
         responses: connection.responses.clone(),
-        terminals: connection.terminals.clone(),
       });
     }
 
@@ -68,7 +65,6 @@ impl PeripheryClient {
       Ok(PeripheryClient {
         id,
         responses: connection.responses.clone(),
-        terminals: connection.terminals.clone(),
       })
     } else {
       // Core -> Periphery connection
@@ -88,6 +84,20 @@ impl PeripheryClient {
   pub async fn request<T>(
     &self,
     request: T,
+  ) -> anyhow::Result<T::Response>
+  where
+    T: std::fmt::Debug + Serialize + HasResponse,
+    T::Response: DeserializeOwned,
+  {
+    self
+      .request_custom_timeout(request, Duration::from_secs(10))
+      .await
+  }
+
+  pub async fn request_custom_timeout<T>(
+    &self,
+    request: T,
+    timeout: Duration,
   ) -> anyhow::Result<T::Response>
   where
     T: std::fmt::Debug + Serialize + HasResponse,
@@ -117,24 +127,28 @@ impl PeripheryClient {
       .await
       .context("Failed to send request over channel")
     {
-      // cleanup
-      self.terminals.remove(&channel_id).await;
+      self.responses.remove(&channel_id).await;
       return Err(e);
     }
 
-    // Poll for the associated response
-    loop {
-      let message = response_receiever
-        .recv()
-        .with_timeout(Duration::from_secs(10))
-        .await?;
+    let res = async {
+      // Poll for the associated response
+      loop {
+        let message =
+          response_receiever.recv().with_timeout(timeout).await?;
 
-      // Still in progress, sent to avoid timeout.
-      let Some(message) = message.decode()? else {
-        continue;
-      };
+        // Still in progress, sent to avoid timeout.
+        let Some(message) = message.decode()? else {
+          continue;
+        };
 
-      return message.decode();
+        return message.decode();
+      }
     }
+    .await;
+
+    self.responses.remove(&channel_id).await;
+
+    res
   }
 }

@@ -14,6 +14,7 @@ export const object_keys = <T extends object>(o: T): (keyof T)[] =>
   Object.keys(o) as (keyof T)[];
 
 export const RESOURCE_TARGETS: UsableResource[] = [
+  "Swarm",
   "Server",
   "Stack",
   "Deployment",

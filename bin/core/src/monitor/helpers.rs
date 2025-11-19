@@ -1,29 +1,73 @@
 use komodo_client::entities::{
   alert::SeverityLevel,
   deployment::{Deployment, DeploymentState},
-  docker::{
-    container::ContainerListItem, image::ImageListItem,
-    network::NetworkListItem, volume::VolumeListItem,
-  },
+  docker::DockerLists,
   repo::Repo,
   server::{
     PeripheryInformation, Server, ServerConfig, ServerHealth,
     ServerHealthState, ServerState,
   },
-  stack::{ComposeProject, Stack, StackState},
+  stack::{Stack, StackState},
   stats::{SingleDiskUsage, SystemInformation, SystemStats},
 };
 use serror::Serror;
 
 use crate::state::{
-  deployment_status_cache, repo_status_cache, server_status_cache,
-  stack_status_cache,
+  CachedDeploymentStatus, CachedRepoStatus, CachedServerStatus,
+  CachedStackStatus, History, deployment_status_cache,
+  repo_status_cache, server_status_cache, stack_status_cache,
 };
 
-use super::{
-  CachedDeploymentStatus, CachedRepoStatus, CachedServerStatus,
-  CachedStackStatus, History,
-};
+pub async fn insert_server_status(
+  server: &Server,
+  state: ServerState,
+  periphery_info: Option<PeripheryInformation>,
+  system_info: Option<SystemInformation>,
+  system_stats: Option<SystemStats>,
+  docker: Option<DockerLists>,
+  err: impl Into<Option<Serror>>,
+) {
+  let health =
+    system_stats.as_ref().map(|s| get_server_health(server, s));
+  server_status_cache()
+    .insert(
+      server.id.clone(),
+      CachedServerStatus {
+        id: server.id.clone(),
+        state,
+        periphery_info,
+        system_info,
+        system_stats,
+        health,
+        docker,
+        err: err.into(),
+      }
+      .into(),
+    )
+    .await;
+}
+
+pub async fn insert_stacks_status_unknown(stacks: Vec<Stack>) {
+  let status_cache = stack_status_cache();
+  for stack in stacks {
+    let prev =
+      status_cache.get(&stack.id).await.map(|s| s.curr.state);
+    status_cache
+      .insert(
+        stack.id.clone(),
+        History {
+          curr: CachedStackStatus {
+            id: stack.id,
+            state: StackState::Unknown,
+            services: Vec::new(),
+          },
+          prev,
+        }
+        .into(),
+      )
+      .await;
+  }
+}
 
 pub async fn insert_deployments_status_unknown(
   deployments: Vec<Deployment>,
@@ -64,69 +108,6 @@ pub async fn insert_repos_status_unknown(repos: Vec<Repo>) {
       )
       .await;
   }
-}
-
-pub async fn insert_stacks_status_unknown(stacks: Vec<Stack>) {
-  let status_cache = stack_status_cache();
-  for stack in stacks {
-    let prev =
-      status_cache.get(&stack.id).await.map(|s| s.curr.state);
-    status_cache
-      .insert(
-        stack.id.clone(),
-        History {
-          curr: CachedStackStatus {
-            id: stack.id,
-            state: StackState::Unknown,
-            services: Vec::new(),
-          },
-          prev,
-        }
-        .into(),
-      )
-      .await;
-  }
-}
-
-type DockerLists = (
-  Option<Vec<ContainerListItem>>,
-  Option<Vec<NetworkListItem>>,
-  Option<Vec<ImageListItem>>,
-  Option<Vec<VolumeListItem>>,
-  Option<Vec<ComposeProject>>,
-);
-
-pub async fn insert_server_status(
-  server: &Server,
-  state: ServerState,
-  periphery_info: Option<PeripheryInformation>,
-  system_info: Option<SystemInformation>,
-  system_stats: Option<SystemStats>,
-  (containers, networks, images, volumes, projects): DockerLists,
-  err: impl Into<Option<Serror>>,
-) {
-  let health =
-    system_stats.as_ref().map(|s| get_server_health(server, s));
-  server_status_cache()
-    .insert(
-      server.id.clone(),
-      CachedServerStatus {
-        id: server.id.clone(),
-        state,
-        periphery_info,
-        system_info,
-        system_stats,
-        health,
-        containers,
-        networks,
-        images,
-        volumes,
-        projects,
-        err: err.into(),
-      }
-      .into(),
-    )
-    .await;
 }
 
 const ALERT_PERCENTAGE_THRESHOLD: f32 = 5.0;

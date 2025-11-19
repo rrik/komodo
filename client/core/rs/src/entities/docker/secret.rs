@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::{Driver, ObjectVersion};
+use super::*;
 
 /// Swarm secret details.
 #[typeshare]

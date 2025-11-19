@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use super::{ObjectVersion, Platform, ResourceObject};
+use super::*;
 
 /// Swarm node details.
 #[typeshare]
@@ -157,25 +157,6 @@ pub struct EngineDescriptionPlugins {
 
   #[serde(rename = "Name")]
   pub name: Option<String>,
-}
-
-/// Information about the issuer of leaf TLS certificates and the trusted root CA certificate.
-#[typeshare]
-#[derive(
-  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
-)]
-pub struct TlsInfo {
-  /// The root CA certificate(s) that are used to validate leaf TLS certificates.
-  #[serde(rename = "TrustRoot")]
-  pub trust_root: Option<String>,
-
-  /// The base64-url-safe-encoded raw subject bytes of the issuer.
-  #[serde(rename = "CertIssuerSubject")]
-  pub cert_issuer_subject: Option<String>,
-
-  /// The base64-url-safe-encoded raw public key bytes of the issuer.
-  #[serde(rename = "CertIssuerPublicKey")]
-  pub cert_issuer_public_key: Option<String>,
 }
 
 /// NodeStatus represents the status of a node.  It provides the current status of the node, as seen by the manager.

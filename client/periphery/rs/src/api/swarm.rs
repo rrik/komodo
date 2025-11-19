@@ -1,9 +1,21 @@
 use komodo_client::entities::docker::{
-  node::SwarmNode, secret::SwarmSecret, service::SwarmService,
-  task::SwarmTask,
+  SwarmLists, node::SwarmNode, secret::SwarmSecret,
+  service::SwarmService, swarm::SwarmInspectInfo, task::SwarmTask,
 };
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
+#[response(PollSwarmStatusResponse)]
+#[error(anyhow::Error)]
+pub struct PollSwarmStatus {}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PollSwarmStatusResponse {
+  /// Inspect swarm response
+  pub inspect: Option<SwarmInspectInfo>,
+  pub lists: SwarmLists,
+}
 
 // ======
 //  Node

@@ -147,8 +147,9 @@ impl super::KomodoResource for Stack {
         .await
         .as_ref()
       {
-        if let Some(projects) = &status.projects {
-          if let Some(project) = projects
+        if let Some(docker) = &status.docker {
+          if let Some(project) = docker
+            .projects
             .iter()
             .find(|project| project.name == project_name)
           {

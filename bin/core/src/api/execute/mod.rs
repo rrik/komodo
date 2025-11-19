@@ -142,12 +142,12 @@ pub enum ExecuteRequest {
   RunAction(RunAction),
   BatchRunAction(BatchRunAction),
 
+  // ==== SYNC ====
+  RunSync(RunSync),
+
   // ==== ALERTER ====
   TestAlerter(TestAlerter),
   SendAlert(SendAlert),
-
-  // ==== SYNC ====
-  RunSync(RunSync),
 
   // ==== MAINTENANCE ====
   ClearRepoCache(ClearRepoCache),

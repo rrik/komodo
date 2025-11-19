@@ -2564,6 +2564,8 @@ export interface SwarmConfig {
 	 * tries the next Server.
 	 */
 	server_ids?: string[];
+	/** Configure quick links that are displayed in the resource header */
+	links?: string[];
 }
 
 export interface SwarmInfo {
@@ -4144,8 +4146,6 @@ export enum SwarmState {
 	Healthy = "Healthy",
 	/** The Swarm is unhealthy */
 	Unhealthy = "Unhealthy",
-	/** Servers are reachable, but Swarm is not running on any of them. */
-	Offline = "Offline",
 }
 
 export interface SwarmListItemInfo {
@@ -5800,6 +5800,15 @@ export interface DiscordAlerterEndpoint {
 	url: string;
 }
 
+/** Standard docker lists available from a Server. */
+export interface DockerLists {
+	containers: ContainerListItem[];
+	networks: NetworkListItem[];
+	images: ImageListItem[];
+	volumes: VolumeListItem[];
+	projects: ComposeProject[];
+}
+
 /** Driver represents a driver (network, logging, secrets). */
 export interface Driver {
 	/** Name of the driver. */
@@ -6637,8 +6646,8 @@ export interface GetSwarmsSummaryResponse {
 	healthy: number;
 	/** The number of Swarms with Unhealthy state */
 	unhealthy: number;
-	/** The number of Swarms with Offline state */
-	offline: number;
+	/** The number of Swarms with Unknown state */
+	unknown: number;
 }
 
 /**
@@ -6796,6 +6805,14 @@ export interface InspectStackContainer {
 	stack: string;
 	/** The service name to inspect */
 	service: string;
+}
+
+/** JoinTokens contains the tokens workers and managers need to join the swarm. */
+export interface JoinTokens {
+	/** The token workers can use to join the swarm. */
+	Worker?: string;
+	/** The token managers can use to join the swarm. */
+	Manager?: string;
 }
 
 export interface LatestCommit {
@@ -8804,6 +8821,124 @@ export interface StopStack {
 	services?: string[];
 }
 
+/** Orchestration configuration. */
+export interface SwarmSpecOrchestration {
+	/**
+	 * The number of historic tasks to keep per instance or node.
+	 * If negative, never remove completed or failed tasks.
+	 */
+	TaskHistoryRetentionLimit?: I64;
+}
+
+/** Raft configuration. */
+export interface SwarmSpecRaft {
+	/** The number of log entries between snapshots. */
+	SnapshotInterval?: U64;
+	/** The number of snapshots to keep beyond the current snapshot. */
+	KeepOldSnapshots?: U64;
+	/** The number of log entries to keep around to sync up slow followers after a snapshot is created. */
+	LogEntriesForSlowFollowers?: U64;
+	/** The number of ticks that a follower will wait for a message from the leader before becoming a candidate and starting an election. `ElectionTick` must be greater than `HeartbeatTick`.  A tick currently defaults to one second, so these translate directly to seconds currently, but this is NOT guaranteed. */
+	ElectionTick?: I64;
+	/**
+	 * The number of ticks between heartbeats.
+	 * Every HeartbeatTick ticks, the leader will send a heartbeat to the followers.
+	 * A tick currently defaults to one second, so these translate directly to seconds currently, but this is NOT guaranteed.
+	 */
+	HeartbeatTick?: I64;
+}
+
+/** Dispatcher configuration. */
+export interface SwarmSpecDispatcher {
+	/** The delay for an agent to send a heartbeat to the dispatcher. */
+	HeartbeatPeriod?: I64;
+}
+
+export enum SwarmSpecCaConfigExternalCasProtocolEnum {
+	EMPTY = "",
+	CFSSL = "cfssl",
+}
+
+export interface SwarmSpecCaConfigExternalCas {
+	/** Protocol for communication with the external CA (currently only `cfssl` is supported). */
+	Protocol?: SwarmSpecCaConfigExternalCasProtocolEnum;
+	/** URL where certificate signing requests should be sent. */
+	URL?: string;
+	/** An object with key/value pairs that are interpreted as protocol-specific options for the external CA driver. */
+	Options?: Record<string, string>;
+	/** The root CA certificate (in PEM format) this external CA uses to issue TLS certificates (assumed to be to the current swarm root CA certificate if not provided). */
+	CACert?: string;
+}
+
+/** CA configuration. */
+export interface SwarmSpecCaConfig {
+	/** The duration node certificates are issued for. */
+	NodeCertExpiry?: I64;
+	/** Configuration for forwarding signing requests to an external certificate authority. */
+	ExternalCAs?: SwarmSpecCaConfigExternalCas[];
+	/** The desired signing CA certificate for all swarm node TLS leaf certificates, in PEM format. */
+	SigningCACert?: string;
+	/** The desired signing CA key for all swarm node TLS leaf certificates, in PEM format. */
+	SigningCAKey?: string;
+	/** An integer whose purpose is to force swarm to generate a new signing CA certificate and key, if none have been specified in `SigningCACert` and `SigningCAKey` */
+	ForceRotate?: U64;
+}
+
+/** Parameters related to encryption-at-rest. */
+export interface SwarmSpecEncryptionConfig {
+	/** If set, generate a key and use it to lock data stored on the managers. */
+	AutoLockManagers?: boolean;
+}
+
+/** The log driver to use for tasks created in the orchestrator if unspecified by a service.  Updating this value only affects new tasks. Existing tasks continue to use their previously configured log driver until recreated. */
+export interface SwarmSpecTaskDefaultsLogDriver {
+	/** The log driver to use as a default for new tasks. */
+	Name?: string;
+	/** Driver-specific options for the selected log driver, specified as key/value pairs. */
+	Options?: Record<string, string>;
+}
+
+/** Defaults for creating tasks in this cluster. */
+export interface SwarmSpecTaskDefaults {
+	LogDriver?: SwarmSpecTaskDefaultsLogDriver;
+}
+
+/** User modifiable swarm configuration. */
+export interface SwarmSpec {
+	/** Name of the swarm. */
+	Name?: string;
+	/** User-defined key/value metadata. */
+	Labels?: Record<string, string>;
+	Orchestration?: SwarmSpecOrchestration;
+	Raft?: SwarmSpecRaft;
+	Dispatcher?: SwarmSpecDispatcher;
+	CAConfig?: SwarmSpecCaConfig;
+	EncryptionConfig?: SwarmSpecEncryptionConfig;
+	TaskDefaults?: SwarmSpecTaskDefaults;
+}
+
+/** Docker-level information about the Swarm. */
+export interface SwarmInspectInfo {
+	/** The (Docker) ID of the swarm. */
+	ID?: string;
+	Version?: ObjectVersion;
+	/** Date and time at which the swarm was initialised in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds. */
+	CreatedAt?: string;
+	/** Date and time at which the swarm was last updated in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds. */
+	UpdatedAt?: string;
+	Spec?: SwarmSpec;
+	TLSInfo?: TlsInfo;
+	/** Whether there is currently a root CA rotation in progress for the swarm */
+	RootRotationInProgress?: boolean;
+	/** DataPathPort specifies the data path port number for data traffic. Acceptable port range is 1024 to 49151. If no port is set or is set to 0, the default port (4789) is used. */
+	DataPathPort?: number;
+	/** Default Address Pool specifies default subnet pools for global scope networks. */
+	DefaultAddrPool?: string[];
+	/** SubnetSize specifies the subnet size of the networks created from the default subnet pool. */
+	SubnetSize?: number;
+	JoinTokens?: JoinTokens;
+}
+
 /** Swarm node details. */
 export interface SwarmNode {
 	ID?: string;
@@ -9486,9 +9621,9 @@ export type ExecuteRequest =
 	| { type: "BatchRunProcedure", params: BatchRunProcedure }
 	| { type: "RunAction", params: RunAction }
 	| { type: "BatchRunAction", params: BatchRunAction }
+	| { type: "RunSync", params: RunSync }
 	| { type: "TestAlerter", params: TestAlerter }
 	| { type: "SendAlert", params: SendAlert }
-	| { type: "RunSync", params: RunSync }
 	| { type: "ClearRepoCache", params: ClearRepoCache }
 	| { type: "BackupCoreDatabase", params: BackupCoreDatabase }
 	| { type: "GlobalAutoUpdate", params: GlobalAutoUpdate }
@@ -9587,33 +9722,16 @@ export type ReadRequest =
 	| { type: "ListSecrets", params: ListSecrets }
 	| { type: "ListGitProvidersFromConfig", params: ListGitProvidersFromConfig }
 	| { type: "ListDockerRegistriesFromConfig", params: ListDockerRegistriesFromConfig }
-	| { type: "GetUsername", params: GetUsername }
-	| { type: "GetPermission", params: GetPermission }
-	| { type: "FindUser", params: FindUser }
-	| { type: "ListUsers", params: ListUsers }
-	| { type: "ListApiKeys", params: ListApiKeys }
-	| { type: "ListApiKeysForServiceUser", params: ListApiKeysForServiceUser }
-	| { type: "ListPermissions", params: ListPermissions }
-	| { type: "ListUserTargetPermissions", params: ListUserTargetPermissions }
-	| { type: "GetUserGroup", params: GetUserGroup }
-	| { type: "ListUserGroups", params: ListUserGroups }
-	| { type: "GetProceduresSummary", params: GetProceduresSummary }
-	| { type: "GetProcedure", params: GetProcedure }
-	| { type: "GetProcedureActionState", params: GetProcedureActionState }
-	| { type: "ListProcedures", params: ListProcedures }
-	| { type: "ListFullProcedures", params: ListFullProcedures }
-	| { type: "GetActionsSummary", params: GetActionsSummary }
-	| { type: "GetAction", params: GetAction }
-	| { type: "GetActionActionState", params: GetActionActionState }
-	| { type: "ListActions", params: ListActions }
-	| { type: "ListFullActions", params: ListFullActions }
-	| { type: "ListSchedules", params: ListSchedules }
+	| { type: "GetSwarmsSummary", params: GetSwarmsSummary }
+	| { type: "GetSwarm", params: GetSwarm }
+	| { type: "GetSwarmActionState", params: GetSwarmActionState }
+	| { type: "ListSwarms", params: ListSwarms }
+	| { type: "ListFullSwarms", params: ListFullSwarms }
 	| { type: "GetServersSummary", params: GetServersSummary }
 	| { type: "GetServer", params: GetServer }
 	| { type: "GetServerState", params: GetServerState }
 	| { type: "GetPeripheryInformation", params: GetPeripheryInformation }
 	| { type: "GetServerActionState", params: GetServerActionState }
-	| { type: "GetHistoricalServerStats", params: GetHistoricalServerStats }
 	| { type: "ListServers", params: ListServers }
 	| { type: "ListFullServers", params: ListFullServers }
 	| { type: "ListTerminals", params: ListTerminals }
@@ -9634,6 +9752,7 @@ export type ReadRequest =
 	| { type: "InspectDockerVolume", params: InspectDockerVolume }
 	| { type: "GetSystemInformation", params: GetSystemInformation }
 	| { type: "GetSystemStats", params: GetSystemStats }
+	| { type: "GetHistoricalServerStats", params: GetHistoricalServerStats }
 	| { type: "ListSystemProcesses", params: ListSystemProcesses }
 	| { type: "GetStacksSummary", params: GetStacksSummary }
 	| { type: "GetStack", params: GetStack }
@@ -9670,6 +9789,17 @@ export type ReadRequest =
 	| { type: "GetRepoActionState", params: GetRepoActionState }
 	| { type: "ListRepos", params: ListRepos }
 	| { type: "ListFullRepos", params: ListFullRepos }
+	| { type: "GetProceduresSummary", params: GetProceduresSummary }
+	| { type: "GetProcedure", params: GetProcedure }
+	| { type: "GetProcedureActionState", params: GetProcedureActionState }
+	| { type: "ListProcedures", params: ListProcedures }
+	| { type: "ListFullProcedures", params: ListFullProcedures }
+	| { type: "GetActionsSummary", params: GetActionsSummary }
+	| { type: "GetAction", params: GetAction }
+	| { type: "GetActionActionState", params: GetActionActionState }
+	| { type: "ListActions", params: ListActions }
+	| { type: "ListFullActions", params: ListFullActions }
+	| { type: "ListSchedules", params: ListSchedules }
 	| { type: "GetResourceSyncsSummary", params: GetResourceSyncsSummary }
 	| { type: "GetResourceSync", params: GetResourceSync }
 	| { type: "GetResourceSyncActionState", params: GetResourceSyncActionState }
@@ -9687,6 +9817,16 @@ export type ReadRequest =
 	| { type: "ExportResourcesToToml", params: ExportResourcesToToml }
 	| { type: "GetTag", params: GetTag }
 	| { type: "ListTags", params: ListTags }
+	| { type: "GetUsername", params: GetUsername }
+	| { type: "GetPermission", params: GetPermission }
+	| { type: "FindUser", params: FindUser }
+	| { type: "ListUsers", params: ListUsers }
+	| { type: "ListApiKeys", params: ListApiKeys }
+	| { type: "ListApiKeysForServiceUser", params: ListApiKeysForServiceUser }
+	| { type: "ListPermissions", params: ListPermissions }
+	| { type: "ListUserTargetPermissions", params: ListUserTargetPermissions }
+	| { type: "GetUserGroup", params: GetUserGroup }
+	| { type: "ListUserGroups", params: ListUserGroups }
 	| { type: "GetUpdate", params: GetUpdate }
 	| { type: "ListUpdates", params: ListUpdates }
 	| { type: "ListAlerts", params: ListAlerts }
@@ -9761,26 +9901,12 @@ export type UserRequest =
 	| { type: "DeleteApiKey", params: DeleteApiKey };
 
 export type WriteRequest = 
-	| { type: "CreateLocalUser", params: CreateLocalUser }
-	| { type: "UpdateUserUsername", params: UpdateUserUsername }
-	| { type: "UpdateUserPassword", params: UpdateUserPassword }
-	| { type: "DeleteUser", params: DeleteUser }
-	| { type: "CreateServiceUser", params: CreateServiceUser }
-	| { type: "UpdateServiceUserDescription", params: UpdateServiceUserDescription }
-	| { type: "CreateApiKeyForServiceUser", params: CreateApiKeyForServiceUser }
-	| { type: "DeleteApiKeyForServiceUser", params: DeleteApiKeyForServiceUser }
-	| { type: "CreateUserGroup", params: CreateUserGroup }
-	| { type: "RenameUserGroup", params: RenameUserGroup }
-	| { type: "DeleteUserGroup", params: DeleteUserGroup }
-	| { type: "AddUserToUserGroup", params: AddUserToUserGroup }
-	| { type: "RemoveUserFromUserGroup", params: RemoveUserFromUserGroup }
-	| { type: "SetUsersInUserGroup", params: SetUsersInUserGroup }
-	| { type: "SetEveryoneUserGroup", params: SetEveryoneUserGroup }
-	| { type: "UpdateUserAdmin", params: UpdateUserAdmin }
-	| { type: "UpdateUserBasePermissions", params: UpdateUserBasePermissions }
-	| { type: "UpdatePermissionOnResourceType", params: UpdatePermissionOnResourceType }
-	| { type: "UpdatePermissionOnTarget", params: UpdatePermissionOnTarget }
 	| { type: "UpdateResourceMeta", params: UpdateResourceMeta }
+	| { type: "CreateSwarm", params: CreateSwarm }
+	| { type: "CopySwarm", params: CopySwarm }
+	| { type: "DeleteSwarm", params: DeleteSwarm }
+	| { type: "UpdateSwarm", params: UpdateSwarm }
+	| { type: "RenameSwarm", params: RenameSwarm }
 	| { type: "CreateServer", params: CreateServer }
 	| { type: "CopyServer", params: CopyServer }
 	| { type: "DeleteServer", params: DeleteServer }
@@ -9789,6 +9915,10 @@ export type WriteRequest =
 	| { type: "CreateNetwork", params: CreateNetwork }
 	| { type: "UpdateServerPublicKey", params: UpdateServerPublicKey }
 	| { type: "RotateServerKeys", params: RotateServerKeys }
+	| { type: "CreateTerminal", params: CreateTerminal }
+	| { type: "DeleteTerminal", params: DeleteTerminal }
+	| { type: "DeleteAllTerminals", params: DeleteAllTerminals }
+	| { type: "BatchDeleteAllTerminals", params: BatchDeleteAllTerminals }
 	| { type: "CreateStack", params: CreateStack }
 	| { type: "CopyStack", params: CopyStack }
 	| { type: "DeleteStack", params: DeleteStack }
@@ -9809,22 +9939,12 @@ export type WriteRequest =
 	| { type: "RenameBuild", params: RenameBuild }
 	| { type: "WriteBuildFileContents", params: WriteBuildFileContents }
 	| { type: "RefreshBuildCache", params: RefreshBuildCache }
-	| { type: "CreateBuilder", params: CreateBuilder }
-	| { type: "CopyBuilder", params: CopyBuilder }
-	| { type: "DeleteBuilder", params: DeleteBuilder }
-	| { type: "UpdateBuilder", params: UpdateBuilder }
-	| { type: "RenameBuilder", params: RenameBuilder }
 	| { type: "CreateRepo", params: CreateRepo }
 	| { type: "CopyRepo", params: CopyRepo }
 	| { type: "DeleteRepo", params: DeleteRepo }
 	| { type: "UpdateRepo", params: UpdateRepo }
 	| { type: "RenameRepo", params: RenameRepo }
 	| { type: "RefreshRepoCache", params: RefreshRepoCache }
-	| { type: "CreateAlerter", params: CreateAlerter }
-	| { type: "CopyAlerter", params: CopyAlerter }
-	| { type: "DeleteAlerter", params: DeleteAlerter }
-	| { type: "UpdateAlerter", params: UpdateAlerter }
-	| { type: "RenameAlerter", params: RenameAlerter }
 	| { type: "CreateProcedure", params: CreateProcedure }
 	| { type: "CopyProcedure", params: CopyProcedure }
 	| { type: "DeleteProcedure", params: DeleteProcedure }
@@ -9843,10 +9963,38 @@ export type WriteRequest =
 	| { type: "WriteSyncFileContents", params: WriteSyncFileContents }
 	| { type: "CommitSync", params: CommitSync }
 	| { type: "RefreshResourceSyncPending", params: RefreshResourceSyncPending }
-	| { type: "CreateTerminal", params: CreateTerminal }
-	| { type: "DeleteTerminal", params: DeleteTerminal }
-	| { type: "DeleteAllTerminals", params: DeleteAllTerminals }
-	| { type: "BatchDeleteAllTerminals", params: BatchDeleteAllTerminals }
+	| { type: "CreateBuilder", params: CreateBuilder }
+	| { type: "CopyBuilder", params: CopyBuilder }
+	| { type: "DeleteBuilder", params: DeleteBuilder }
+	| { type: "UpdateBuilder", params: UpdateBuilder }
+	| { type: "RenameBuilder", params: RenameBuilder }
+	| { type: "CreateAlerter", params: CreateAlerter }
+	| { type: "CopyAlerter", params: CopyAlerter }
+	| { type: "DeleteAlerter", params: DeleteAlerter }
+	| { type: "UpdateAlerter", params: UpdateAlerter }
+	| { type: "RenameAlerter", params: RenameAlerter }
+	| { type: "CreateOnboardingKey", params: CreateOnboardingKey }
+	| { type: "UpdateOnboardingKey", params: UpdateOnboardingKey }
+	| { type: "DeleteOnboardingKey", params: DeleteOnboardingKey }
+	| { type: "CreateLocalUser", params: CreateLocalUser }
+	| { type: "UpdateUserUsername", params: UpdateUserUsername }
+	| { type: "UpdateUserPassword", params: UpdateUserPassword }
+	| { type: "DeleteUser", params: DeleteUser }
+	| { type: "CreateServiceUser", params: CreateServiceUser }
+	| { type: "UpdateServiceUserDescription", params: UpdateServiceUserDescription }
+	| { type: "CreateApiKeyForServiceUser", params: CreateApiKeyForServiceUser }
+	| { type: "DeleteApiKeyForServiceUser", params: DeleteApiKeyForServiceUser }
+	| { type: "CreateUserGroup", params: CreateUserGroup }
+	| { type: "RenameUserGroup", params: RenameUserGroup }
+	| { type: "DeleteUserGroup", params: DeleteUserGroup }
+	| { type: "AddUserToUserGroup", params: AddUserToUserGroup }
+	| { type: "RemoveUserFromUserGroup", params: RemoveUserFromUserGroup }
+	| { type: "SetUsersInUserGroup", params: SetUsersInUserGroup }
+	| { type: "SetEveryoneUserGroup", params: SetEveryoneUserGroup }
+	| { type: "UpdateUserAdmin", params: UpdateUserAdmin }
+	| { type: "UpdateUserBasePermissions", params: UpdateUserBasePermissions }
+	| { type: "UpdatePermissionOnResourceType", params: UpdatePermissionOnResourceType }
+	| { type: "UpdatePermissionOnTarget", params: UpdatePermissionOnTarget }
 	| { type: "CreateTag", params: CreateTag }
 	| { type: "DeleteTag", params: DeleteTag }
 	| { type: "RenameTag", params: RenameTag }
@@ -9862,9 +10010,6 @@ export type WriteRequest =
 	| { type: "CreateDockerRegistryAccount", params: CreateDockerRegistryAccount }
 	| { type: "UpdateDockerRegistryAccount", params: UpdateDockerRegistryAccount }
 	| { type: "DeleteDockerRegistryAccount", params: DeleteDockerRegistryAccount }
-	| { type: "CreateOnboardingKey", params: CreateOnboardingKey }
-	| { type: "UpdateOnboardingKey", params: UpdateOnboardingKey }
-	| { type: "DeleteOnboardingKey", params: DeleteOnboardingKey }
 	| { type: "CloseAlert", params: CloseAlert };
 
 export type WsLoginMessage = 

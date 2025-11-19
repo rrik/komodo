@@ -49,6 +49,7 @@ mod repo;
 mod schedule;
 mod server;
 mod stack;
+mod swarm;
 mod sync;
 mod tag;
 mod terminal;
@@ -75,36 +76,12 @@ enum ReadRequest {
   ListGitProvidersFromConfig(ListGitProvidersFromConfig),
   ListDockerRegistriesFromConfig(ListDockerRegistriesFromConfig),
 
-  // ==== USER ====
-  GetUsername(GetUsername),
-  GetPermission(GetPermission),
-  FindUser(FindUser),
-  ListUsers(ListUsers),
-  ListApiKeys(ListApiKeys),
-  ListApiKeysForServiceUser(ListApiKeysForServiceUser),
-  ListPermissions(ListPermissions),
-  ListUserTargetPermissions(ListUserTargetPermissions),
-
-  // ==== USER GROUP ====
-  GetUserGroup(GetUserGroup),
-  ListUserGroups(ListUserGroups),
-
-  // ==== PROCEDURE ====
-  GetProceduresSummary(GetProceduresSummary),
-  GetProcedure(GetProcedure),
-  GetProcedureActionState(GetProcedureActionState),
-  ListProcedures(ListProcedures),
-  ListFullProcedures(ListFullProcedures),
-
-  // ==== ACTION ====
-  GetActionsSummary(GetActionsSummary),
-  GetAction(GetAction),
-  GetActionActionState(GetActionActionState),
-  ListActions(ListActions),
-  ListFullActions(ListFullActions),
-
-  // ==== SCHEDULE ====
-  ListSchedules(ListSchedules),
+  // ==== SWARM ====
+  GetSwarmsSummary(GetSwarmsSummary),
+  GetSwarm(GetSwarm),
+  GetSwarmActionState(GetSwarmActionState),
+  ListSwarms(ListSwarms),
+  ListFullSwarms(ListFullSwarms),
 
   // ==== SERVER ====
   GetServersSummary(GetServersSummary),
@@ -112,7 +89,6 @@ enum ReadRequest {
   GetServerState(GetServerState),
   GetPeripheryInformation(GetPeripheryInformation),
   GetServerActionState(GetServerActionState),
-  GetHistoricalServerStats(GetHistoricalServerStats),
   ListServers(ListServers),
   ListFullServers(ListFullServers),
 
@@ -139,6 +115,7 @@ enum ReadRequest {
   // ==== SERVER STATS ====
   GetSystemInformation(GetSystemInformation),
   GetSystemStats(GetSystemStats),
+  GetHistoricalServerStats(GetHistoricalServerStats),
   ListSystemProcesses(ListSystemProcesses),
 
   // ==== STACK ====
@@ -184,6 +161,23 @@ enum ReadRequest {
   ListRepos(ListRepos),
   ListFullRepos(ListFullRepos),
 
+  // ==== PROCEDURE ====
+  GetProceduresSummary(GetProceduresSummary),
+  GetProcedure(GetProcedure),
+  GetProcedureActionState(GetProcedureActionState),
+  ListProcedures(ListProcedures),
+  ListFullProcedures(ListFullProcedures),
+
+  // ==== ACTION ====
+  GetActionsSummary(GetActionsSummary),
+  GetAction(GetAction),
+  GetActionActionState(GetActionActionState),
+  ListActions(ListActions),
+  ListFullActions(ListFullActions),
+
+  // ==== SCHEDULE ====
+  ListSchedules(ListSchedules),
+
   // ==== SYNC ====
   GetResourceSyncsSummary(GetResourceSyncsSummary),
   GetResourceSync(GetResourceSync),
@@ -210,6 +204,20 @@ enum ReadRequest {
   // ==== TAG ====
   GetTag(GetTag),
   ListTags(ListTags),
+
+  // ==== USER ====
+  GetUsername(GetUsername),
+  GetPermission(GetPermission),
+  FindUser(FindUser),
+  ListUsers(ListUsers),
+  ListApiKeys(ListApiKeys),
+  ListApiKeysForServiceUser(ListApiKeysForServiceUser),
+  ListPermissions(ListPermissions),
+  ListUserTargetPermissions(ListUserTargetPermissions),
+
+  // ==== USER GROUP ====
+  GetUserGroup(GetUserGroup),
+  ListUserGroups(ListUserGroups),
 
   // ==== UPDATE ====
   GetUpdate(GetUpdate),

@@ -1,15 +1,44 @@
 use anyhow::Context as _;
 use komodo_client::entities::docker::{
-  node::SwarmNode, secret::SwarmSecret, service::SwarmService,
-  task::SwarmTask,
+  SwarmLists, node::SwarmNode, secret::SwarmSecret,
+  service::SwarmService, task::SwarmTask,
 };
 use periphery_client::api::swarm::{
   InspectSwarmNode, InspectSwarmSecret, InspectSwarmService,
-  InspectSwarmTask,
+  InspectSwarmTask, PollSwarmStatus, PollSwarmStatusResponse,
 };
 use resolver_api::Resolve;
 
 use crate::state::docker_client;
+
+impl Resolve<super::Args> for PollSwarmStatus {
+  async fn resolve(
+    self,
+    _: &super::Args,
+  ) -> anyhow::Result<PollSwarmStatusResponse> {
+    let client = docker_client().load();
+    let client = client
+      .iter()
+      .next()
+      .context("Could not connect to docker client")?;
+    let (inspect, nodes, services, tasks, secrets) = tokio::join!(
+      client.inspect_swarm(),
+      client.list_swarm_nodes(),
+      client.list_swarm_services(),
+      client.list_swarm_tasks(),
+      client.list_swarm_secrets(),
+    );
+    Ok(PollSwarmStatusResponse {
+      inspect: inspect.ok(),
+      lists: SwarmLists {
+        nodes: nodes.unwrap_or_default(),
+        services: services.unwrap_or_default(),
+        tasks: tasks.unwrap_or_default(),
+        secrets: secrets.unwrap_or_default(),
+      },
+    })
+  }
+}
 
 // ======
 //  Node

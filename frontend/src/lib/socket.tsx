@@ -126,12 +126,14 @@ const on_update = (
   // Invalidate these every time
   invalidate(["ListUpdates"]);
   invalidate(["GetUpdate", { id: update.id }]);
-  if (update.target.type === "Deployment") {
-    invalidate(["GetDeploymentActionState", { deployment: update.target.id }]);
-  } else if (update.target.type === "Stack") {
-    invalidate(["GetStackActionState", { stack: update.target.id }]);
+  if (update.target.type === "Swarm") {
+    invalidate(["GetSwarmActionState", { swarm: update.target.id }]);
   } else if (update.target.type === "Server") {
     invalidate(["GetServerActionState", { server: update.target.id }]);
+  } else if (update.target.type === "Stack") {
+    invalidate(["GetStackActionState", { stack: update.target.id }]);
+  } else if (update.target.type === "Deployment") {
+    invalidate(["GetDeploymentActionState", { deployment: update.target.id }]);
   } else if (update.target.type === "Build") {
     invalidate(["GetBuildActionState", { build: update.target.id }]);
   } else if (update.target.type === "Repo") {
@@ -144,7 +146,7 @@ const on_update = (
     invalidate(["GetResourceSyncActionState", { sync: update.target.id }]);
   }
 
-  // Invalidate lists for execution updates - update status
+  // Invalidate lists for execution updates - this updates status
   if (update.operation === Types.Operation.RunBuild) {
     invalidate(["ListBuilds"]);
   } else if (
@@ -180,18 +182,23 @@ const on_update = (
       );
     }
 
-    if (update.target.type === "Deployment") {
+    if (update.target.type === "Swarm") {
       invalidate(
-        ["ListDeployments"],
-        ["GetDeploymentsSummary"],
-        ["ListDockerContainers"],
-        ["ListDockerNetworks"],
-        ["ListDockerImages"],
-        ["GetDeployment"],
-        ["GetDeploymentLog", { deployment: update.target.id }],
-        ["SearchDeploymentLog", { deployment: update.target.id }],
-        ["GetDeploymentContainer"],
-        ["GetResourceMatchingContainer"]
+        ["ListSwarms"],
+        ["ListFullSwarms"],
+        ["GetSwarmsSummary"],
+        ["GetSwarm"]
+      );
+    }
+
+    if (update.target.type === "Server") {
+      invalidate(
+        ["ListServers"],
+        ["ListFullServers"],
+        ["GetServersSummary"],
+        ["GetServer"],
+        ["GetServerState"],
+        ["GetHistoricalServerStats"]
       );
     }
 
@@ -213,14 +220,18 @@ const on_update = (
       );
     }
 
-    if (update.target.type === "Server") {
+    if (update.target.type === "Deployment") {
       invalidate(
-        ["ListServers"],
-        ["ListFullServers"],
-        ["GetServersSummary"],
-        ["GetServer"],
-        ["GetServerState"],
-        ["GetHistoricalServerStats"]
+        ["ListDeployments"],
+        ["GetDeploymentsSummary"],
+        ["ListDockerContainers"],
+        ["ListDockerNetworks"],
+        ["ListDockerImages"],
+        ["GetDeployment"],
+        ["GetDeploymentLog", { deployment: update.target.id }],
+        ["SearchDeploymentLog", { deployment: update.target.id }],
+        ["GetDeploymentContainer"],
+        ["GetResourceMatchingContainer"]
       );
     }
 
@@ -264,6 +275,15 @@ const on_update = (
       );
     }
 
+    if (update.target.type === "ResourceSync") {
+      invalidate(
+        ["ListResourceSyncs"],
+        ["ListFullResourceSyncs"],
+        ["GetResourceSyncsSummary"],
+        ["GetResourceSync"]
+      );
+    }
+
     if (update.target.type === "Builder") {
       invalidate(
         ["ListBuilders"],
@@ -279,15 +299,6 @@ const on_update = (
         ["ListFullAlerters"],
         ["GetAlertersSummary"],
         ["GetAlerter"]
-      );
-    }
-
-    if (update.target.type === "ResourceSync") {
-      invalidate(
-        ["ListResourceSyncs"],
-        ["ListFullResourceSyncs"],
-        ["GetResourceSyncsSummary"],
-        ["GetResourceSync"]
       );
     }
 

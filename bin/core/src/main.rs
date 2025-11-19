@@ -76,7 +76,7 @@ async fn app() -> anyhow::Result<()> {
     startup::on_startup().await;
 
     // Spawn background tasks
-    monitor::spawn_monitor_loop();
+    monitor::spawn_monitoring_loops();
     resource::spawn_resource_refresh_loop();
     resource::spawn_all_resources_cache_refresh_loop();
     resource::spawn_build_state_refresh_loop();

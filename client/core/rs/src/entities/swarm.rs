@@ -6,6 +6,10 @@ use serde::{Deserialize, Serialize};
 use strum::Display;
 use typeshare::typeshare;
 
+use crate::deserializers::{
+  option_string_list_deserializer, string_list_deserializer,
+};
+
 use super::resource::{Resource, ResourceListItem, ResourceQuery};
 
 #[typeshare]
@@ -32,8 +36,6 @@ pub enum SwarmState {
   Healthy,
   /// The Swarm is unhealthy
   Unhealthy,
-  /// Servers are reachable, but Swarm is not running on any of them.
-  Offline,
 }
 
 #[typeshare]
@@ -58,12 +60,22 @@ pub struct SwarmConfig {
   #[partial_attr(serde(alias = "servers"))]
   #[builder(default)]
   pub server_ids: Vec<String>,
+
+  /// Configure quick links that are displayed in the resource header
+  #[serde(default, deserialize_with = "string_list_deserializer")]
+  #[partial_attr(serde(
+    default,
+    deserialize_with = "option_string_list_deserializer"
+  ))]
+  #[builder(default)]
+  pub links: Vec<String>,
 }
 
 impl Default for SwarmConfig {
   fn default() -> Self {
     Self {
       server_ids: Default::default(),
+      links: Default::default(),
     }
   }
 }

@@ -299,6 +299,7 @@ export const ResourceSelector = ({
   placeholder,
   targetClassName,
   state,
+  exclude_ids,
 }: {
   type: UsableResource;
   selected: string | undefined;
@@ -309,6 +310,7 @@ export const ResourceSelector = ({
   placeholder?: string;
   targetClassName?: string;
   state?: unknown;
+  exclude_ids?: string[];
 }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -321,7 +323,11 @@ export const ResourceSelector = ({
         : () => true;
   const resources = useRead(`List${type}s`, {})
     .data?.filter(templateFilterFn)
-    .filter((r) => !state || (r.info as any).state === state);
+    .filter(
+      (r) =>
+        (!state || (r.info as any).state === state) &&
+        (!exclude_ids || r.id === selected || !exclude_ids?.includes(r.id))
+    );
   const name = resources?.find((r) => r.id === selected)?.name;
 
   if (!resources) return null;

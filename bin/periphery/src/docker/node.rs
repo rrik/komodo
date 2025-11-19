@@ -8,7 +8,9 @@ use super::{
 
 impl DockerClient {
   /// Lists swarm nodes
-  pub async fn list_swarm_nodes(&self) -> anyhow::Result<Vec<SwarmNode>> {
+  pub async fn list_swarm_nodes(
+    &self,
+  ) -> anyhow::Result<Vec<SwarmNode>> {
     let nodes = self
       .docker
       .list_nodes(Option::<ListNodesOptions>::None)
@@ -93,11 +95,7 @@ fn convert_node(node: bollard::models::Node) -> SwarmNode {
               .collect()
           }),
         }),
-        tls_info: description.tls_info.map(|tls_info| TlsInfo {
-          trust_root: tls_info.trust_root,
-          cert_issuer_subject: tls_info.cert_issuer_subject,
-          cert_issuer_public_key: tls_info.cert_issuer_public_key,
-        }),
+        tls_info: description.tls_info.map(super::convert_tls_info),
       }
     }),
     status: node.status.map(|status| NodeStatus {

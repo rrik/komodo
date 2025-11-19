@@ -4,9 +4,19 @@ use anyhow::Context;
 use arc_swap::ArcSwap;
 use cache::CloneCache;
 use komodo_client::entities::{
-  action::ActionState, build::BuildState,
-  deployment::DeploymentState, procedure::ProcedureState,
-  repo::RepoState, stack::StackState,
+  action::ActionState,
+  build::BuildState,
+  deployment::DeploymentState,
+  docker::{
+    DockerLists, SwarmLists, container::ContainerListItem,
+    swarm::SwarmInspectInfo,
+  },
+  procedure::ProcedureState,
+  repo::RepoState,
+  server::{PeripheryInformation, ServerHealth, ServerState},
+  stack::{StackService, StackState},
+  stats::{SystemInformation, SystemStats},
+  swarm::SwarmState,
 };
 
 use crate::{
@@ -15,10 +25,6 @@ use crate::{
   connection::PeripheryConnections,
   helpers::{
     action_state::ActionStates, all_resources::AllResourcesById,
-  },
-  monitor::{
-    CachedDeploymentStatus, CachedRepoStatus, CachedServerStatus,
-    CachedStackStatus, History,
   },
 };
 
@@ -64,6 +70,43 @@ pub fn action_states() -> &'static ActionStates {
   ACTION_STATES.get_or_init(ActionStates::default)
 }
 
+#[derive(Default, Debug)]
+pub struct History<Curr: Default, Prev> {
+  pub curr: Curr,
+  pub prev: Option<Prev>,
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct CachedSwarmStatus {
+  pub state: SwarmState,
+  pub inspect: Option<SwarmInspectInfo>,
+  pub lists: Option<SwarmLists>,
+  /// Store the error in communicating with Swarm
+  pub err: Option<serror::Serror>,
+}
+
+pub type SwarmStatusCache =
+  CloneCache<String, Arc<CachedSwarmStatus>>;
+
+pub fn swarm_status_cache() -> &'static SwarmStatusCache {
+  static SWARM_STATUS_CACHE: OnceLock<SwarmStatusCache> =
+    OnceLock::new();
+  SWARM_STATUS_CACHE.get_or_init(Default::default)
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct CachedServerStatus {
+  pub id: String,
+  pub state: ServerState,
+  pub health: Option<ServerHealth>,
+  pub periphery_info: Option<PeripheryInformation>,
+  pub system_info: Option<SystemInformation>,
+  pub system_stats: Option<SystemStats>,
+  pub docker: Option<DockerLists>,
+  /// Store the error in reaching periphery
+  pub err: Option<serror::Serror>,
+}
+
 pub type ServerStatusCache =
   CloneCache<String, Arc<CachedServerStatus>>;
 
@@ -73,6 +116,16 @@ pub fn server_status_cache() -> &'static ServerStatusCache {
   SERVER_STATUS_CACHE.get_or_init(Default::default)
 }
 
+#[derive(Default, Clone, Debug)]
+pub struct CachedStackStatus {
+  /// The stack id
+  pub id: String,
+  /// The stack state
+  pub state: StackState,
+  /// The services connected to the stack
+  pub services: Vec<StackService>,
+}
+
 pub type StackStatusCache =
   CloneCache<String, Arc<History<CachedStackStatus, StackState>>>;
 
@@ -80,6 +133,15 @@ pub fn stack_status_cache() -> &'static StackStatusCache {
   static STACK_STATUS_CACHE: OnceLock<StackStatusCache> =
     OnceLock::new();
   STACK_STATUS_CACHE.get_or_init(Default::default)
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct CachedDeploymentStatus {
+  /// The deployment id
+  pub id: String,
+  pub state: DeploymentState,
+  pub container: Option<ContainerListItem>,
+  pub update_available: bool,
 }
 
 /// Cache of ids to status
@@ -101,6 +163,12 @@ pub fn build_state_cache() -> &'static BuildStateCache {
   static BUILD_STATE_CACHE: OnceLock<BuildStateCache> =
     OnceLock::new();
   BUILD_STATE_CACHE.get_or_init(Default::default)
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct CachedRepoStatus {
+  pub latest_hash: Option<String>,
+  pub latest_message: Option<String>,
 }
 
 pub type RepoStatusCache = CloneCache<String, Arc<CachedRepoStatus>>;

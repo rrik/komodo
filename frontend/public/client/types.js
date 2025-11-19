@@ -580,8 +580,6 @@ export var SwarmState;
     SwarmState["Healthy"] = "Healthy";
     /** The Swarm is unhealthy */
     SwarmState["Unhealthy"] = "Unhealthy";
-    /** Servers are reachable, but Swarm is not running on any of them. */
-    SwarmState["Offline"] = "Offline";
 })(SwarmState || (SwarmState = {}));
 /**
  * Configures the behavior of [CreateTerminal] if the
@@ -734,6 +732,11 @@ export var ServiceUpdateStatusStateEnum;
     ServiceUpdateStatusStateEnum["ROLLBACK_PAUSED"] = "rollback_paused";
     ServiceUpdateStatusStateEnum["ROLLBACK_COMPLETED"] = "rollback_completed";
 })(ServiceUpdateStatusStateEnum || (ServiceUpdateStatusStateEnum = {}));
+export var SwarmSpecCaConfigExternalCasProtocolEnum;
+(function (SwarmSpecCaConfigExternalCasProtocolEnum) {
+    SwarmSpecCaConfigExternalCasProtocolEnum["EMPTY"] = "";
+    SwarmSpecCaConfigExternalCasProtocolEnum["CFSSL"] = "cfssl";
+})(SwarmSpecCaConfigExternalCasProtocolEnum || (SwarmSpecCaConfigExternalCasProtocolEnum = {}));
 export var TaskState;
 (function (TaskState) {
     TaskState["NEW"] = "new";

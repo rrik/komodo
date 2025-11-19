@@ -7,19 +7,15 @@ use futures_util::future::join_all;
 use helpers::insert_stacks_status_unknown;
 use komodo_client::entities::{
   build::Build,
-  deployment::{Deployment, DeploymentState},
-  docker::{
-    container::ContainerListItem, image::ImageListItem,
-    network::NetworkListItem, volume::VolumeListItem,
-  },
+  deployment::Deployment,
   komodo_timestamp, optional_string,
   repo::Repo,
-  server::{PeripheryInformation, Server, ServerHealth, ServerState},
-  stack::{ComposeProject, Stack, StackService, StackState},
-  stats::{SystemInformation, SystemStats},
+  server::{Server, ServerState},
+  stack::Stack,
+  stats::SystemStats,
 };
 use periphery_client::api::{
-  self, PollStatusResponse, git::GetLatestCommit,
+  self, git::GetLatestCommit, poll::PollStatusResponse,
 };
 use serror::Serror;
 use tokio::sync::Mutex;
@@ -29,8 +25,8 @@ use crate::{
   helpers::periphery_client,
   monitor::{alert::check_alerts, record::record_server_stats},
   state::{
-    db_client, deployment_status_cache, periphery_connections,
-    repo_status_cache,
+    CachedRepoStatus, db_client, deployment_status_cache,
+    periphery_connections, repo_status_cache,
   },
 };
 
@@ -43,62 +39,24 @@ mod alert;
 mod helpers;
 mod record;
 mod resources;
+mod swarm;
 
-#[derive(Default, Debug)]
-pub struct History<Curr: Default, Prev> {
-  pub curr: Curr,
-  pub prev: Option<Prev>,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct CachedServerStatus {
-  pub id: String,
-  pub state: ServerState,
-  pub health: Option<ServerHealth>,
-  pub periphery_info: Option<PeripheryInformation>,
-  pub system_info: Option<SystemInformation>,
-  pub system_stats: Option<SystemStats>,
-  pub containers: Option<Vec<ContainerListItem>>,
-  pub networks: Option<Vec<NetworkListItem>>,
-  pub images: Option<Vec<ImageListItem>>,
-  pub volumes: Option<Vec<VolumeListItem>>,
-  pub projects: Option<Vec<ComposeProject>>,
-  /// Store the error in reaching periphery
-  pub err: Option<serror::Serror>,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct CachedDeploymentStatus {
-  /// The deployment id
-  pub id: String,
-  pub state: DeploymentState,
-  pub container: Option<ContainerListItem>,
-  pub update_available: bool,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct CachedRepoStatus {
-  pub latest_hash: Option<String>,
-  pub latest_message: Option<String>,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct CachedStackStatus {
-  /// The stack id
-  pub id: String,
-  /// The stack state
-  pub state: StackState,
-  /// The services connected to the stack
-  pub services: Vec<StackService>,
-}
+pub use swarm::update_cache_for_swarm;
 
 const ADDITIONAL_MS: u128 = 500;
 
-pub fn spawn_monitor_loop() {
-  let interval: async_timing_util::Timelength = core_config()
+pub fn spawn_monitoring_loops() {
+  let interval = core_config()
     .monitoring_interval
     .try_into()
     .expect("Invalid monitoring interval");
+  spawn_server_monitoring_loop(interval);
+  swarm::spawn_swarm_monitoring_loop(interval);
+}
+
+fn spawn_server_monitoring_loop(
+  interval: async_timing_util::Timelength,
+) {
   tokio::spawn(async move {
     refresh_server_cache(komodo_timestamp()).await;
     loop {
@@ -115,7 +73,7 @@ async fn refresh_server_cache(ts: i64) {
       Ok(servers) => servers,
       Err(e) => {
         error!(
-          "failed to get server list (manage status cache) | {e:#}"
+          "Failed to get server list (refresh server cache) | {e:#}"
         );
         return;
       }
@@ -172,7 +130,7 @@ pub async fn update_cache_for_server(server: &Server, force: bool) {
       None,
       None,
       None,
-      (None, None, None, None, None),
+      None,
       None,
     )
     .await;
@@ -190,7 +148,7 @@ pub async fn update_cache_for_server(server: &Server, force: bool) {
         None,
         None,
         None,
-        (None, None, None, None, None),
+        None,
         Serror::from(&e),
       )
       .await;
@@ -202,14 +160,11 @@ pub async fn update_cache_for_server(server: &Server, force: bool) {
     periphery_info,
     system_info,
     system_stats,
-    mut containers,
-    networks,
-    images,
-    volumes,
-    projects,
+    mut docker,
   } = match periphery
-    .request(api::PollStatus {
+    .request(api::poll::PollStatus {
       include_stats: server.config.stats_monitoring,
+      include_docker: true,
     })
     .await
   {
@@ -222,7 +177,7 @@ pub async fn update_cache_for_server(server: &Server, force: bool) {
         None,
         None,
         None,
-        (None, None, None, None, None),
+        None,
         Serror::from(&e),
       )
       .await;
@@ -230,37 +185,44 @@ pub async fn update_cache_for_server(server: &Server, force: bool) {
     }
   };
 
-  containers.iter_mut().for_each(|container| {
-    container.server_id = Some(server.id.clone())
-  });
+  if let Some(docker) = &mut docker {
+    docker.containers.iter_mut().for_each(|container| {
+      container.server_id = Some(server.id.clone())
+    });
+  }
+
+  let containers = docker
+    .as_ref()
+    .map(|docker| docker.containers.as_slice())
+    .unwrap_or(&[]);
+  let images = docker
+    .as_ref()
+    .map(|docker| docker.images.as_slice())
+    .unwrap_or(&[]);
+
   tokio::join!(
     resources::update_deployment_cache(
       server.name.clone(),
       resources.deployments,
-      &containers,
-      &images,
+      containers,
+      images,
       &resources.builds,
     ),
     resources::update_stack_cache(
       server.name.clone(),
       resources.stacks,
-      &containers,
-      &images
+      containers,
+      images
     ),
   );
+
   insert_server_status(
     server,
     ServerState::Ok,
     Some(periphery_info),
     Some(system_info),
     system_stats.map(|stats| filter_volumes(server, stats)),
-    (
-      Some(containers.clone()),
-      Some(networks),
-      Some(images),
-      Some(volumes),
-      Some(projects),
-    ),
+    docker,
     None,
   )
   .await;

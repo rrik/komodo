@@ -1,18 +1,20 @@
 import { RequiredResourceComponents, UsableResource } from "@types";
-import { AlerterComponents } from "./alerter";
-import { BuildComponents } from "./build";
-import { BuilderComponents } from "./builder";
-import { DeploymentComponents } from "./deployment";
-import { RepoComponents } from "./repo";
+import { SwarmComponents } from "./swarm";
 import { ServerComponents } from "./server";
-import { ProcedureComponents } from "./procedure/index";
-import { ResourceSyncComponents } from "./sync";
 import { StackComponents } from "./stack";
+import { DeploymentComponents } from "./deployment";
+import { BuildComponents } from "./build";
+import { RepoComponents } from "./repo";
+import { ProcedureComponents } from "./procedure/index";
 import { ActionComponents } from "./action";
+import { BuilderComponents } from "./builder";
+import { AlerterComponents } from "./alerter";
+import { ResourceSyncComponents } from "./sync";
 
 export const ResourceComponents: {
   [key in UsableResource]: RequiredResourceComponents;
 } = {
+  Swarm: SwarmComponents,
   Server: ServerComponents,
   Stack: StackComponents,
   Deployment: DeploymentComponents,

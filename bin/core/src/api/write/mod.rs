@@ -32,6 +32,7 @@ mod resource;
 mod server;
 mod service_user;
 mod stack;
+mod swarm;
 mod sync;
 mod tag;
 mod terminal;
@@ -53,35 +54,15 @@ pub struct WriteArgs {
 #[error(serror::Error)]
 #[serde(tag = "type", content = "params")]
 pub enum WriteRequest {
-  // ==== USER ====
-  CreateLocalUser(CreateLocalUser),
-  UpdateUserUsername(UpdateUserUsername),
-  UpdateUserPassword(UpdateUserPassword),
-  DeleteUser(DeleteUser),
-
-  // ==== SERVICE USER ====
-  CreateServiceUser(CreateServiceUser),
-  UpdateServiceUserDescription(UpdateServiceUserDescription),
-  CreateApiKeyForServiceUser(CreateApiKeyForServiceUser),
-  DeleteApiKeyForServiceUser(DeleteApiKeyForServiceUser),
-
-  // ==== USER GROUP ====
-  CreateUserGroup(CreateUserGroup),
-  RenameUserGroup(RenameUserGroup),
-  DeleteUserGroup(DeleteUserGroup),
-  AddUserToUserGroup(AddUserToUserGroup),
-  RemoveUserFromUserGroup(RemoveUserFromUserGroup),
-  SetUsersInUserGroup(SetUsersInUserGroup),
-  SetEveryoneUserGroup(SetEveryoneUserGroup),
-
-  // ==== PERMISSIONS ====
-  UpdateUserAdmin(UpdateUserAdmin),
-  UpdateUserBasePermissions(UpdateUserBasePermissions),
-  UpdatePermissionOnResourceType(UpdatePermissionOnResourceType),
-  UpdatePermissionOnTarget(UpdatePermissionOnTarget),
-
   // ==== RESOURCE ====
   UpdateResourceMeta(UpdateResourceMeta),
+
+  // ==== SWARM ====
+  CreateSwarm(CreateSwarm),
+  CopySwarm(CopySwarm),
+  DeleteSwarm(DeleteSwarm),
+  UpdateSwarm(UpdateSwarm),
+  RenameSwarm(RenameSwarm),
 
   // ==== SERVER ====
   CreateServer(CreateServer),
@@ -92,6 +73,12 @@ pub enum WriteRequest {
   CreateNetwork(CreateNetwork),
   UpdateServerPublicKey(UpdateServerPublicKey),
   RotateServerKeys(RotateServerKeys),
+
+  // ==== TERMINAL ====
+  CreateTerminal(CreateTerminal),
+  DeleteTerminal(DeleteTerminal),
+  DeleteAllTerminals(DeleteAllTerminals),
+  BatchDeleteAllTerminals(BatchDeleteAllTerminals),
 
   // ==== STACK ====
   CreateStack(CreateStack),
@@ -119,13 +106,6 @@ pub enum WriteRequest {
   WriteBuildFileContents(WriteBuildFileContents),
   RefreshBuildCache(RefreshBuildCache),
 
-  // ==== BUILDER ====
-  CreateBuilder(CreateBuilder),
-  CopyBuilder(CopyBuilder),
-  DeleteBuilder(DeleteBuilder),
-  UpdateBuilder(UpdateBuilder),
-  RenameBuilder(RenameBuilder),
-
   // ==== REPO ====
   CreateRepo(CreateRepo),
   CopyRepo(CopyRepo),
@@ -133,13 +113,6 @@ pub enum WriteRequest {
   UpdateRepo(UpdateRepo),
   RenameRepo(RenameRepo),
   RefreshRepoCache(RefreshRepoCache),
-
-  // ==== ALERTER ====
-  CreateAlerter(CreateAlerter),
-  CopyAlerter(CopyAlerter),
-  DeleteAlerter(DeleteAlerter),
-  UpdateAlerter(UpdateAlerter),
-  RenameAlerter(RenameAlerter),
 
   // ==== PROCEDURE ====
   CreateProcedure(CreateProcedure),
@@ -165,11 +138,51 @@ pub enum WriteRequest {
   CommitSync(CommitSync),
   RefreshResourceSyncPending(RefreshResourceSyncPending),
 
-  // ==== TERMINAL ====
-  CreateTerminal(CreateTerminal),
-  DeleteTerminal(DeleteTerminal),
-  DeleteAllTerminals(DeleteAllTerminals),
-  BatchDeleteAllTerminals(BatchDeleteAllTerminals),
+  // ==== BUILDER ====
+  CreateBuilder(CreateBuilder),
+  CopyBuilder(CopyBuilder),
+  DeleteBuilder(DeleteBuilder),
+  UpdateBuilder(UpdateBuilder),
+  RenameBuilder(RenameBuilder),
+
+  // ==== ALERTER ====
+  CreateAlerter(CreateAlerter),
+  CopyAlerter(CopyAlerter),
+  DeleteAlerter(DeleteAlerter),
+  UpdateAlerter(UpdateAlerter),
+  RenameAlerter(RenameAlerter),
+
+  // ==== ONBOARDING KEY ====
+  CreateOnboardingKey(CreateOnboardingKey),
+  UpdateOnboardingKey(UpdateOnboardingKey),
+  DeleteOnboardingKey(DeleteOnboardingKey),
+
+  // ==== USER ====
+  CreateLocalUser(CreateLocalUser),
+  UpdateUserUsername(UpdateUserUsername),
+  UpdateUserPassword(UpdateUserPassword),
+  DeleteUser(DeleteUser),
+
+  // ==== SERVICE USER ====
+  CreateServiceUser(CreateServiceUser),
+  UpdateServiceUserDescription(UpdateServiceUserDescription),
+  CreateApiKeyForServiceUser(CreateApiKeyForServiceUser),
+  DeleteApiKeyForServiceUser(DeleteApiKeyForServiceUser),
+
+  // ==== USER GROUP ====
+  CreateUserGroup(CreateUserGroup),
+  RenameUserGroup(RenameUserGroup),
+  DeleteUserGroup(DeleteUserGroup),
+  AddUserToUserGroup(AddUserToUserGroup),
+  RemoveUserFromUserGroup(RemoveUserFromUserGroup),
+  SetUsersInUserGroup(SetUsersInUserGroup),
+  SetEveryoneUserGroup(SetEveryoneUserGroup),
+
+  // ==== PERMISSIONS ====
+  UpdateUserAdmin(UpdateUserAdmin),
+  UpdateUserBasePermissions(UpdateUserBasePermissions),
+  UpdatePermissionOnResourceType(UpdatePermissionOnResourceType),
+  UpdatePermissionOnTarget(UpdatePermissionOnTarget),
 
   // ==== TAG ====
   CreateTag(CreateTag),
@@ -191,11 +204,6 @@ pub enum WriteRequest {
   CreateDockerRegistryAccount(CreateDockerRegistryAccount),
   UpdateDockerRegistryAccount(UpdateDockerRegistryAccount),
   DeleteDockerRegistryAccount(DeleteDockerRegistryAccount),
-
-  // ==== ONBOARDING KEY ====
-  CreateOnboardingKey(CreateOnboardingKey),
-  UpdateOnboardingKey(UpdateOnboardingKey),
-  DeleteOnboardingKey(DeleteOnboardingKey),
 
   // ==== ALERT ====
   CloseAlert(CloseAlert),

@@ -3,6 +3,15 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::entities::{
+  docker::{
+    container::ContainerListItem, image::ImageListItem,
+    network::NetworkListItem, node::SwarmNode, secret::SwarmSecret,
+    service::SwarmService, task::SwarmTask, volume::VolumeListItem,
+  },
+  stack::ComposeProject,
+};
+
 use super::{I64, U64};
 
 pub mod container;
@@ -12,8 +21,31 @@ pub mod node;
 pub mod secret;
 pub mod service;
 pub mod stats;
+pub mod swarm;
 pub mod task;
 pub mod volume;
+
+/// Swarm lists available from a manager node.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SwarmLists {
+  pub nodes: Vec<SwarmNode>,
+  pub services: Vec<SwarmService>,
+  pub tasks: Vec<SwarmTask>,
+  pub secrets: Vec<SwarmSecret>,
+}
+
+/// Standard docker lists available from a Server.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct DockerLists {
+  pub containers: Vec<ContainerListItem>,
+  pub networks: Vec<NetworkListItem>,
+  pub images: Vec<ImageListItem>,
+  pub volumes: Vec<VolumeListItem>,
+  pub projects: Vec<ComposeProject>,
+}
 
 /// PortBinding represents a binding between a host IP address and a host port.
 #[typeshare]
@@ -564,4 +596,23 @@ pub enum EndpointPortConfigPublishModeEnum {
   INGRESS,
   #[serde(rename = "host")]
   HOST,
+}
+
+/// Information about the issuer of leaf TLS certificates and the trusted root CA certificate.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct TlsInfo {
+  /// The root CA certificate(s) that are used to validate leaf TLS certificates.
+  #[serde(rename = "TrustRoot")]
+  pub trust_root: Option<String>,
+
+  /// The base64-url-safe-encoded raw subject bytes of the issuer.
+  #[serde(rename = "CertIssuerSubject")]
+  pub cert_issuer_subject: Option<String>,
+
+  /// The base64-url-safe-encoded raw public key bytes of the issuer.
+  #[serde(rename = "CertIssuerPublicKey")]
+  pub cert_issuer_public_key: Option<String>,
 }

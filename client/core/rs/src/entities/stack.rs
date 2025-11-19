@@ -655,7 +655,9 @@ impl Default for StackConfig {
 }
 
 #[typeshare]
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
 pub struct ComposeProject {
   /// The compose project name.
   pub name: String,

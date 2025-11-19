@@ -30,199 +30,11 @@ use crate::{
     services::extract_services_from_stack,
   },
   state::{
+    CachedDeploymentStatus, CachedStackStatus, History,
     action_states, db_client, deployment_status_cache,
     stack_status_cache,
   },
 };
-
-use super::{CachedDeploymentStatus, CachedStackStatus, History};
-
-fn deployment_alert_sent_cache() -> &'static Mutex<HashSet<String>> {
-  static CACHE: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
-  CACHE.get_or_init(Default::default)
-}
-
-pub async fn update_deployment_cache(
-  server_name: String,
-  deployments: Vec<Deployment>,
-  containers: &[ContainerListItem],
-  images: &[ImageListItem],
-  builds: &[Build],
-) {
-  let deployment_status_cache = deployment_status_cache();
-  for deployment in deployments {
-    let container = containers
-      .iter()
-      .find(|container| container.name == deployment.name)
-      .cloned();
-    let prev = deployment_status_cache
-      .get(&deployment.id)
-      .await
-      .map(|s| s.curr.state);
-    let state = container
-      .as_ref()
-      .map(|c| c.state.into())
-      .unwrap_or(DeploymentState::NotDeployed);
-    let image = match deployment.config.image {
-      DeploymentImage::Build { build_id, version } => {
-        let (build_name, build_version) = builds
-          .iter()
-          .find(|build| build.id == build_id)
-          .map(|b| (b.name.as_ref(), b.config.version))
-          .unwrap_or(("Unknown", Default::default()));
-        let version = if version.is_none() {
-          build_version.to_string()
-        } else {
-          version.to_string()
-        };
-        format!("{build_name}:{version}")
-      }
-      DeploymentImage::Image { image } => {
-        // If image already has tag, leave it,
-        // otherwise default the tag to latest
-        if image.contains(':') {
-          image.to_string()
-        } else {
-          format!("{image}:latest")
-        }
-      }
-    };
-    let update_available = if let Some(ContainerListItem {
-      image_id: Some(curr_image_id),
-      ..
-    }) = &container
-    {
-      // Docker will automatically strip `docker.io` from incoming image names re #468.
-      // Need to strip it in order to match by image name and find available updates.
-      let image = image.strip_prefix("docker.io/").unwrap_or(&image);
-      images
-        .iter()
-        .find(|i| i.name == image)
-        .map(|i| &i.id != curr_image_id)
-        .unwrap_or_default()
-    } else {
-      false
-    };
-
-    if update_available {
-      if deployment.config.auto_update {
-        if state == DeploymentState::Running
-          && !action_states()
-            .deployment
-            .get_or_insert_default(&deployment.id)
-            .await
-            .busy()
-            .unwrap_or(true)
-        {
-          let id = deployment.id.clone();
-          let server_name = server_name.clone();
-          tokio::spawn(async move {
-            match execute::inner_handler(
-              ExecuteRequest::Deploy(Deploy {
-                deployment: deployment.name.clone(),
-                stop_time: None,
-                stop_signal: None,
-              }),
-              auto_redeploy_user().to_owned(),
-            )
-            .await
-            {
-              Ok(_) => {
-                let ts = komodo_timestamp();
-                let alert = Alert {
-                  id: Default::default(),
-                  ts,
-                  resolved: true,
-                  resolved_ts: ts.into(),
-                  level: SeverityLevel::Ok,
-                  target: ResourceTarget::Deployment(id.clone()),
-                  data: AlertData::DeploymentAutoUpdated {
-                    id,
-                    name: deployment.name,
-                    server_name,
-                    server_id: deployment.config.server_id,
-                    image,
-                  },
-                };
-                let res = db_client().alerts.insert_one(&alert).await;
-                if let Err(e) = res {
-                  error!(
-                    "Failed to record DeploymentAutoUpdated to db | {e:#}"
-                  );
-                }
-                send_alerts(&[alert]).await;
-              }
-              Err(e) => {
-                warn!(
-                  "Failed to auto update Deployment {} | {e:#}",
-                  deployment.name
-                )
-              }
-            }
-          });
-        }
-      } else if state == DeploymentState::Running
-        && deployment.config.send_alerts
-        && !deployment_alert_sent_cache()
-          .lock()
-          .unwrap()
-          .contains(&deployment.id)
-      {
-        // Add that it is already sent to the cache, so another alert won't be sent.
-        deployment_alert_sent_cache()
-          .lock()
-          .unwrap()
-          .insert(deployment.id.clone());
-        let ts = komodo_timestamp();
-        let alert = Alert {
-          id: Default::default(),
-          ts,
-          resolved: true,
-          resolved_ts: ts.into(),
-          level: SeverityLevel::Ok,
-          target: ResourceTarget::Deployment(deployment.id.clone()),
-          data: AlertData::DeploymentImageUpdateAvailable {
-            id: deployment.id.clone(),
-            name: deployment.name,
-            server_name: server_name.clone(),
-            server_id: deployment.config.server_id,
-            image,
-          },
-        };
-        let res = db_client().alerts.insert_one(&alert).await;
-        if let Err(e) = res {
-          error!(
-            "Failed to record DeploymentImageUpdateAvailable to db | {e:#}"
-          );
-        }
-        send_alerts(&[alert]).await;
-      }
-    } else {
-      // If it sees there is no longer update available, remove
-      // from the sent cache, so on next `update_available = true`
-      // the cache is empty and a fresh alert will be sent.
-      deployment_alert_sent_cache()
-        .lock()
-        .unwrap()
-        .remove(&deployment.id);
-    }
-    deployment_status_cache
-      .insert(
-        deployment.id.clone(),
-        History {
-          curr: CachedDeploymentStatus {
-            id: deployment.id,
-            state,
-            container,
-            update_available,
-          },
-          prev,
-        }
-        .into(),
-      )
-      .await;
-  }
-}
 
 /// (StackId, Service)
 fn stack_alert_sent_cache()
@@ -422,6 +234,193 @@ pub async fn update_stack_cache(
     };
     stack_status_cache
       .insert(stack.id, History { curr: status, prev }.into())
+      .await;
+  }
+}
+
+fn deployment_alert_sent_cache() -> &'static Mutex<HashSet<String>> {
+  static CACHE: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+  CACHE.get_or_init(Default::default)
+}
+
+pub async fn update_deployment_cache(
+  server_name: String,
+  deployments: Vec<Deployment>,
+  containers: &[ContainerListItem],
+  images: &[ImageListItem],
+  builds: &[Build],
+) {
+  let deployment_status_cache = deployment_status_cache();
+  for deployment in deployments {
+    let container = containers
+      .iter()
+      .find(|container| container.name == deployment.name)
+      .cloned();
+    let prev = deployment_status_cache
+      .get(&deployment.id)
+      .await
+      .map(|s| s.curr.state);
+    let state = container
+      .as_ref()
+      .map(|c| c.state.into())
+      .unwrap_or(DeploymentState::NotDeployed);
+    let image = match deployment.config.image {
+      DeploymentImage::Build { build_id, version } => {
+        let (build_name, build_version) = builds
+          .iter()
+          .find(|build| build.id == build_id)
+          .map(|b| (b.name.as_ref(), b.config.version))
+          .unwrap_or(("Unknown", Default::default()));
+        let version = if version.is_none() {
+          build_version.to_string()
+        } else {
+          version.to_string()
+        };
+        format!("{build_name}:{version}")
+      }
+      DeploymentImage::Image { image } => {
+        // If image already has tag, leave it,
+        // otherwise default the tag to latest
+        if image.contains(':') {
+          image.to_string()
+        } else {
+          format!("{image}:latest")
+        }
+      }
+    };
+    let update_available = if let Some(ContainerListItem {
+      image_id: Some(curr_image_id),
+      ..
+    }) = &container
+    {
+      // Docker will automatically strip `docker.io` from incoming image names re #468.
+      // Need to strip it in order to match by image name and find available updates.
+      let image = image.strip_prefix("docker.io/").unwrap_or(&image);
+      images
+        .iter()
+        .find(|i| i.name == image)
+        .map(|i| &i.id != curr_image_id)
+        .unwrap_or_default()
+    } else {
+      false
+    };
+
+    if update_available {
+      if deployment.config.auto_update {
+        if state == DeploymentState::Running
+          && !action_states()
+            .deployment
+            .get_or_insert_default(&deployment.id)
+            .await
+            .busy()
+            .unwrap_or(true)
+        {
+          let id = deployment.id.clone();
+          let server_name = server_name.clone();
+          tokio::spawn(async move {
+            match execute::inner_handler(
+              ExecuteRequest::Deploy(Deploy {
+                deployment: deployment.name.clone(),
+                stop_time: None,
+                stop_signal: None,
+              }),
+              auto_redeploy_user().to_owned(),
+            )
+            .await
+            {
+              Ok(_) => {
+                let ts = komodo_timestamp();
+                let alert = Alert {
+                  id: Default::default(),
+                  ts,
+                  resolved: true,
+                  resolved_ts: ts.into(),
+                  level: SeverityLevel::Ok,
+                  target: ResourceTarget::Deployment(id.clone()),
+                  data: AlertData::DeploymentAutoUpdated {
+                    id,
+                    name: deployment.name,
+                    server_name,
+                    server_id: deployment.config.server_id,
+                    image,
+                  },
+                };
+                let res = db_client().alerts.insert_one(&alert).await;
+                if let Err(e) = res {
+                  error!(
+                    "Failed to record DeploymentAutoUpdated to db | {e:#}"
+                  );
+                }
+                send_alerts(&[alert]).await;
+              }
+              Err(e) => {
+                warn!(
+                  "Failed to auto update Deployment {} | {e:#}",
+                  deployment.name
+                )
+              }
+            }
+          });
+        }
+      } else if state == DeploymentState::Running
+        && deployment.config.send_alerts
+        && !deployment_alert_sent_cache()
+          .lock()
+          .unwrap()
+          .contains(&deployment.id)
+      {
+        // Add that it is already sent to the cache, so another alert won't be sent.
+        deployment_alert_sent_cache()
+          .lock()
+          .unwrap()
+          .insert(deployment.id.clone());
+        let ts = komodo_timestamp();
+        let alert = Alert {
+          id: Default::default(),
+          ts,
+          resolved: true,
+          resolved_ts: ts.into(),
+          level: SeverityLevel::Ok,
+          target: ResourceTarget::Deployment(deployment.id.clone()),
+          data: AlertData::DeploymentImageUpdateAvailable {
+            id: deployment.id.clone(),
+            name: deployment.name,
+            server_name: server_name.clone(),
+            server_id: deployment.config.server_id,
+            image,
+          },
+        };
+        let res = db_client().alerts.insert_one(&alert).await;
+        if let Err(e) = res {
+          error!(
+            "Failed to record DeploymentImageUpdateAvailable to db | {e:#}"
+          );
+        }
+        send_alerts(&[alert]).await;
+      }
+    } else {
+      // If it sees there is no longer update available, remove
+      // from the sent cache, so on next `update_available = true`
+      // the cache is empty and a fresh alert will be sent.
+      deployment_alert_sent_cache()
+        .lock()
+        .unwrap()
+        .remove(&deployment.id);
+    }
+    deployment_status_cache
+      .insert(
+        deployment.id.clone(),
+        History {
+          curr: CachedDeploymentStatus {
+            id: deployment.id,
+            state,
+            container,
+            update_available,
+          },
+          prev,
+        }
+        .into(),
+      )
       .await;
   }
 }

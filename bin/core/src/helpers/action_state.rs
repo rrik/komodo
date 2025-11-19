@@ -9,12 +9,13 @@ use komodo_client::{
     deployment::DeploymentActionState,
     procedure::ProcedureActionState, repo::RepoActionState,
     server::ServerActionState, stack::StackActionState,
-    sync::ResourceSyncActionState,
+    swarm::SwarmActionState, sync::ResourceSyncActionState,
   },
 };
 
 #[derive(Default)]
 pub struct ActionStates {
+  pub swarm: CloneCache<String, Arc<ActionState<SwarmActionState>>>,
   pub server: CloneCache<String, Arc<ActionState<ServerActionState>>>,
   pub stack: CloneCache<String, Arc<ActionState<StackActionState>>>,
   pub deployment:

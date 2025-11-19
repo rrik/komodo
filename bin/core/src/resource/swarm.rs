@@ -8,13 +8,16 @@ use komodo_client::entities::{
   swarm::{
     PartialSwarmConfig, Swarm, SwarmConfig, SwarmConfigDiff,
     SwarmInfo, SwarmListItem, SwarmListItemInfo, SwarmQuerySpecifics,
-    SwarmState,
   },
   update::Update,
   user::User,
 };
 
-use crate::{config::core_config, state::db_client};
+use crate::{
+  config::core_config,
+  monitor::update_cache_for_swarm,
+  state::{db_client, swarm_status_cache},
+};
 
 use super::get_check_permissions;
 
@@ -42,6 +45,11 @@ impl super::KomodoResource for Swarm {
   async fn to_list_item(
     swarm: Resource<Self::Config, Self::Info>,
   ) -> Self::ListItem {
+    let state = swarm_status_cache()
+      .get(&swarm.id)
+      .await
+      .map(|status| status.state)
+      .unwrap_or_default();
     SwarmListItem {
       name: swarm.name,
       id: swarm.id,
@@ -50,18 +58,12 @@ impl super::KomodoResource for Swarm {
       resource_type: ResourceTargetVariant::Swarm,
       info: SwarmListItemInfo {
         server_ids: swarm.config.server_ids,
-        state: SwarmState::Unknown,
+        state,
       },
     }
   }
 
-  async fn busy(id: &String) -> anyhow::Result<bool> {
-    // action_states()
-    //   .swarm
-    //   .get(id)
-    //   .await
-    //   .unwrap_or_default()
-    //   .busy()
+  async fn busy(_id: &String) -> anyhow::Result<bool> {
     Ok(false)
   }
 
@@ -83,10 +85,10 @@ impl super::KomodoResource for Swarm {
   }
 
   async fn post_create(
-    _created: &Resource<Self::Config, Self::Info>,
+    created: &Self,
     _update: &mut Update,
   ) -> anyhow::Result<()> {
-    // refresh_swarm_state_cache().await;
+    update_cache_for_swarm(created, true).await;
     Ok(())
   }
 
@@ -105,10 +107,10 @@ impl super::KomodoResource for Swarm {
   }
 
   async fn post_update(
-    _updated: &Self,
+    updated: &Self,
     _update: &mut Update,
   ) -> anyhow::Result<()> {
-    // refresh_swarm_state_cache().await;
+    update_cache_for_swarm(updated, true).await;
     Ok(())
   }
 
@@ -125,18 +127,17 @@ impl super::KomodoResource for Swarm {
   }
 
   async fn pre_delete(
-    _swarm: &Resource<Self::Config, Self::Info>,
+    _swarm: &Self,
     _update: &mut Update,
   ) -> anyhow::Result<()> {
     Ok(())
   }
 
   async fn post_delete(
-    _swarm: &Resource<Self::Config, Self::Info>,
+    swarm: &Self,
     _update: &mut Update,
   ) -> anyhow::Result<()> {
-    // swarm_state_cache().remove(&swarm.id).await;
-
+    swarm_status_cache().remove(&swarm.id).await;
     Ok(())
   }
 }

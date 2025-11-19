@@ -364,6 +364,7 @@ type ResourceMap = {
 
 export const useAllResources = (): ResourceMap => {
   return {
+    Swarm: useRead("ListSwarms", {}).data,
     Server: useRead("ListServers", {}).data,
     Stack: useRead("ListStacks", {}).data,
     Deployment: useRead("ListDeployments", {}).data,

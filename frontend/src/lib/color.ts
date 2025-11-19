@@ -129,6 +129,23 @@ export const soft_text_color_class_by_intention = (
   }
 };
 
+export const swarm_state_intention: (
+  state?: Types.SwarmState,
+  hasVersionMismatch?: boolean
+) => ColorIntention = (state, hasVersionMismatch) => {
+  switch (state) {
+    case Types.SwarmState.Healthy:
+      // If there's a version mismatch and the server is "Ok", show warning instead
+      return hasVersionMismatch ? "Warning" : "Good";
+    case Types.SwarmState.Unhealthy:
+      return "Critical";
+    case Types.SwarmState.Unknown:
+      return "Neutral";
+    case undefined:
+      return "None";
+  }
+};
+
 export const server_state_intention: (
   state?: Types.ServerState,
   hasVersionMismatch?: boolean
@@ -143,6 +160,29 @@ export const server_state_intention: (
       return "Neutral";
     case undefined:
       return "None";
+  }
+};
+
+export const stack_state_intention = (state?: Types.StackState) => {
+  switch (state) {
+    case undefined:
+      return "None";
+    case Types.StackState.Deploying:
+      return "Warning";
+    case Types.StackState.Running:
+      return "Good";
+    case Types.StackState.Paused:
+      return "Warning";
+    case Types.StackState.Stopped:
+      return "Critical";
+    case Types.StackState.Restarting:
+      return "Critical";
+    case Types.StackState.Down:
+      return "Neutral";
+    case Types.StackState.Unknown:
+      return "Unknown";
+    default:
+      return "Critical";
   }
 };
 
@@ -219,29 +259,6 @@ export const repo_state_intention = (state?: Types.RepoState) => {
       return "Critical";
     default:
       return "None";
-  }
-};
-
-export const stack_state_intention = (state?: Types.StackState) => {
-  switch (state) {
-    case undefined:
-      return "None";
-    case Types.StackState.Deploying:
-      return "Warning";
-    case Types.StackState.Running:
-      return "Good";
-    case Types.StackState.Paused:
-      return "Warning";
-    case Types.StackState.Stopped:
-      return "Critical";
-    case Types.StackState.Restarting:
-      return "Critical";
-    case Types.StackState.Down:
-      return "Neutral";
-    case Types.StackState.Unknown:
-      return "Unknown";
-    default:
-      return "Critical";
   }
 };
 

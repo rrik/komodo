@@ -46,7 +46,7 @@ export const BuildComponents: RequiredResourceComponents = {
   list_item: (id) => useBuild(id),
   resource_links: (resource) => (resource.config as Types.BuildConfig).links,
 
-  Description: () => <>Build docker images.</>,
+  Description: () => <>Build container images.</>,
 
   Dashboard: () => {
     const summary = useRead("GetBuildsSummary", {}).data;

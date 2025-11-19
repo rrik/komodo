@@ -383,8 +383,8 @@ impl Resolve<ReadArgs> for ListDockerContainers {
     let cache = server_status_cache()
       .get_or_insert_default(&server.id)
       .await;
-    if let Some(containers) = &cache.containers {
-      Ok(containers.clone())
+    if let Some(docker) = &cache.docker {
+      Ok(docker.containers.clone())
     } else {
       Ok(Vec::new())
     }
@@ -410,10 +410,11 @@ impl Resolve<ReadArgs> for ListAllDockerContainers {
       let cache = server_status_cache()
         .get_or_insert_default(&server.id)
         .await;
-      let Some(more) = &cache.containers else {
+      let Some(docker) = &cache.docker else {
         continue;
       };
-      let more = more
+      let more = docker
+        .containers
         .iter()
         .filter(|container| {
           self.containers.is_empty()
@@ -448,8 +449,8 @@ impl Resolve<ReadArgs> for GetDockerContainersSummary {
         .get_or_insert_default(&server.id)
         .await;
 
-      if let Some(containers) = &cache.containers {
-        for container in containers {
+      if let Some(docker) = &cache.docker {
+        for container in &docker.containers {
           res.total += 1;
           match container.state {
             ContainerStateStatusEnum::Created
@@ -641,8 +642,8 @@ impl Resolve<ReadArgs> for ListDockerNetworks {
     let cache = server_status_cache()
       .get_or_insert_default(&server.id)
       .await;
-    if let Some(networks) = &cache.networks {
-      Ok(networks.clone())
+    if let Some(docker) = &cache.docker {
+      Ok(docker.networks.clone())
     } else {
       Ok(Vec::new())
     }
@@ -694,8 +695,8 @@ impl Resolve<ReadArgs> for ListDockerImages {
     let cache = server_status_cache()
       .get_or_insert_default(&server.id)
       .await;
-    if let Some(images) = &cache.images {
-      Ok(images.clone())
+    if let Some(docker) = &cache.docker {
+      Ok(docker.images.clone())
     } else {
       Ok(Vec::new())
     }
@@ -775,8 +776,8 @@ impl Resolve<ReadArgs> for ListDockerVolumes {
     let cache = server_status_cache()
       .get_or_insert_default(&server.id)
       .await;
-    if let Some(volumes) = &cache.volumes {
-      Ok(volumes.clone())
+    if let Some(docker) = &cache.docker {
+      Ok(docker.volumes.clone())
     } else {
       Ok(Vec::new())
     }
@@ -825,8 +826,8 @@ impl Resolve<ReadArgs> for ListComposeProjects {
     let cache = server_status_cache()
       .get_or_insert_default(&server.id)
       .await;
-    if let Some(projects) = &cache.projects {
-      Ok(projects.clone())
+    if let Some(docker) = &cache.docker {
+      Ok(docker.projects.clone())
     } else {
       Ok(Vec::new())
     }

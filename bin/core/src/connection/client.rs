@@ -45,7 +45,6 @@ impl PeripheryConnectionArgs<'_> {
       periphery_connections().insert(id.clone(), self).await;
 
     let responses = connection.responses.clone();
-    let terminals = connection.terminals.clone();
 
     tokio::spawn(async move {
       loop {
@@ -94,7 +93,6 @@ impl PeripheryConnectionArgs<'_> {
     Ok(PeripheryClient {
       id,
       responses,
-      terminals,
     })
   }
 }

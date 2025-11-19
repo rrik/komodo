@@ -1,28 +1,20 @@
 use command::run_komodo_standard_command;
 use derive_variants::EnumVariants;
 use encoding::{EncodedJsonMessage, EncodedResponse};
-use futures_util::FutureExt;
 use komodo_client::entities::{
   config::{DockerRegistry, GitProvider},
-  server::PeripheryInformation,
   stats::SystemProcess,
   update::Log,
 };
 use periphery_client::api::{
   build::*, compose::*, container::*, docker::*, git::*, keys::*,
-  stats::*, swarm::*, terminal::*, *,
+  poll::*, stats::*, swarm::*, terminal::*, *,
 };
 use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{
-  api::compose::list_compose_projects,
-  config::periphery_config,
-  state::{
-    docker_client, host_public_ip, periphery_keys, stats_client,
-  },
-};
+use crate::{config::periphery_config, state::stats_client};
 
 pub mod terminal;
 
@@ -33,6 +25,7 @@ mod deploy;
 mod docker;
 mod git;
 mod keys;
+mod poll;
 mod swarm;
 
 #[derive(Debug)]
@@ -144,6 +137,7 @@ pub enum PeripheryRequest {
   PruneSystem(PruneSystem),
 
   // Swarm
+  GetSwarmLists(PollSwarmStatus),
   InspectSwarmNode(InspectSwarmNode),
   InspectSwarmService(InspectSwarmService),
   InspectSwarmTask(InspectSwarmTask),
@@ -185,78 +179,6 @@ impl Resolve<Args> for GetVersion {
   ) -> anyhow::Result<GetVersionResponse> {
     Ok(GetVersionResponse {
       version: env!("CARGO_PKG_VERSION").to_string(),
-    })
-  }
-}
-
-//
-
-impl Resolve<Args> for PollStatus {
-  async fn resolve(
-    self,
-    _: &Args,
-  ) -> anyhow::Result<PollStatusResponse> {
-    // Docker lists
-    let docker_lists = async {
-      let client = docker_client().load();
-      let Some(client) = client.iter().next() else {
-        return Default::default();
-      };
-      let containers =
-        client.list_containers().await.unwrap_or_default();
-      // Todo: handle errors better
-      (
-        tokio::join!(
-          client
-            .list_networks(&containers)
-            .map(Result::unwrap_or_default),
-          client
-            .list_images(&containers)
-            .map(Result::unwrap_or_default),
-          client
-            .list_volumes(&containers)
-            .map(Result::unwrap_or_default)
-        ),
-        containers,
-      )
-    };
-
-    let (
-      ((networks, images, volumes), containers),
-      projects,
-      stats_client,
-    ) = tokio::join!(
-      docker_lists,
-      list_compose_projects().map(Result::unwrap_or_default),
-      stats_client().read(),
-    );
-
-    let system_stats = if self.include_stats {
-      Some(stats_client.stats.clone())
-    } else {
-      None
-    };
-
-    let config = periphery_config();
-
-    Ok(PollStatusResponse {
-      periphery_info: PeripheryInformation {
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        public_key: periphery_keys().load().public.to_string(),
-        terminals_disabled: config.disable_terminals,
-        container_terminals_disabled: config
-          .disable_container_terminals,
-        stats_polling_rate: config.stats_polling_rate,
-        docker_connected: docker_client().load().is_some(),
-        public_ip: host_public_ip().await.cloned(),
-      },
-      system_info: stats_client.info.clone(),
-      system_stats,
-      containers,
-      networks,
-      images,
-      volumes,
-      projects,
     })
   }
 }
