@@ -7,7 +7,7 @@ import {
   DockerLabelsSection,
   DockerOptions,
   DockerResourceLink,
-  DockerResourcePageName,
+  PageHeaderName,
   ShowHideButton,
 } from "@components/util";
 import { useExecute, usePermissions, useRead, useSetTitle } from "@lib/hooks";
@@ -130,7 +130,7 @@ const NetworkPageInner = ({
               size={8}
             />
           </div>
-          <DockerResourcePageName name={network_name} />
+          <PageHeaderName name={network_name} />
           {unused && <Badge variant="destructive">Unused</Badge>}
         </div>
 

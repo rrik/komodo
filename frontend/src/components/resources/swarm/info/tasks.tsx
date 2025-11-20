@@ -2,9 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { Search } from "lucide-react";
+import { ListTodo, Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
+import { Link } from "react-router-dom";
 
 export const SwarmTasks = ({
   id,
@@ -41,7 +42,7 @@ export const SwarmTasks = ({
     >
       <DataTable
         containerClassName="min-h-[60vh]"
-        tableKey="server-tasks"
+        tableKey="swarm-tasks"
         data={filtered}
         columns={[
           {
@@ -49,7 +50,15 @@ export const SwarmTasks = ({
             header: ({ column }) => (
               <SortableHeader column={column} title="Id" />
             ),
-            cell: ({ row }) => row.original.ID ?? "Unknown",
+            cell: ({ row }) => (
+              <Link
+                to={`/swarms/${id}/swarm-task/${row.original.ID}`}
+                className="flex gap-2 items-center hover:underline"
+              >
+                <ListTodo className="w-4 h-4" />
+                {row.original.ID ?? "Unknown"}
+              </Link>
+            ),
             size: 200,
           },
         ]}

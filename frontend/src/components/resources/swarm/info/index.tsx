@@ -11,8 +11,9 @@ import { SwarmNodes } from "./nodes";
 import { SwarmSecrets } from "./secrets";
 import { SwarmServices } from "./services";
 import { SwarmTasks } from "./tasks";
+import { SwarmInspect } from "./inspect";
 
-type SwarmInfoView = "Nodes" | "Services" | "Tasks" | "Secrets";
+type SwarmInfoView = "Inspect" | "Nodes" | "Services" | "Tasks" | "Secrets";
 
 export const SwarmInfo = ({
   id,
@@ -25,7 +26,7 @@ export const SwarmInfo = ({
   const state = useSwarm(id)?.info.state ?? Types.SwarmState.Unknown;
   const [view, setView] = useLocalStorage<SwarmInfoView>(
     "swarm-info-view-v1",
-    "Nodes"
+    "Inspect"
   );
 
   if (state === Types.SwarmState.Unknown) {
@@ -40,6 +41,9 @@ export const SwarmInfo = ({
 
   const tabsNoContent = useMemo<TabNoContent<SwarmInfoView>[]>(
     () => [
+      {
+        value: "Inspect",
+      },
       {
         value: "Nodes",
       },
@@ -67,6 +71,8 @@ export const SwarmInfo = ({
 
   const Component = () => {
     switch (view) {
+      case "Inspect":
+        return <SwarmInspect id={id} titleOther={Selector} />;
       case "Nodes":
         return <SwarmNodes id={id} titleOther={Selector} _search={_search} />;
       case "Services":

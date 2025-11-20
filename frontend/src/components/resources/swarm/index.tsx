@@ -1,6 +1,6 @@
 import { useRead } from "@lib/hooks";
 import { RequiredResourceComponents } from "@types";
-import { Boxes } from "lucide-react";
+import { Component } from "lucide-react";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
 import { SwarmTable } from "./table";
 import {
@@ -27,7 +27,7 @@ export const useFullSwarm = (id: string) =>
 const SwarmIcon = ({ id, size }: { id?: string; size: number }) => {
   const state = useSwarm(id)?.info.state;
   const color = stroke_color_class_by_intention(swarm_state_intention(state));
-  return <Boxes className={cn(`w-${size} h-${size}`, state && color)} />;
+  return <Component className={cn(`w-${size} h-${size}`, state && color)} />;
 };
 
 export const SwarmComponents: RequiredResourceComponents = {

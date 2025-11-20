@@ -6,53 +6,60 @@ import {
   DOCKER_LINK_ICONS,
   DockerContainersSection,
   DockerLabelsSection,
-  DockerOptions,
-  DockerResourcePageName,
+  PageHeaderName,
   ShowHideButton,
 } from "@components/util";
+import { fmt_date_with_minutes, format_size_bytes } from "@lib/formatting";
 import { useExecute, usePermissions, useRead, useSetTitle } from "@lib/hooks";
 import { Types } from "komodo_client";
 import { Badge } from "@ui/badge";
 import { Button } from "@ui/button";
 import { DataTable } from "@ui/data-table";
-import { ChevronLeft, Info, Loader2, SearchCode, Trash } from "lucide-react";
+import {
+  ChevronLeft,
+  HistoryIcon,
+  Info,
+  Loader2,
+  SearchCode,
+  Trash,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { MonacoEditor } from "@components/monaco";
 
-export default function VolumePage() {
-  const { type, id, volume } = useParams() as {
+export default function ImagePage() {
+  const { type, id, image } = useParams() as {
     type: string;
     id: string;
-    volume: string;
+    image: string;
   };
   if (type !== "servers") {
-    return <div>This resource type does not have any volumes.</div>;
+    return <div>This resource type does not have any images.</div>;
   }
-  return <VolumePageInner id={id} volume={decodeURIComponent(volume)} />;
+  return <ImagePageInner id={id} image={decodeURIComponent(image)} />;
 }
 
-const VolumePageInner = ({
+const ImagePageInner = ({
   id,
-  volume: volume_name,
+  image: image_name,
 }: {
   id: string;
-  volume: string;
+  image: string;
 }) => {
   const [showInspect, setShowInspect] = useState(false);
   const server = useServer(id);
-  useSetTitle(`${server?.name} | Volume | ${volume_name}`);
+  useSetTitle(`${server?.name} | Image | ${image_name}`);
   const nav = useNavigate();
 
   const { canExecute, specific } = usePermissions({ type: "Server", id });
 
   const {
-    data: volume,
+    data: image,
     isPending,
     isError,
-  } = useRead("InspectDockerVolume", {
+  } = useRead("InspectDockerImage", {
     server: id,
-    volume: volume_name,
+    image: image_name,
   });
 
   const containers = useRead(
@@ -61,10 +68,17 @@ const VolumePageInner = ({
       server: id,
     },
     { refetchInterval: 10_000 }
-  ).data?.filter((container) => container.volumes?.includes(volume_name));
+  ).data?.filter((container) =>
+    !image?.Id ? false : container.image_id === image?.Id
+  );
 
-  const { mutate: deleteVolume, isPending: deletePending } = useExecute(
-    "DeleteVolume",
+  const history = useRead("ListDockerImageHistory", {
+    server: id,
+    image: image_name,
+  }).data;
+
+  const { mutate: deleteImage, isPending: deletePending } = useExecute(
+    "DeleteImage",
     {
       onSuccess: () => nav("/servers/" + id),
     }
@@ -79,13 +93,13 @@ const VolumePageInner = ({
   }
 
   if (isError) {
-    return <div className="flex w-full py-4">Failed to inspect volume.</div>;
+    return <div className="flex w-full py-4">Failed to inspect image.</div>;
   }
 
-  if (!volume) {
+  if (!image) {
     return (
       <div className="flex w-full py-4">
-        No volume found with given name: {volume_name}
+        No image found with given name: {image_name}
       </div>
     );
   }
@@ -110,21 +124,29 @@ const VolumePageInner = ({
         {/* TITLE */}
         <div className="flex items-center gap-4">
           <div className="mt-1">
-            <DOCKER_LINK_ICONS.volume
-              server_id={id}
-              name={volume_name}
-              size={8}
-            />
+            <DOCKER_LINK_ICONS.image server_id={id} name={image.Id} size={8} />
           </div>
-          <DockerResourcePageName name={volume_name} />
-          {containers && containers.length === 0 && (
-            <Badge variant="destructive">Unused</Badge>
-          )}
+          <PageHeaderName name={image_name} />
+          {unused && <Badge variant="destructive">Unused</Badge>}
         </div>
 
         {/* INFO */}
         <div className="flex flex-wrap gap-4 items-center text-muted-foreground">
           <ResourceLink type="Server" id={id} />
+          {image.Id ? (
+            <>
+              |
+              <div className="flex gap-2">
+                Id:
+                <div
+                  title={image.Id}
+                  className="max-w-[150px] overflow-hidden text-ellipsis"
+                >
+                  {image.Id}
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -132,10 +154,10 @@ const VolumePageInner = ({
       {canExecute && unused && (
         <ConfirmButton
           variant="destructive"
-          title="Delete Volume"
+          title="Delete Image"
           icon={<Trash className="w-4 h-4" />}
           loading={deletePending}
-          onClick={() => deleteVolume({ server: id, name: volume_name })}
+          onClick={() => deleteImage({ server: id, name: image_name })}
         />
       )}
 
@@ -143,34 +165,56 @@ const VolumePageInner = ({
         <DockerContainersSection server_id={id} containers={containers} />
       )}
 
-      {/* TOP LEVEL VOLUME INFO */}
+      {/* TOP LEVEL IMAGE INFO */}
       <Section title="Details" icon={<Info className="w-4 h-4" />}>
         <DataTable
-          tableKey="volume-info"
-          data={[volume]}
+          tableKey="image-info"
+          data={[image]}
           columns={[
             {
-              accessorKey: "Driver",
-              header: "Driver",
+              accessorKey: "Architecture",
+              header: "Architecture",
             },
             {
-              accessorKey: "Scope",
-              header: "Scope",
+              accessorKey: "Os",
+              header: "Os",
             },
             {
-              accessorKey: "CreatedAt",
-              header: "Created At",
-            },
-            {
-              accessorKey: "UsageData.Size",
-              header: "Used Size",
+              accessorKey: "Size",
+              header: "Size",
+              cell: ({ row }) =>
+                row.original.Size
+                  ? format_size_bytes(row.original.Size)
+                  : "Unknown",
             },
           ]}
         />
-        <DockerOptions options={volume.Options} />
       </Section>
 
-      <DockerLabelsSection labels={volume.Labels} />
+      {history && history.length > 0 && (
+        <Section title="History" icon={<HistoryIcon className="w-4 h-4" />}>
+          <DataTable
+            tableKey="image-history"
+            data={history.toReversed()}
+            columns={[
+              {
+                accessorKey: "CreatedBy",
+                header: "Created By",
+                size: 400,
+              },
+              {
+                accessorKey: "Created",
+                header: "Timestamp",
+                cell: ({ row }) =>
+                  fmt_date_with_minutes(new Date(row.original.Created * 1000)),
+                size: 200,
+              },
+            ]}
+          />
+        </Section>
+      )}
+
+      <DockerLabelsSection labels={image?.Config?.Labels} />
 
       {specific.includes(Types.SpecificPermission.Inspect) && (
         <Section
@@ -184,7 +228,7 @@ const VolumePageInner = ({
         >
           {showInspect && (
             <MonacoEditor
-              value={JSON.stringify(volume, null, 2)}
+              value={JSON.stringify(image, null, 2)}
               language="json"
               readOnly
             />

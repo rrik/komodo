@@ -2,9 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { Search } from "lucide-react";
+import { KeyRound, Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
+import { Link } from "react-router-dom";
 
 export const SwarmSecrets = ({
   id,
@@ -45,7 +46,7 @@ export const SwarmSecrets = ({
     >
       <DataTable
         containerClassName="min-h-[60vh]"
-        tableKey="server-secrets"
+        tableKey="swarm-secrets"
         data={filtered}
         columns={[
           {
@@ -53,7 +54,15 @@ export const SwarmSecrets = ({
             header: ({ column }) => (
               <SortableHeader column={column} title="ID" />
             ),
-            cell: ({ row }) => row.original.Spec?.Name ?? "Unknown",
+            cell: ({ row }) => (
+              <Link
+                to={`/swarms/${id}/swarm-secret/${row.original.ID}`}
+                className="flex gap-2 items-center hover:underline"
+              >
+                <KeyRound className="w-4 h-4" />
+                {row.original.Spec?.Name ?? "Unknown"}
+              </Link>
+            ),
             size: 200,
           },
           {

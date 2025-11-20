@@ -24,14 +24,18 @@ const UserPage = lazy(() => import("@pages/user"));
 const UserGroupPage = lazy(() => import("@pages/user-group"));
 const Settings = lazy(() => import("@pages/settings"));
 const StackServicePage = lazy(() => import("@pages/stack-service"));
-const NetworkPage = lazy(() => import("@pages/server-info/network"));
-const ImagePage = lazy(() => import("@pages/server-info/image"));
-const VolumePage = lazy(() => import("@pages/server-info/volume"));
-const ContainerPage = lazy(() => import("@pages/server-info/container"));
+const NetworkPage = lazy(() => import("@pages/docker/network"));
+const ImagePage = lazy(() => import("@pages/docker/image"));
+const VolumePage = lazy(() => import("@pages/docker/volume"));
+const ContainerPage = lazy(() => import("@pages/docker/container"));
 const ContainersPage = lazy(() => import("@pages/containers"));
 const TerminalsPage = lazy(() => import("@pages/terminals"));
 const TerminalPage = lazy(() => import("@pages/terminal"));
 const SchedulesPage = lazy(() => import("@pages/schedules"));
+const SwarmNodePage = lazy(() => import("@pages/swarm/node"));
+const SwarmServicePage = lazy(() => import("@pages/swarm/service"));
+const SwarmTaskPage = lazy(() => import("@pages/swarm/task"));
+const SwarmSecretPage = lazy(() => import("@pages/swarm/secret"));
 
 const sanitize_query = (search: URLSearchParams) => {
   search.delete("token");
@@ -101,6 +105,7 @@ export const Router = () => {
               <Route path="alerts" element={<AlertsPage />} />
               <Route path="user-groups/:id" element={<UserGroupPage />} />
               <Route path="users/:id" element={<UserPage />} />
+              {/* Updates */}
               <Route path="updates">
                 <Route path="" element={<UpdatesPage />} />
                 <Route path=":id" element={<UpdatePage />} />
@@ -121,7 +126,24 @@ export const Router = () => {
                 <Route path=":id/network/:network" element={<NetworkPage />} />
                 <Route path=":id/image/:image" element={<ImagePage />} />
                 <Route path=":id/volume/:volume" element={<VolumePage />} />
-                {/* TerminalPage */}
+                {/* Swarm Resource */}
+                <Route
+                  path=":id/swarm-node/:node"
+                  element={<SwarmNodePage />}
+                />
+                <Route
+                  path=":id/swarm-service/:service"
+                  element={<SwarmServicePage />}
+                />
+                <Route
+                  path=":id/swarm-task/:task"
+                  element={<SwarmTaskPage />}
+                />
+                <Route
+                  path=":id/swarm-secret/:secret"
+                  element={<SwarmSecretPage />}
+                />
+                {/* Terminal Page */}
                 <Route
                   path=":id/terminal/:terminal"
                   element={<TerminalPage />}

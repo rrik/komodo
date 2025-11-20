@@ -782,7 +782,7 @@ export const StackServiceLink = ({
   );
 };
 
-export const DockerResourcePageName = ({ name: _name }: { name?: string }) => {
+export const PageHeaderName = ({ name: _name }: { name?: string }) => {
   const name = _name ?? "Unknown";
   return (
     <h1

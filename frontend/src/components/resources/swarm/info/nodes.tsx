@@ -2,9 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { Search } from "lucide-react";
+import { Diamond, Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
+import { Link } from "react-router-dom";
 
 export const SwarmNodes = ({
   id,
@@ -45,15 +46,23 @@ export const SwarmNodes = ({
     >
       <DataTable
         containerClassName="min-h-[60vh]"
-        tableKey="server-nodes"
+        tableKey="swarm-nodes"
         data={filtered}
         columns={[
           {
-            accessorKey: "Name",
+            accessorKey: "Description.Hostname",
             header: ({ column }) => (
-              <SortableHeader column={column} title="Name" />
+              <SortableHeader column={column} title="Hostname" />
             ),
-            cell: ({ row }) => row.original.Spec?.Name ?? "Unknown",
+            cell: ({ row }) => (
+              <Link
+                to={`/swarms/${id}/swarm-node/${row.original.ID}`}
+                className="flex gap-2 items-center hover:underline"
+              >
+                <Diamond className="w-4 h-4" />
+                {row.original.Description?.Hostname ?? "Unknown"}
+              </Link>
+            ),
             size: 200,
           },
           {
@@ -65,7 +74,7 @@ export const SwarmNodes = ({
             size: 200,
           },
           {
-            accessorKey: "Status",
+            accessorKey: "Status.State",
             header: ({ column }) => (
               <SortableHeader column={column} title="State" />
             ),
