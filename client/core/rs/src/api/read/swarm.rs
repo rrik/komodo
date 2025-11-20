@@ -3,8 +3,12 @@ use resolver_api::Resolve;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::entities::swarm::{
-  Swarm, SwarmActionState, SwarmListItem, SwarmQuery,
+use crate::entities::{
+  docker::{
+    node::SwarmNode, secret::SwarmSecret, service::SwarmService,
+    swarm::SwarmInspectInfo, task::SwarmTask,
+  },
+  swarm::{Swarm, SwarmActionState, SwarmListItem, SwarmQuery},
 };
 
 use super::KomodoReadRequest;
@@ -111,3 +115,103 @@ pub struct GetSwarmsSummaryResponse {
   /// The number of Swarms with Unknown state
   pub unknown: u32,
 }
+
+//
+
+/// Inspect information about the swarm.
+/// Response: [SwarmInspectInfo].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarm {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type InspectSwarmResponse = SwarmInspectInfo;
+
+//
+
+/// List nodes part of the target Swarm.
+/// Response: [ListSwarmNodesResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListSwarmNodesResponse)]
+#[error(serror::Error)]
+pub struct ListSwarmNodes {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type ListSwarmNodesResponse = Vec<SwarmNode>;
+
+//
+
+/// List services on the target Swarm.
+/// Response: [ListSwarmServicesResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListSwarmServicesResponse)]
+#[error(serror::Error)]
+pub struct ListSwarmServices {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type ListSwarmServicesResponse = Vec<SwarmService>;
+
+//
+
+/// List tasks on the target Swarm.
+/// Response: [ListSwarmTasksResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListSwarmTasksResponse)]
+#[error(serror::Error)]
+pub struct ListSwarmTasks {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type ListSwarmTasksResponse = Vec<SwarmTask>;
+
+//
+
+/// List secrets on the target Swarm.
+/// Response: [ListSwarmSecretsResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListSwarmSecretsResponse)]
+#[error(serror::Error)]
+pub struct ListSwarmSecrets {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type ListSwarmSecretsResponse = Vec<SwarmSecret>;

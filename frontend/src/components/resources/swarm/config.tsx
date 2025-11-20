@@ -1,12 +1,19 @@
 import { Config } from "@components/config";
-import { ConfigItem } from "@components/config/util";
+import { ConfigItem, ConfigList } from "@components/config/util";
 import { useLocalStorage, usePermissions, useRead, useWrite } from "@lib/hooks";
 import { Types } from "komodo_client";
 import { ResourceSelector } from "../common";
 import { Button } from "@ui/button";
 import { MinusCircle, PlusCircle } from "lucide-react";
+import { ReactNode } from "react";
 
-export const SwarmConfig = ({ id }: { id: string }) => {
+export const SwarmConfig = ({
+  id,
+  titleOther,
+}: {
+  id: string;
+  titleOther: ReactNode;
+}) => {
   const { canWrite } = usePermissions({ type: "Swarm", id });
   const swarm = useRead("GetSwarm", { swarm: id }).data;
   const config = swarm?.config;
@@ -24,6 +31,7 @@ export const SwarmConfig = ({ id }: { id: string }) => {
 
   return (
     <Config
+      titleOther={titleOther}
       disabled={disabled}
       original={config}
       update={update}
@@ -41,6 +49,7 @@ export const SwarmConfig = ({ id }: { id: string }) => {
                 return (
                   <ConfigItem
                     label="Manager Nodes"
+                    boldLabel
                     description="Select the Servers which have joined the Swarm as Manager Nodes."
                   >
                     <div className="flex flex-col gap-4 w-full">
@@ -98,6 +107,25 @@ export const SwarmConfig = ({ id }: { id: string }) => {
                   </ConfigItem>
                 );
               },
+            },
+          },
+          {
+            label: "Links",
+            labelHidden: true,
+            components: {
+              links: (values, set) => (
+                <ConfigList
+                  label="Links"
+                  boldLabel
+                  addLabel="Add Link"
+                  description="Add quick links in the resource header"
+                  field="links"
+                  values={values ?? []}
+                  set={set}
+                  disabled={disabled}
+                  placeholder="Input link"
+                />
+              ),
             },
           },
         ],

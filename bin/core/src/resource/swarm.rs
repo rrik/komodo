@@ -45,10 +45,10 @@ impl super::KomodoResource for Swarm {
   async fn to_list_item(
     swarm: Resource<Self::Config, Self::Info>,
   ) -> Self::ListItem {
-    let state = swarm_status_cache()
+    let (state, err) = swarm_status_cache()
       .get(&swarm.id)
       .await
-      .map(|status| status.state)
+      .map(|status| (status.state, status.err.clone()))
       .unwrap_or_default();
     SwarmListItem {
       name: swarm.name,
@@ -59,6 +59,7 @@ impl super::KomodoResource for Swarm {
       info: SwarmListItemInfo {
         server_ids: swarm.config.server_ids,
         state,
+        err,
       },
     }
   }

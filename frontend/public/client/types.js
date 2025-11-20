@@ -492,6 +492,11 @@ export var ClusterVolumePublishStatusStateEnum;
     ClusterVolumePublishStatusStateEnum["PendingNodeUnpublish"] = "pending-node-unpublish";
     ClusterVolumePublishStatusStateEnum["PendingControllerUnpublish"] = "pending-controller-unpublish";
 })(ClusterVolumePublishStatusStateEnum || (ClusterVolumePublishStatusStateEnum = {}));
+export var SwarmSpecCaConfigExternalCasProtocolEnum;
+(function (SwarmSpecCaConfigExternalCasProtocolEnum) {
+    SwarmSpecCaConfigExternalCasProtocolEnum["EMPTY"] = "";
+    SwarmSpecCaConfigExternalCasProtocolEnum["CFSSL"] = "cfssl";
+})(SwarmSpecCaConfigExternalCasProtocolEnum || (SwarmSpecCaConfigExternalCasProtocolEnum = {}));
 export var PortTypeEnum;
 (function (PortTypeEnum) {
     PortTypeEnum["EMPTY"] = "";
@@ -572,63 +577,6 @@ export var StackState;
     /** Server not reachable for status */
     StackState["Unknown"] = "unknown";
 })(StackState || (StackState = {}));
-export var SwarmState;
-(function (SwarmState) {
-    /** Unknown case */
-    SwarmState["Unknown"] = "Unknown";
-    /** The Swarm is healthy, all nodes OK */
-    SwarmState["Healthy"] = "Healthy";
-    /** The Swarm is unhealthy */
-    SwarmState["Unhealthy"] = "Unhealthy";
-})(SwarmState || (SwarmState = {}));
-/**
- * Configures the behavior of [CreateTerminal] if the
- * specified terminal name already exists.
- */
-export var TerminalRecreateMode;
-(function (TerminalRecreateMode) {
-    /**
-     * Never kill the old terminal if it already exists.
-     * If the init command is different, returns error.
-     */
-    TerminalRecreateMode["Never"] = "Never";
-    /** Always kill the old terminal and create new one */
-    TerminalRecreateMode["Always"] = "Always";
-    /** Only kill and recreate if the command is different. */
-    TerminalRecreateMode["DifferentCommand"] = "DifferentCommand";
-})(TerminalRecreateMode || (TerminalRecreateMode = {}));
-/** Specify the container terminal mode (exec or attach) */
-export var ContainerTerminalMode;
-(function (ContainerTerminalMode) {
-    ContainerTerminalMode["Exec"] = "exec";
-    ContainerTerminalMode["Attach"] = "attach";
-})(ContainerTerminalMode || (ContainerTerminalMode = {}));
-export var EndpointPortConfigProtocolEnum;
-(function (EndpointPortConfigProtocolEnum) {
-    EndpointPortConfigProtocolEnum["EMPTY"] = "";
-    EndpointPortConfigProtocolEnum["TCP"] = "tcp";
-    EndpointPortConfigProtocolEnum["UDP"] = "udp";
-    EndpointPortConfigProtocolEnum["SCTP"] = "sctp";
-})(EndpointPortConfigProtocolEnum || (EndpointPortConfigProtocolEnum = {}));
-export var EndpointPortConfigPublishModeEnum;
-(function (EndpointPortConfigPublishModeEnum) {
-    EndpointPortConfigPublishModeEnum["EMPTY"] = "";
-    EndpointPortConfigPublishModeEnum["INGRESS"] = "ingress";
-    EndpointPortConfigPublishModeEnum["HOST"] = "host";
-})(EndpointPortConfigPublishModeEnum || (EndpointPortConfigPublishModeEnum = {}));
-export var EndpointSpecModeEnum;
-(function (EndpointSpecModeEnum) {
-    EndpointSpecModeEnum["EMPTY"] = "";
-    EndpointSpecModeEnum["VIP"] = "vip";
-    EndpointSpecModeEnum["DNSRR"] = "dnsrr";
-})(EndpointSpecModeEnum || (EndpointSpecModeEnum = {}));
-/** Reachability represents the reachability of a node. */
-export var NodeReachability;
-(function (NodeReachability) {
-    NodeReachability["UNKNOWN"] = "unknown";
-    NodeReachability["UNREACHABLE"] = "unreachable";
-    NodeReachability["REACHABLE"] = "reachable";
-})(NodeReachability || (NodeReachability = {}));
 export var NodeSpecRoleEnum;
 (function (NodeSpecRoleEnum) {
     NodeSpecRoleEnum["EMPTY"] = "";
@@ -650,26 +598,13 @@ export var NodeState;
     NodeState["READY"] = "ready";
     NodeState["DISCONNECTED"] = "disconnected";
 })(NodeState || (NodeState = {}));
-export var DefaultRepoFolder;
-(function (DefaultRepoFolder) {
-    /** /${root_directory}/stacks */
-    DefaultRepoFolder["Stacks"] = "Stacks";
-    /** /${root_directory}/builds */
-    DefaultRepoFolder["Builds"] = "Builds";
-    /** /${root_directory}/repos */
-    DefaultRepoFolder["Repos"] = "Repos";
-    /**
-     * If the repo is only cloned
-     * in the core repo cache (resource sync),
-     * this isn't relevant.
-     */
-    DefaultRepoFolder["NotApplicable"] = "NotApplicable";
-})(DefaultRepoFolder || (DefaultRepoFolder = {}));
-export var SearchCombinator;
-(function (SearchCombinator) {
-    SearchCombinator["Or"] = "Or";
-    SearchCombinator["And"] = "And";
-})(SearchCombinator || (SearchCombinator = {}));
+/** Reachability represents the reachability of a node. */
+export var NodeReachability;
+(function (NodeReachability) {
+    NodeReachability["UNKNOWN"] = "unknown";
+    NodeReachability["UNREACHABLE"] = "unreachable";
+    NodeReachability["REACHABLE"] = "reachable";
+})(NodeReachability || (NodeReachability = {}));
 export var TaskSpecContainerSpecPrivilegesSeccompModeEnum;
 (function (TaskSpecContainerSpecPrivilegesSeccompModeEnum) {
     TaskSpecContainerSpecPrivilegesSeccompModeEnum["EMPTY"] = "";
@@ -722,6 +657,25 @@ export var ServiceSpecRollbackConfigOrderEnum;
     ServiceSpecRollbackConfigOrderEnum["STOP_FIRST"] = "stop-first";
     ServiceSpecRollbackConfigOrderEnum["START_FIRST"] = "start-first";
 })(ServiceSpecRollbackConfigOrderEnum || (ServiceSpecRollbackConfigOrderEnum = {}));
+export var EndpointSpecModeEnum;
+(function (EndpointSpecModeEnum) {
+    EndpointSpecModeEnum["EMPTY"] = "";
+    EndpointSpecModeEnum["VIP"] = "vip";
+    EndpointSpecModeEnum["DNSRR"] = "dnsrr";
+})(EndpointSpecModeEnum || (EndpointSpecModeEnum = {}));
+export var EndpointPortConfigProtocolEnum;
+(function (EndpointPortConfigProtocolEnum) {
+    EndpointPortConfigProtocolEnum["EMPTY"] = "";
+    EndpointPortConfigProtocolEnum["TCP"] = "tcp";
+    EndpointPortConfigProtocolEnum["UDP"] = "udp";
+    EndpointPortConfigProtocolEnum["SCTP"] = "sctp";
+})(EndpointPortConfigProtocolEnum || (EndpointPortConfigProtocolEnum = {}));
+export var EndpointPortConfigPublishModeEnum;
+(function (EndpointPortConfigPublishModeEnum) {
+    EndpointPortConfigPublishModeEnum["EMPTY"] = "";
+    EndpointPortConfigPublishModeEnum["INGRESS"] = "ingress";
+    EndpointPortConfigPublishModeEnum["HOST"] = "host";
+})(EndpointPortConfigPublishModeEnum || (EndpointPortConfigPublishModeEnum = {}));
 export var ServiceUpdateStatusStateEnum;
 (function (ServiceUpdateStatusStateEnum) {
     ServiceUpdateStatusStateEnum["EMPTY"] = "";
@@ -732,11 +686,6 @@ export var ServiceUpdateStatusStateEnum;
     ServiceUpdateStatusStateEnum["ROLLBACK_PAUSED"] = "rollback_paused";
     ServiceUpdateStatusStateEnum["ROLLBACK_COMPLETED"] = "rollback_completed";
 })(ServiceUpdateStatusStateEnum || (ServiceUpdateStatusStateEnum = {}));
-export var SwarmSpecCaConfigExternalCasProtocolEnum;
-(function (SwarmSpecCaConfigExternalCasProtocolEnum) {
-    SwarmSpecCaConfigExternalCasProtocolEnum["EMPTY"] = "";
-    SwarmSpecCaConfigExternalCasProtocolEnum["CFSSL"] = "cfssl";
-})(SwarmSpecCaConfigExternalCasProtocolEnum || (SwarmSpecCaConfigExternalCasProtocolEnum = {}));
 export var TaskState;
 (function (TaskState) {
     TaskState["NEW"] = "new";
@@ -755,6 +704,57 @@ export var TaskState;
     TaskState["REMOVE"] = "remove";
     TaskState["ORPHANED"] = "orphaned";
 })(TaskState || (TaskState = {}));
+export var SwarmState;
+(function (SwarmState) {
+    /** Unknown case */
+    SwarmState["Unknown"] = "Unknown";
+    /** The Swarm is healthy, all nodes OK */
+    SwarmState["Healthy"] = "Healthy";
+    /** The Swarm is unhealthy */
+    SwarmState["Unhealthy"] = "Unhealthy";
+})(SwarmState || (SwarmState = {}));
+/**
+ * Configures the behavior of [CreateTerminal] if the
+ * specified terminal name already exists.
+ */
+export var TerminalRecreateMode;
+(function (TerminalRecreateMode) {
+    /**
+     * Never kill the old terminal if it already exists.
+     * If the init command is different, returns error.
+     */
+    TerminalRecreateMode["Never"] = "Never";
+    /** Always kill the old terminal and create new one */
+    TerminalRecreateMode["Always"] = "Always";
+    /** Only kill and recreate if the command is different. */
+    TerminalRecreateMode["DifferentCommand"] = "DifferentCommand";
+})(TerminalRecreateMode || (TerminalRecreateMode = {}));
+/** Specify the container terminal mode (exec or attach) */
+export var ContainerTerminalMode;
+(function (ContainerTerminalMode) {
+    ContainerTerminalMode["Exec"] = "exec";
+    ContainerTerminalMode["Attach"] = "attach";
+})(ContainerTerminalMode || (ContainerTerminalMode = {}));
+export var DefaultRepoFolder;
+(function (DefaultRepoFolder) {
+    /** /${root_directory}/stacks */
+    DefaultRepoFolder["Stacks"] = "Stacks";
+    /** /${root_directory}/builds */
+    DefaultRepoFolder["Builds"] = "Builds";
+    /** /${root_directory}/repos */
+    DefaultRepoFolder["Repos"] = "Repos";
+    /**
+     * If the repo is only cloned
+     * in the core repo cache (resource sync),
+     * this isn't relevant.
+     */
+    DefaultRepoFolder["NotApplicable"] = "NotApplicable";
+})(DefaultRepoFolder || (DefaultRepoFolder = {}));
+export var SearchCombinator;
+(function (SearchCombinator) {
+    SearchCombinator["Or"] = "Or";
+    SearchCombinator["And"] = "And";
+})(SearchCombinator || (SearchCombinator = {}));
 /** Days of the week */
 export var DayOfWeek;
 (function (DayOfWeek) {

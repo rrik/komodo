@@ -137,7 +137,7 @@ pub enum PeripheryRequest {
   PruneSystem(PruneSystem),
 
   // Swarm
-  GetSwarmLists(PollSwarmStatus),
+  PollSwarmStatus(PollSwarmStatus),
   InspectSwarmNode(InspectSwarmNode),
   InspectSwarmService(InspectSwarmService),
   InspectSwarmTask(InspectSwarmTask),

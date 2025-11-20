@@ -1,18 +1,20 @@
 import { useRead } from "@lib/hooks";
 import { RequiredResourceComponents } from "@types";
 import { Boxes } from "lucide-react";
-import { SwarmConfig } from "./config";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
 import { SwarmTable } from "./table";
 import {
   swarm_state_intention,
   stroke_color_class_by_intention,
 } from "@lib/color";
-import { cn } from "@lib/utils";
+import { cn, updateLogToHtml } from "@lib/utils";
 import { Types } from "komodo_client";
 import { DashboardPieChart } from "@components/util";
 import { StatusBadge } from "@components/util";
 import { GroupActions } from "@components/group-actions";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
+import { Card } from "@ui/card";
+import { SwarmTabs } from "./tabs";
 
 export const useSwarm = (id?: string) =>
   useRead("ListSwarms", {}, { refetchInterval: 10_000 }).data?.find(
@@ -73,13 +75,36 @@ export const SwarmComponents: RequiredResourceComponents = {
 
   Info: {},
 
-  Status: {},
+  Status: {
+    Err: ({ id }) => {
+      const err = useSwarm(id)?.info.err;
+      if (!err) return null;
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Card className="px-3 py-2 bg-destructive/75 hover:bg-destructive transition-colors cursor-pointer">
+              <div className="text-sm text-nowrap overflow-hidden overflow-ellipsis">
+                Error
+              </div>
+            </Card>
+          </TooltipTrigger>
+          <TooltipContent className="w-fit max-w-[90vw] md:max-w-[60vw]">
+            <pre
+              dangerouslySetInnerHTML={{
+                __html: updateLogToHtml(err),
+              }}
+            />
+          </TooltipContent>
+        </Tooltip>
+      );
+    },
+  },
 
   Actions: {},
 
   Page: {},
 
-  Config: SwarmConfig,
+  Config: SwarmTabs,
 
   DangerZone: ({ id }) => <DeleteResource type="Swarm" id={id} />,
 

@@ -9,8 +9,10 @@ use komodo_client::{
 use resolver_api::Resolve;
 
 use crate::{
-  helpers::query::get_all_tags, permission::get_check_permissions,
-  resource, state::{action_states, swarm_status_cache},
+  helpers::query::get_all_tags,
+  permission::get_check_permissions,
+  resource,
+  state::{action_states, swarm_status_cache},
 };
 
 use super::ReadArgs;
@@ -136,5 +138,111 @@ impl Resolve<ReadArgs> for GetSwarmsSummary {
     }
 
     Ok(res)
+  }
+}
+
+impl Resolve<ReadArgs> for InspectSwarm {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    let inspect = cache
+      .inspect
+      .as_ref()
+      .cloned()
+      .context("SwarmInspectInfo not available")?;
+    Ok(inspect)
+  }
+}
+
+impl Resolve<ReadArgs> for ListSwarmNodes {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<ListSwarmNodesResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    if let Some(lists) = &cache.lists {
+      Ok(lists.nodes.clone())
+    } else {
+      Ok(Vec::new())
+    }
+  }
+}
+
+impl Resolve<ReadArgs> for ListSwarmServices {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<ListSwarmServicesResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    if let Some(lists) = &cache.lists {
+      Ok(lists.services.clone())
+    } else {
+      Ok(Vec::new())
+    }
+  }
+}
+
+impl Resolve<ReadArgs> for ListSwarmTasks {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<ListSwarmTasksResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    if let Some(lists) = &cache.lists {
+      Ok(lists.tasks.clone())
+    } else {
+      Ok(Vec::new())
+    }
+  }
+}
+
+impl Resolve<ReadArgs> for ListSwarmSecrets {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<ListSwarmSecretsResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    if let Some(lists) = &cache.lists {
+      Ok(lists.secrets.clone())
+    } else {
+      Ok(Vec::new())
+    }
   }
 }

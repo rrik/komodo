@@ -22,6 +22,9 @@ pub struct SwarmListItemInfo {
   pub server_ids: Vec<String>,
   /// The Swarm state
   pub state: SwarmState,
+  /// If there is an error reaching
+  /// Swarm, message will be given here.
+  pub err: Option<String>,
 }
 
 #[typeshare]

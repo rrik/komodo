@@ -7,6 +7,7 @@ use anyhow::anyhow;
 use async_timing_util::wait_until_timelength;
 use cache::CloneCache;
 use database::mungos::find::find_collect;
+use formatting::format_serror;
 use futures_util::future::join_all;
 use komodo_client::entities::{
   docker::node::NodeState,
@@ -100,9 +101,9 @@ pub async fn update_cache_for_swarm(swarm: &Swarm, force: bool) {
           state: SwarmState::Unknown,
           inspect: None,
           lists: None,
-          err: Some(
-            anyhow!("No Servers configured as manager nodes").into(),
-          ),
+          err: Some(format_serror(
+            &anyhow!("No Servers configured as manager nodes").into(),
+          )),
         }
         .into(),
       )
@@ -121,7 +122,7 @@ pub async fn update_cache_for_swarm(swarm: &Swarm, force: bool) {
               state: SwarmState::Unknown,
               inspect: None,
               lists: None,
-              err: Some(e.into()),
+              err: Some(format_serror(&e.into())),
             }
             .into(),
           )

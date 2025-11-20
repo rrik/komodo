@@ -82,7 +82,7 @@ pub struct CachedSwarmStatus {
   pub inspect: Option<SwarmInspectInfo>,
   pub lists: Option<SwarmLists>,
   /// Store the error in communicating with Swarm
-  pub err: Option<serror::Serror>,
+  pub err: Option<String>,
 }
 
 pub type SwarmStatusCache =

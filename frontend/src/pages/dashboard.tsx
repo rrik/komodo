@@ -147,6 +147,7 @@ const RecentsDashboard = () => {
           </p>
         </div>
       )}
+      <ResourceRow type="Swarm" />
       <ResourceRow type="Server" />
       <ResourceRow type="Stack" />
       <ResourceRow type="Deployment" />

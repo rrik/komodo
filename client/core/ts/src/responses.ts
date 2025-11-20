@@ -28,6 +28,11 @@ export type ReadResponses = {
   GetSwarmActionState: Types.GetSwarmActionStateResponse;
   ListSwarms: Types.ListSwarmsResponse;
   ListFullSwarms: Types.ListFullSwarmsResponse;
+  InspectSwarm: Types.InspectSwarmResponse;
+  ListSwarmNodes: Types.ListSwarmNodesResponse;
+  ListSwarmServices: Types.ListSwarmServicesResponse;
+  ListSwarmTasks: Types.ListSwarmTasksResponse;
+  ListSwarmSecrets: Types.ListSwarmSecretsResponse;
 
   // ==== SERVER ====
   GetServersSummary: Types.GetServersSummaryResponse;
