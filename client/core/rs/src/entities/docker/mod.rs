@@ -5,15 +5,17 @@ use typeshare::typeshare;
 
 use crate::entities::{
   docker::{
-    container::ContainerListItem, image::ImageListItem,
-    network::NetworkListItem, node::SwarmNode, secret::SwarmSecret,
-    service::SwarmService, task::SwarmTask, volume::VolumeListItem,
+    config::SwarmConfigListItem, container::ContainerListItem,
+    image::ImageListItem, network::NetworkListItem, node::SwarmNode,
+    secret::SwarmSecret, service::SwarmService, task::SwarmTask,
+    volume::VolumeListItem,
   },
   stack::ComposeProject,
 };
 
 use super::{I64, U64};
 
+pub mod config;
 pub mod container;
 pub mod image;
 pub mod network;
@@ -32,6 +34,7 @@ pub struct SwarmLists {
   pub services: Vec<SwarmService>,
   pub tasks: Vec<SwarmTask>,
   pub secrets: Vec<SwarmSecret>,
+  pub configs: Vec<SwarmConfigListItem>,
 }
 
 /// Standard docker lists available from a Server.

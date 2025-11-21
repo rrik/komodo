@@ -5,8 +5,12 @@ use typeshare::typeshare;
 
 use crate::entities::{
   docker::{
-    node::SwarmNode, secret::SwarmSecret, service::SwarmService,
-    swarm::SwarmInspectInfo, task::SwarmTask,
+    config::{SwarmConfig, SwarmConfigListItem},
+    node::SwarmNode,
+    secret::SwarmSecret,
+    service::SwarmService,
+    swarm::SwarmInspectInfo,
+    task::SwarmTask,
   },
   swarm::{Swarm, SwarmActionState, SwarmListItem, SwarmQuery},
 };
@@ -215,3 +219,45 @@ pub struct ListSwarmSecrets {
 
 #[typeshare]
 pub type ListSwarmSecretsResponse = Vec<SwarmSecret>;
+
+//
+
+/// List configs on the target Swarm.
+/// Response: [ListSwarmConfigsResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListSwarmConfigsResponse)]
+#[error(serror::Error)]
+pub struct ListSwarmConfigs {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type ListSwarmConfigsResponse = Vec<SwarmConfigListItem>;
+
+//
+
+/// Inspect a config on the target Swarm.
+/// Response: [InspectSwarmConfigResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmConfigResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarmConfig {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Swarm config ID or Name
+  pub config: String,
+}
+
+#[typeshare]
+pub type InspectSwarmConfigResponse = SwarmConfig;

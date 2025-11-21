@@ -3602,6 +3602,7 @@ export interface Volume {
 }
 export type InspectDockerVolumeResponse = Volume;
 export type InspectStackContainerResponse = Container;
+export type InspectSwarmConfigResponse = SwarmConfig;
 /** Orchestration configuration. */
 export interface SwarmSpecOrchestration {
     /**
@@ -4228,6 +4229,23 @@ export interface StackListItemInfo {
 }
 export type StackListItem = ResourceListItem<StackListItemInfo>;
 export type ListStacksResponse = StackListItem[];
+/**
+ * Swarm config list item.
+ * Returned by `docker swarm config ls --format json`
+ */
+export interface SwarmConfigListItem {
+    /** User-defined name of the config. */
+    Name?: string;
+    ID?: string;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+    /**
+     * User-defined key/value metadata, formatted as a string:
+     * `"lab1=val1,lab2=val2"`.
+     */
+    Labels?: string;
+}
+export type ListSwarmConfigsResponse = SwarmConfigListItem[];
 export declare enum NodeSpecRoleEnum {
     EMPTY = "",
     WORKER = "worker",
@@ -4330,11 +4348,19 @@ export interface SecretSpec {
     Name?: string;
     /** User-defined key/value metadata. */
     Labels?: Record<string, string>;
-    /** Data is the data to store as a secret, formatted as a Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string. It must be empty if the Driver field is set, in which case the data is loaded from an external secret store. The maximum allowed size is 500KB, as defined in [MaxSecretSize](https://pkg.go.dev/github.com/moby/swarmkit/v2@v2.0.0-20250103191802-8c1959736554/api/validation#MaxSecretSize).  This field is only used to _create_ a secret, and is not returned by other endpoints. */
+    /**
+     * Data is the data to store as a secret, formatted as a Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string.
+     * It must be empty if the Driver field is set, in which case the data is loaded from an external secret store.
+     * The maximum allowed size is 500KB, as defined in [MaxSecretSize](https://pkg.go.dev/github.com/moby/swarmkit/v2@v2.0.0-20250103191802-8c1959736554/api/validation#MaxSecretSize).
+     * This field is only used to _create_ a secret, and is not returned by other endpoints.
+     */
     Data?: string;
     /** Name of the secrets driver used to fetch the secret's value from an external secret store. */
     Driver?: Driver;
-    /** Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template. If no driver is set, no templating is used. */
+    /**
+     * Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template.
+     * If no driver is set, no templating is used.
+     */
     Templating?: Driver;
 }
 /** Swarm secret details. */
@@ -5377,6 +5403,20 @@ export interface CloseAlert {
 export interface CommitSync {
     /** Id or name */
     sync: string;
+}
+export interface ConfigSpec {
+    /** User-defined name of the config. */
+    Name?: string;
+    /** User-defined key/value metadata. */
+    Labels?: Record<string, string>;
+    /**
+     * Data is the data to store as a config, formatted as a Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string.
+     * It must be empty if the Driver field is set, in which case the data is loaded from an external secret store.
+     * The maximum allowed size is 500KB, as defined in [MaxSecretSize](https://pkg.go.dev/github.com/moby/swarmkit/v2@v2.0.0-20250103191802-8c1959736554/api/validation#MaxSecretSize).
+     */
+    Data?: string;
+    /** Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template. If no driver is set, no templating is used. */
+    Templating?: Driver;
 }
 /**
  * Configures the behavior of [CreateTerminal] if the
@@ -7199,6 +7239,16 @@ export interface InspectSwarm {
     /** Id or name */
     swarm: string;
 }
+/**
+ * Inspect a config on the target Swarm.
+ * Response: [InspectSwarmConfigResponse].
+ */
+export interface InspectSwarmConfig {
+    /** Id or name */
+    swarm: string;
+    /** Swarm config ID or Name */
+    config: string;
+}
 export interface LatestCommit {
     hash: string;
     message: string;
@@ -7568,6 +7618,14 @@ export interface ListStackServices {
 export interface ListStacks {
     /** optional structured query to filter stacks. */
     query?: StackQuery;
+}
+/**
+ * List configs on the target Swarm.
+ * Response: [ListSwarmConfigsResponse].
+ */
+export interface ListSwarmConfigs {
+    /** Id or name */
+    swarm: string;
 }
 /**
  * List nodes part of the target Swarm.
@@ -8565,6 +8623,14 @@ export interface StopStack {
      */
     services?: string[];
 }
+/** Swarm config details. */
+export interface SwarmConfig {
+    ID?: string;
+    Version?: ObjectVersion;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+    Spec?: ConfigSpec;
+}
 /** JSON structure to send new terminal window dimensions */
 export interface TerminalResizeMessage {
     rows: number;
@@ -9401,6 +9467,12 @@ export type ReadRequest = {
 } | {
     type: "ListSwarmSecrets";
     params: ListSwarmSecrets;
+} | {
+    type: "ListSwarmConfigs";
+    params: ListSwarmConfigs;
+} | {
+    type: "InspectSwarmConfig";
+    params: InspectSwarmConfig;
 } | {
     type: "GetServersSummary";
     params: GetServersSummary;

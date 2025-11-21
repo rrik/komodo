@@ -9,7 +9,7 @@ use komodo_client::{
 use resolver_api::Resolve;
 
 use crate::{
-  helpers::query::get_all_tags,
+  helpers::{query::get_all_tags, swarm::swarm_request},
   permission::get_check_permissions,
   resource,
   state::{action_states, swarm_status_cache},
@@ -244,5 +244,48 @@ impl Resolve<ReadArgs> for ListSwarmSecrets {
     } else {
       Ok(Vec::new())
     }
+  }
+}
+
+impl Resolve<ReadArgs> for ListSwarmConfigs {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<ListSwarmConfigsResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    if let Some(lists) = &cache.lists {
+      Ok(lists.configs.clone())
+    } else {
+      Ok(Vec::new())
+    }
+  }
+}
+
+impl Resolve<ReadArgs> for InspectSwarmConfig {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmConfigResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::InspectSwarmConfig {
+        id: self.config,
+      },
+    )
+    .await
+    .map_err(Into::into)
   }
 }

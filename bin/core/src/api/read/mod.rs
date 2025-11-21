@@ -87,6 +87,8 @@ enum ReadRequest {
   ListSwarmServices(ListSwarmServices),
   ListSwarmTasks(ListSwarmTasks),
   ListSwarmSecrets(ListSwarmSecrets),
+  ListSwarmConfigs(ListSwarmConfigs),
+  InspectSwarmConfig(InspectSwarmConfig),
 
   // ==== SERVER ====
   GetServersSummary(GetServersSummary),

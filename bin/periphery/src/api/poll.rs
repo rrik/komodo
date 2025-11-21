@@ -6,9 +6,8 @@ use periphery_client::api::poll::{PollStatus, PollStatusResponse};
 use resolver_api::Resolve;
 
 use crate::{
-  api::compose::list_compose_projects,
   config::periphery_config,
-  docker::DockerClient,
+  docker::{DockerClient, compose::list_compose_projects},
   state::{
     docker_client, host_public_ip, periphery_keys, stats_client,
   },

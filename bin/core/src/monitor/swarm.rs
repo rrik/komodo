@@ -12,7 +12,6 @@ use futures_util::future::join_all;
 use komodo_client::entities::{
   docker::node::NodeState,
   komodo_timestamp,
-  server::Server,
   swarm::{Swarm, SwarmState},
 };
 use periphery_client::api::swarm::{
@@ -21,8 +20,7 @@ use periphery_client::api::swarm::{
 use tokio::sync::Mutex;
 
 use crate::{
-  helpers::periphery_client,
-  resource,
+  helpers::swarm::swarm_request_custom_timeout,
   state::{CachedSwarmStatus, db_client, swarm_status_cache},
 };
 
@@ -112,7 +110,13 @@ pub async fn update_cache_for_swarm(swarm: &Swarm, force: bool) {
   }
 
   let PollSwarmStatusResponse { inspect, lists } =
-    match poll_swarm_inspect_info(&swarm.config.server_ids).await {
+    match swarm_request_custom_timeout(
+      &swarm.config.server_ids,
+      PollSwarmStatus {},
+      Duration::from_secs(1),
+    )
+    .await
+    {
       Ok(info) => info,
       Err(e) => {
         swarm_status_cache()
@@ -156,32 +160,4 @@ pub async fn update_cache_for_swarm(swarm: &Swarm, force: bool) {
       .into(),
     )
     .await;
-}
-
-async fn poll_swarm_inspect_info(
-  servers: &[String],
-) -> anyhow::Result<PollSwarmStatusResponse> {
-  let mut err = Option::<anyhow::Error>::None;
-  for server in servers {
-    match poll_swarm_inspect_info_from_server(server).await {
-      Ok(res) => return Ok(res),
-      Err(e) => err = Some(e),
-    }
-  }
-  Err(err.unwrap_or_else(|| {
-    anyhow!("Failed to poll swarm inspect info with unknown error")
-  }))
-}
-
-async fn poll_swarm_inspect_info_from_server(
-  server: &str,
-) -> anyhow::Result<PollSwarmStatusResponse> {
-  let server = resource::get::<Server>(server).await?;
-  let periphery = periphery_client(&server).await?;
-  periphery
-    .request_custom_timeout(
-      PollSwarmStatus {},
-      Duration::from_secs(1),
-    )
-    .await
 }

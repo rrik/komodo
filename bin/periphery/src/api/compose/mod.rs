@@ -12,9 +12,8 @@ use komodo_client::{
   entities::{
     FileContents, RepoExecutionResponse, all_logs_success,
     stack::{
-      ComposeFile, ComposeProject, ComposeService,
-      ComposeServiceDeploy, StackRemoteFileContents,
-      StackServiceNames,
+      ComposeFile, ComposeService, ComposeServiceDeploy,
+      StackRemoteFileContents, StackServiceNames,
     },
     to_path_compatible_name,
     update::Log,
@@ -23,12 +22,12 @@ use komodo_client::{
 };
 use periphery_client::api::compose::*;
 use resolver_api::Resolve;
-use serde::{Deserialize, Serialize};
 use shell_escape::unix::escape;
 use tracing::Instrument;
 
 use crate::{
   config::periphery_config,
+  docker::compose::docker_compose,
   helpers::{format_extra_args, format_log_grep},
 };
 
@@ -36,67 +35,6 @@ mod helpers;
 mod write;
 
 use helpers::*;
-
-fn docker_compose() -> &'static str {
-  if periphery_config().legacy_compose_cli {
-    "docker-compose"
-  } else {
-    "docker compose"
-  }
-}
-
-pub async fn list_compose_projects()
--> anyhow::Result<Vec<ComposeProject>> {
-  let docker_compose = docker_compose();
-  let res = run_komodo_standard_command(
-    "List Projects",
-    None,
-    format!("{docker_compose} ls --all --format json"),
-  )
-  .await;
-
-  if !res.success {
-    return Err(anyhow!("{}", res.combined()).context(format!(
-      "failed to list compose projects using {docker_compose} ls"
-    )));
-  }
-
-  let res =
-    serde_json::from_str::<Vec<DockerComposeLsItem>>(&res.stdout)
-      .with_context(|| res.stdout.clone())
-      .with_context(|| {
-        format!(
-          "failed to parse '{docker_compose} ls' response to json"
-        )
-      })?
-      .into_iter()
-      .filter(|item| !item.name.is_empty())
-      .map(|item| ComposeProject {
-        name: item.name,
-        status: item.status,
-        compose_files: item
-          .config_files
-          .split(',')
-          .map(str::to_string)
-          .collect(),
-      })
-      .collect();
-
-  Ok(res)
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DockerComposeLsItem {
-  #[serde(default, alias = "Name")]
-  pub name: String,
-  #[serde(alias = "Status")]
-  pub status: Option<String>,
-  /// Comma seperated list of paths
-  #[serde(default, alias = "ConfigFiles")]
-  pub config_files: String,
-}
-
-//
 
 impl Resolve<super::Args> for GetComposeLog {
   async fn resolve(self, _: &super::Args) -> anyhow::Result<Log> {

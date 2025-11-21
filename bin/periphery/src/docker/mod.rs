@@ -7,6 +7,8 @@ use komodo_client::entities::{
   update::Log,
 };
 
+pub mod compose;
+pub mod config;
 pub mod stats;
 
 mod container;

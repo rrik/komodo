@@ -5,12 +5,38 @@ use typeshare::typeshare;
 
 use super::*;
 
-/// Swarm secret details.
+/// Swarm config list item.
+/// Returned by `docker swarm config ls --format json`
 #[typeshare]
 #[derive(
   Debug, Clone, Default, PartialEq, Serialize, Deserialize,
 )]
-pub struct SwarmSecret {
+pub struct SwarmConfigListItem {
+  /// User-defined name of the config.
+  #[serde(rename = "Name")]
+  pub name: Option<String>,
+
+  #[serde(rename = "ID")]
+  pub id: Option<String>,
+
+  #[serde(rename = "CreatedAt")]
+  pub created_at: Option<String>,
+
+  #[serde(rename = "UpdatedAt")]
+  pub updated_at: Option<String>,
+
+  /// User-defined key/value metadata, formatted as a string:
+  /// `"lab1=val1,lab2=val2"`.
+  #[serde(rename = "Labels")]
+  pub labels: Option<String>,
+}
+
+/// Swarm config details.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct SwarmConfig {
   #[serde(rename = "ID")]
   pub id: Option<String>,
 
@@ -24,15 +50,15 @@ pub struct SwarmSecret {
   pub updated_at: Option<String>,
 
   #[serde(rename = "Spec")]
-  pub spec: Option<SecretSpec>,
+  pub spec: Option<ConfigSpec>,
 }
 
 #[typeshare]
 #[derive(
   Debug, Clone, Default, PartialEq, Serialize, Deserialize,
 )]
-pub struct SecretSpec {
-  /// User-defined name of the secret.
+pub struct ConfigSpec {
+  /// User-defined name of the config.
   #[serde(rename = "Name")]
   pub name: Option<String>,
 
@@ -40,19 +66,13 @@ pub struct SecretSpec {
   #[serde(rename = "Labels")]
   pub labels: Option<HashMap<String, String>>,
 
-  /// Data is the data to store as a secret, formatted as a Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string.
+  /// Data is the data to store as a config, formatted as a Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5)) string.
   /// It must be empty if the Driver field is set, in which case the data is loaded from an external secret store.
   /// The maximum allowed size is 500KB, as defined in [MaxSecretSize](https://pkg.go.dev/github.com/moby/swarmkit/v2@v2.0.0-20250103191802-8c1959736554/api/validation#MaxSecretSize).
-  /// This field is only used to _create_ a secret, and is not returned by other endpoints.
   #[serde(rename = "Data")]
   pub data: Option<String>,
 
-  /// Name of the secrets driver used to fetch the secret's value from an external secret store.
-  #[serde(rename = "Driver")]
-  pub driver: Option<Driver>,
-
-  /// Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template.
-  /// If no driver is set, no templating is used.
+  /// Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template. If no driver is set, no templating is used.
   #[serde(rename = "Templating")]
   pub templating: Option<Driver>,
 }
