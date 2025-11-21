@@ -7,6 +7,35 @@ use typeshare::typeshare;
 
 use super::*;
 
+/// Swarm node list item.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct SwarmNodeListItem {
+  #[serde(rename = "ID")]
+  pub id: Option<String>,
+
+  /// Name for the node.
+  #[serde(rename = "Name")]
+  pub name: Option<String>,
+
+  #[serde(rename = "Hostname")]
+  pub hostname: Option<String>,
+
+  /// Role of the node.
+  #[serde(rename = "Role")]
+  pub role: Option<NodeSpecRoleEnum>,
+
+  /// Availability of the node.
+  #[serde(rename = "Availability")]
+  pub availability: Option<NodeSpecAvailabilityEnum>,
+
+  /// State of the node
+  #[serde(rename = "State")]
+  pub state: Option<NodeState>,
+}
+
 /// Swarm node details.
 #[typeshare]
 #[derive(

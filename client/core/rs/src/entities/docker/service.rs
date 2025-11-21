@@ -3,12 +3,44 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::entities::{I64, U64};
+use crate::entities::{
+  I64, U64, docker::task::TaskSpecRestartPolicyConditionEnum,
+};
 
 use super::{
   EndpointPortConfig, NetworkAttachmentConfig, ObjectVersion,
   task::TaskSpec,
 };
+
+/// Swarm service list item.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct SwarmServiceListItem {
+  #[serde(rename = "ID")]
+  pub id: Option<String>,
+
+  /// Name of the service.
+  #[serde(rename = "Name")]
+  pub name: Option<String>,
+
+  /// The image associated with service
+  #[serde(rename = "Image")]
+  pub image: Option<String>,
+
+  /// Runtime is the type of runtime specified for the task executor.
+  #[serde(rename = "Runtime")]
+  pub runtime: Option<String>,
+
+  /// Condition for restart.
+  #[serde(rename = "Restart")]
+  pub restart: Option<TaskSpecRestartPolicyConditionEnum>,
+
+  /// Number of replicas
+  #[serde(rename = "Replicas")]
+  pub replicas: Option<I64>,
+}
 
 /// Swarm service details.
 #[typeshare]
@@ -89,10 +121,8 @@ pub struct ServiceSpecMode {
 
   // #[serde(rename = "Global")]
   // pub global: Option<HashMap<(), ()>>,
-
   #[serde(rename = "ReplicatedJob")]
   pub replicated_job: Option<ServiceSpecModeReplicatedJob>,
-
   // /// The mode used for services which run a task to the completed state on each valid node.
   // #[serde(rename = "GlobalJob")]
   // pub global_job: Option<HashMap<(), ()>>,

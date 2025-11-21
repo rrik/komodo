@@ -6,24 +6,20 @@ use komodo_client::entities::docker::{
   NetworkAttachmentConfig, service::*,
 };
 
-use crate::docker::convert_task_spec;
-
-use super::{
-  DockerClient, convert_endpoint_spec_ports, convert_object_version,
-};
+use super::*;
 
 impl DockerClient {
   /// List swarm services
   pub async fn list_swarm_services(
     &self,
-  ) -> anyhow::Result<Vec<SwarmService>> {
+  ) -> anyhow::Result<Vec<SwarmServiceListItem>> {
     let services = self
       .docker
       .list_services(Option::<ListServicesOptions>::None)
       .await
       .context("Failed to query for swarm service list")?
       .into_iter()
-      .map(convert_service)
+      .map(convert_service_list_item)
       .collect();
     Ok(services)
   }
@@ -47,6 +43,44 @@ impl DockerClient {
           "Failed to query for swarm service with name {service_name}"
         )
       })
+  }
+}
+
+fn convert_service_list_item(
+  service: bollard::models::Service,
+) -> SwarmServiceListItem {
+  let (name, (image, restart, runtime), replicas) = service
+    .spec
+    .map(|spec| {
+      (
+        spec.name,
+        spec
+          .task_template
+          .map(|template| {
+            (
+              template.container_spec.and_then(|spec| spec.image),
+              template.restart_policy.and_then(|policy| {
+                policy
+                  .condition
+                  .map(convert_task_spec_restart_policy_condition)
+              }),
+              template.runtime,
+            )
+          })
+          .unwrap_or_default(),
+        spec.mode.and_then(|mode| {
+          mode.replicated.and_then(|replicated| replicated.replicas)
+        }),
+      )
+    })
+    .unwrap_or_default();
+  SwarmServiceListItem {
+    id: service.id,
+    name,
+    replicas,
+    image,
+    restart,
+    runtime,
   }
 }
 
@@ -137,15 +171,7 @@ fn convert_service(
     }),
     update_status: service.update_status.map(|status| {
       ServiceUpdateStatus {
-        state: status.state.map(|state| match state {
-          bollard::secret::ServiceUpdateStatusStateEnum::EMPTY => ServiceUpdateStatusStateEnum::EMPTY,
-          bollard::secret::ServiceUpdateStatusStateEnum::UPDATING => ServiceUpdateStatusStateEnum::UPDATING,
-          bollard::secret::ServiceUpdateStatusStateEnum::PAUSED => ServiceUpdateStatusStateEnum::PAUSED,
-          bollard::secret::ServiceUpdateStatusStateEnum::COMPLETED => ServiceUpdateStatusStateEnum::COMPLETED,
-          bollard::secret::ServiceUpdateStatusStateEnum::ROLLBACK_STARTED => ServiceUpdateStatusStateEnum::ROLLBACK_STARTED,
-          bollard::secret::ServiceUpdateStatusStateEnum::ROLLBACK_PAUSED => ServiceUpdateStatusStateEnum::ROLLBACK_PAUSED,
-          bollard::secret::ServiceUpdateStatusStateEnum::ROLLBACK_COMPLETED => ServiceUpdateStatusStateEnum::ROLLBACK_COMPLETED,
-        }),
+        state: status.state.map(convert_state),
         started_at: status.started_at,
         completed_at: status.completed_at,
         message: status.message,
@@ -181,5 +207,19 @@ fn convert_endpoint_spec(
       }
     }),
     ports: spec.ports.map(convert_endpoint_spec_ports),
+  }
+}
+
+fn convert_state(
+  state: bollard::secret::ServiceUpdateStatusStateEnum,
+) -> ServiceUpdateStatusStateEnum {
+  match state {
+    bollard::secret::ServiceUpdateStatusStateEnum::EMPTY => ServiceUpdateStatusStateEnum::EMPTY,
+    bollard::secret::ServiceUpdateStatusStateEnum::UPDATING => ServiceUpdateStatusStateEnum::UPDATING,
+    bollard::secret::ServiceUpdateStatusStateEnum::PAUSED => ServiceUpdateStatusStateEnum::PAUSED,
+    bollard::secret::ServiceUpdateStatusStateEnum::COMPLETED => ServiceUpdateStatusStateEnum::COMPLETED,
+    bollard::secret::ServiceUpdateStatusStateEnum::ROLLBACK_STARTED => ServiceUpdateStatusStateEnum::ROLLBACK_STARTED,
+    bollard::secret::ServiceUpdateStatusStateEnum::ROLLBACK_PAUSED => ServiceUpdateStatusStateEnum::ROLLBACK_PAUSED,
+    bollard::secret::ServiceUpdateStatusStateEnum::ROLLBACK_COMPLETED => ServiceUpdateStatusStateEnum::ROLLBACK_COMPLETED,
   }
 }

@@ -138,12 +138,7 @@ pub async fn update_cache_for_swarm(swarm: &Swarm, force: bool) {
   let mut state = SwarmState::Healthy;
 
   for node in &lists.nodes {
-    let node_state = node
-      .status
-      .as_ref()
-      .and_then(|status| status.state)
-      .unwrap_or_default();
-    if !matches!(node_state, NodeState::READY) {
+    if !matches!(node.state, Some(NodeState::READY)) {
       state = SwarmState::Unhealthy;
     }
   }

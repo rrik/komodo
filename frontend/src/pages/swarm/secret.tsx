@@ -14,8 +14,10 @@ export default function SwarmSecretPage() {
   };
   const _secret = decodeURIComponent(__secret);
   const swarm = useSwarm(id);
-  const { data, isPending } = useRead("ListSwarmSecrets", { swarm: id });
-  const secret = data?.find((secret) => secret.ID === _secret);
+  const { data: secret, isPending } = useRead("InspectSwarmSecret", {
+    swarm: id,
+    secret: _secret,
+  });
   useSetTitle(
     `${swarm?.name} | Secret | ${secret?.Spec?.Name ?? secret?.ID ?? "Unknown"}`
   );

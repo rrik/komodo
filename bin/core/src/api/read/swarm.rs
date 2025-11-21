@@ -184,6 +184,28 @@ impl Resolve<ReadArgs> for ListSwarmNodes {
   }
 }
 
+impl Resolve<ReadArgs> for InspectSwarmNode {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmNodeResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::InspectSwarmNode {
+        name: self.node,
+      },
+    )
+    .await
+    .map_err(Into::into)
+  }
+}
+
 impl Resolve<ReadArgs> for ListSwarmServices {
   async fn resolve(
     self,
@@ -202,6 +224,28 @@ impl Resolve<ReadArgs> for ListSwarmServices {
     } else {
       Ok(Vec::new())
     }
+  }
+}
+
+impl Resolve<ReadArgs> for InspectSwarmService {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmServiceResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::InspectSwarmService {
+        name: self.service,
+      },
+    )
+    .await
+    .map_err(Into::into)
   }
 }
 
@@ -226,6 +270,28 @@ impl Resolve<ReadArgs> for ListSwarmTasks {
   }
 }
 
+impl Resolve<ReadArgs> for InspectSwarmTask {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmTaskResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::InspectSwarmTask {
+        id: self.task,
+      },
+    )
+    .await
+    .map_err(Into::into)
+  }
+}
+
 impl Resolve<ReadArgs> for ListSwarmSecrets {
   async fn resolve(
     self,
@@ -244,6 +310,28 @@ impl Resolve<ReadArgs> for ListSwarmSecrets {
     } else {
       Ok(Vec::new())
     }
+  }
+}
+
+impl Resolve<ReadArgs> for InspectSwarmSecret {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmSecretResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::InspectSwarmSecret {
+        id: self.secret,
+      },
+    )
+    .await
+    .map_err(Into::into)
   }
 }
 

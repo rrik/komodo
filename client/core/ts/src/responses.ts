@@ -30,9 +30,13 @@ export type ReadResponses = {
   ListFullSwarms: Types.ListFullSwarmsResponse;
   InspectSwarm: Types.InspectSwarmResponse;
   ListSwarmNodes: Types.ListSwarmNodesResponse;
+  InspectSwarmNode: Types.InspectSwarmNodeResponse;
   ListSwarmServices: Types.ListSwarmServicesResponse;
+  InspectSwarmService: Types.InspectSwarmServiceResponse;
   ListSwarmTasks: Types.ListSwarmTasksResponse;
+  InspectSwarmTask: Types.InspectSwarmTaskResponse;
   ListSwarmSecrets: Types.ListSwarmSecretsResponse;
+  InspectSwarmSecret: Types.InspectSwarmSecretResponse;
   ListSwarmConfigs: Types.ListSwarmConfigsResponse;
   InspectSwarmConfig: Types.InspectSwarmConfigResponse;
 

@@ -18,7 +18,7 @@ use super::{
   Debug, Clone, Default, PartialEq, Serialize, Deserialize,
 )]
 pub struct ContainerListItem {
-  /// The Server which holds the container.
+  /// The Server which hosts the container.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub server_id: Option<String>,
   /// The first name in Names, not including the initial '/'

@@ -14,8 +14,10 @@ export default function SwarmServicePage() {
   };
   const _service = decodeURIComponent(__service);
   const swarm = useSwarm(id);
-  const { data, isPending } = useRead("ListSwarmServices", { swarm: id });
-  const service = data?.find((service) => service.ID === _service);
+  const { data: service, isPending } = useRead("InspectSwarmService", {
+    swarm: id,
+    service: _service,
+  });
   useSetTitle(
     `${swarm?.name} | Service | ${service?.Spec?.Name ?? service?.ID ?? "Unknown"}`
   );

@@ -6,8 +6,9 @@ use typeshare::typeshare;
 use crate::entities::{
   docker::{
     config::SwarmConfigListItem, container::ContainerListItem,
-    image::ImageListItem, network::NetworkListItem, node::SwarmNode,
-    secret::SwarmSecret, service::SwarmService, task::SwarmTask,
+    image::ImageListItem, network::NetworkListItem,
+    node::SwarmNodeListItem, secret::SwarmSecret,
+    service::SwarmServiceListItem, task::SwarmTask,
     volume::VolumeListItem,
   },
   stack::ComposeProject,
@@ -30,8 +31,8 @@ pub mod volume;
 /// Swarm lists available from a manager node.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwarmLists {
-  pub nodes: Vec<SwarmNode>,
-  pub services: Vec<SwarmService>,
+  pub nodes: Vec<SwarmNodeListItem>,
+  pub services: Vec<SwarmServiceListItem>,
   pub tasks: Vec<SwarmTask>,
   pub secrets: Vec<SwarmSecret>,
   pub configs: Vec<SwarmConfigListItem>,

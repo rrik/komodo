@@ -314,50 +314,70 @@ fn convert_task_spec(spec: bollard::models::TaskSpec) -> TaskSpec {
           .map(|privilege| PluginPrivilege {
             name: privilege.name,
             description: privilege.description,
-            value: privilege.value
-          }).collect()
+            value: privilege.value,
+          })
+          .collect()
       }),
     }),
-    container_spec: spec.container_spec.map(convert_task_spec_container_spec),
-    network_attachment_spec: spec.network_attachment_spec.map(|spec| TaskSpecNetworkAttachmentSpec {
-      container_id: spec.container_id,
-    }),
+    container_spec: spec
+      .container_spec
+      .map(convert_task_spec_container_spec),
+    network_attachment_spec: spec.network_attachment_spec.map(
+      |spec| TaskSpecNetworkAttachmentSpec {
+        container_id: spec.container_id,
+      },
+    ),
     resources: spec.resources.map(|resources| TaskSpecResources {
       limits: resources.limits.map(|limits| Limit {
         nano_cpus: limits.nano_cpus,
         memory_bytes: limits.memory_bytes,
         pids: limits.pids,
       }),
-      reservations: resources.reservations.map(convert_resource_object),
+      reservations: resources
+        .reservations
+        .map(convert_resource_object),
     }),
-    restart_policy: spec.restart_policy.map(|policy| TaskSpecRestartPolicy {
-      condition: policy.condition.map(|condition| match condition {
-        bollard::secret::TaskSpecRestartPolicyConditionEnum::EMPTY => TaskSpecRestartPolicyConditionEnum::EMPTY,
-        bollard::secret::TaskSpecRestartPolicyConditionEnum::NONE => TaskSpecRestartPolicyConditionEnum::NONE,
-        bollard::secret::TaskSpecRestartPolicyConditionEnum::ON_FAILURE => TaskSpecRestartPolicyConditionEnum::ON_FAILURE,
-        bollard::secret::TaskSpecRestartPolicyConditionEnum::ANY => TaskSpecRestartPolicyConditionEnum::ANY,
-      }),
-      delay: policy.delay,
-      max_attempts: policy.max_attempts,
-      window: policy.window,
+    restart_policy: spec.restart_policy.map(|policy| {
+      TaskSpecRestartPolicy {
+        condition: policy
+          .condition
+          .map(convert_task_spec_restart_policy_condition),
+        delay: policy.delay,
+        max_attempts: policy.max_attempts,
+        window: policy.window,
+      }
     }),
     placement: spec.placement.map(|placement| TaskSpecPlacement {
       constraints: placement.constraints,
-      preferences: placement.preferences.map(|preferences| preferences.into_iter().map(|preference| TaskSpecPlacementPreferences {
-        spread: preference.spread.map(|spread| TaskSpecPlacementSpread {
-          spread_descriptor: spread.spread_descriptor,
-        }),
-      }).collect()),
+      preferences: placement.preferences.map(|preferences| {
+        preferences
+          .into_iter()
+          .map(|preference| TaskSpecPlacementPreferences {
+            spread: preference.spread.map(|spread| {
+              TaskSpecPlacementSpread {
+                spread_descriptor: spread.spread_descriptor,
+              }
+            }),
+          })
+          .collect()
+      }),
       max_replicas: placement.max_replicas,
-      platforms: placement.platforms.map(|platforms| platforms.into_iter().map(convert_platform).collect()),
+      platforms: placement.platforms.map(|platforms| {
+        platforms.into_iter().map(convert_platform).collect()
+      }),
     }),
     force_update: spec.force_update,
     runtime: spec.runtime,
-    networks: spec.networks.map(|networks| networks.into_iter().map(|network| NetworkAttachmentConfig {
-      target: network.target,
-      aliases: network.aliases,
-      driver_opts: network.driver_opts,
-    }).collect()),
+    networks: spec.networks.map(|networks| {
+      networks
+        .into_iter()
+        .map(|network| NetworkAttachmentConfig {
+          target: network.target,
+          aliases: network.aliases,
+          driver_opts: network.driver_opts,
+        })
+        .collect()
+    }),
     log_driver: spec.log_driver.map(|driver| TaskSpecLogDriver {
       name: driver.name,
       options: driver.options,
@@ -464,6 +484,17 @@ fn convert_task_spec_container_spec(
     capability_add: spec.capability_add,
     capability_drop: spec.capability_drop,
     ulimits: spec.ulimits.map(|ulimits| ulimits.into_iter().map(convert_resources_ulimits).collect()),
+  }
+}
+
+fn convert_task_spec_restart_policy_condition(
+  condition: bollard::secret::TaskSpecRestartPolicyConditionEnum,
+) -> TaskSpecRestartPolicyConditionEnum {
+  match condition {
+    bollard::secret::TaskSpecRestartPolicyConditionEnum::EMPTY => TaskSpecRestartPolicyConditionEnum::EMPTY,
+    bollard::secret::TaskSpecRestartPolicyConditionEnum::NONE => TaskSpecRestartPolicyConditionEnum::NONE,
+    bollard::secret::TaskSpecRestartPolicyConditionEnum::ON_FAILURE => TaskSpecRestartPolicyConditionEnum::ON_FAILURE,
+    bollard::secret::TaskSpecRestartPolicyConditionEnum::ANY => TaskSpecRestartPolicyConditionEnum::ANY,
   }
 }
 

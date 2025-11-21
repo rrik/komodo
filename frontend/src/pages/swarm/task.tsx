@@ -14,8 +14,10 @@ export default function SwarmTaskPage() {
   };
   const _task = decodeURIComponent(__task);
   const swarm = useSwarm(id);
-  const { data, isPending } = useRead("ListSwarmTasks", { swarm: id });
-  const task = data?.find((task) => task.ID === _task);
+  const { data: task, isPending } = useRead("InspectSwarmTask", {
+    swarm: id,
+    task: _task,
+  });
   useSetTitle(`${swarm?.name} | Task | ${task?.ID ?? "Unknown"}`);
   const nav = useNavigate();
 

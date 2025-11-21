@@ -6,9 +6,9 @@ use typeshare::typeshare;
 use crate::entities::{
   docker::{
     config::{SwarmConfig, SwarmConfigListItem},
-    node::SwarmNode,
+    node::{SwarmNode, SwarmNodeListItem},
     secret::SwarmSecret,
-    service::SwarmService,
+    service::{SwarmService, SwarmServiceListItem},
     swarm::SwarmInspectInfo,
     task::SwarmTask,
   },
@@ -158,7 +158,29 @@ pub struct ListSwarmNodes {
 }
 
 #[typeshare]
-pub type ListSwarmNodesResponse = Vec<SwarmNode>;
+pub type ListSwarmNodesResponse = Vec<SwarmNodeListItem>;
+
+//
+
+/// Inspect a Swarm node.
+/// Response: [SwarmNode].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmNodeResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarmNode {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Node id
+  pub node: String,
+}
+
+#[typeshare]
+pub type InspectSwarmNodeResponse = SwarmNode;
 
 //
 
@@ -178,7 +200,29 @@ pub struct ListSwarmServices {
 }
 
 #[typeshare]
-pub type ListSwarmServicesResponse = Vec<SwarmService>;
+pub type ListSwarmServicesResponse = Vec<SwarmServiceListItem>;
+
+//
+
+/// Inspect a Swarm service.
+/// Response: [SwarmService].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmServiceResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarmService {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Service id
+  pub service: String,
+}
+
+#[typeshare]
+pub type InspectSwarmServiceResponse = SwarmService;
 
 //
 
@@ -202,6 +246,28 @@ pub type ListSwarmTasksResponse = Vec<SwarmTask>;
 
 //
 
+/// Inspect a Swarm task.
+/// Response: [SwarmTask].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmTaskResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarmTask {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Task id
+  pub task: String,
+}
+
+#[typeshare]
+pub type InspectSwarmTaskResponse = SwarmTask;
+
+//
+
 /// List secrets on the target Swarm.
 /// Response: [ListSwarmSecretsResponse].
 #[typeshare]
@@ -219,6 +285,28 @@ pub struct ListSwarmSecrets {
 
 #[typeshare]
 pub type ListSwarmSecretsResponse = Vec<SwarmSecret>;
+
+//
+
+/// Inspect a Swarm secret.
+/// Response: [SwarmSecret].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmSecretResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarmSecret {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Secret id
+  pub secret: String,
+}
+
+#[typeshare]
+pub type InspectSwarmSecretResponse = SwarmSecret;
 
 //
 

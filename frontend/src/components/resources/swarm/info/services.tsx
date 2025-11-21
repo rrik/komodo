@@ -24,7 +24,7 @@ export const SwarmServices = ({
   const filtered = filterBySplit(
     services,
     search,
-    (service) => service.Spec?.Name ?? service.ID ?? "Unknown"
+    (service) => service.Name ?? service.ID ?? "Unknown"
   );
 
   return (
@@ -50,7 +50,7 @@ export const SwarmServices = ({
         data={filtered}
         columns={[
           {
-            accessorKey: "Spec.Name",
+            accessorKey: "Name",
             header: ({ column }) => (
               <SortableHeader column={column} title="Name" />
             ),
@@ -60,7 +60,7 @@ export const SwarmServices = ({
                 className="flex gap-2 items-center hover:underline"
               >
                 <FolderCode className="w-4 h-4" />
-                {row.original.Spec?.Name ?? "Unknown"}
+                {row.original.Name ?? "Unknown"}
               </Link>
             ),
             size: 200,
@@ -71,14 +71,6 @@ export const SwarmServices = ({
               <SortableHeader column={column} title="Id" />
             ),
             cell: ({ row }) => row.original.ID ?? "Unknown",
-            size: 200,
-          },
-          {
-            accessorKey: "UpdateStatus.State",
-            header: ({ column }) => (
-              <SortableHeader column={column} title="State" />
-            ),
-            cell: ({ row }) => row.original.UpdateStatus?.State ?? "Unknown",
             size: 200,
           },
         ]}

@@ -84,9 +84,13 @@ enum ReadRequest {
   InspectSwarm(InspectSwarm),
   ListFullSwarms(ListFullSwarms),
   ListSwarmNodes(ListSwarmNodes),
+  InspectSwarmNode(InspectSwarmNode),
   ListSwarmServices(ListSwarmServices),
+  InspectSwarmService(InspectSwarmService),
   ListSwarmTasks(ListSwarmTasks),
+  InspectSwarmTask(InspectSwarmTask),
   ListSwarmSecrets(ListSwarmSecrets),
+  InspectSwarmSecret(InspectSwarmSecret),
   ListSwarmConfigs(ListSwarmConfigs),
   InspectSwarmConfig(InspectSwarmConfig),
 

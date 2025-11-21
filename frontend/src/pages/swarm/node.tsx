@@ -14,8 +14,10 @@ export default function SwarmNodePage() {
   };
   const _node = decodeURIComponent(__node);
   const swarm = useSwarm(id);
-  const { data, isPending } = useRead("ListSwarmNodes", { swarm: id });
-  const node = data?.find((node) => node.ID === _node);
+  const { data: node, isPending } = useRead("InspectSwarmNode", {
+    swarm: id,
+    node: _node,
+  });
   useSetTitle(
     `${swarm?.name} | Node | ${node?.Spec?.Name ?? node?.ID ?? "Unknown"}`
   );

@@ -24,7 +24,7 @@ export const SwarmNodes = ({
   const filtered = filterBySplit(
     nodes,
     search,
-    (node) => node.Spec?.Name ?? node.ID ?? "Unknown"
+    (node) => node.Name ?? node.Hostname ?? node.ID ?? "Unknown"
   );
 
   return (
@@ -50,7 +50,7 @@ export const SwarmNodes = ({
         data={filtered}
         columns={[
           {
-            accessorKey: "Description.Hostname",
+            accessorKey: "Hostname",
             header: ({ column }) => (
               <SortableHeader column={column} title="Hostname" />
             ),
@@ -60,7 +60,7 @@ export const SwarmNodes = ({
                 className="flex gap-2 items-center hover:underline"
               >
                 <Diamond className="w-4 h-4" />
-                {row.original.Description?.Hostname ?? "Unknown"}
+                {row.original.Hostname ?? "Unknown"}
               </Link>
             ),
             size: 200,
@@ -74,12 +74,27 @@ export const SwarmNodes = ({
             size: 200,
           },
           {
-            accessorKey: "Status.State",
+            accessorKey: "Role",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Role" />
+            ),
+            cell: ({ row }) => row.original.Role ?? "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "Availability",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Availability" />
+            ),
+            cell: ({ row }) => row.original.Availability ?? "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "State",
             header: ({ column }) => (
               <SortableHeader column={column} title="State" />
             ),
-            cell: ({ row }) =>
-              row.original.Status ? row.original.Status.State : "Unknown",
+            cell: ({ row }) => row.original.State ?? "Unknown",
           },
         ]}
       />

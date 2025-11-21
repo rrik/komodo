@@ -492,91 +492,6 @@ export var ClusterVolumePublishStatusStateEnum;
     ClusterVolumePublishStatusStateEnum["PendingNodeUnpublish"] = "pending-node-unpublish";
     ClusterVolumePublishStatusStateEnum["PendingControllerUnpublish"] = "pending-controller-unpublish";
 })(ClusterVolumePublishStatusStateEnum || (ClusterVolumePublishStatusStateEnum = {}));
-export var SwarmSpecCaConfigExternalCasProtocolEnum;
-(function (SwarmSpecCaConfigExternalCasProtocolEnum) {
-    SwarmSpecCaConfigExternalCasProtocolEnum["EMPTY"] = "";
-    SwarmSpecCaConfigExternalCasProtocolEnum["CFSSL"] = "cfssl";
-})(SwarmSpecCaConfigExternalCasProtocolEnum || (SwarmSpecCaConfigExternalCasProtocolEnum = {}));
-export var PortTypeEnum;
-(function (PortTypeEnum) {
-    PortTypeEnum["EMPTY"] = "";
-    PortTypeEnum["TCP"] = "tcp";
-    PortTypeEnum["UDP"] = "udp";
-    PortTypeEnum["SCTP"] = "sctp";
-})(PortTypeEnum || (PortTypeEnum = {}));
-export var ProcedureState;
-(function (ProcedureState) {
-    /** Currently running */
-    ProcedureState["Running"] = "Running";
-    /** Last run successful */
-    ProcedureState["Ok"] = "Ok";
-    /** Last run failed */
-    ProcedureState["Failed"] = "Failed";
-    /** Other case (never run) */
-    ProcedureState["Unknown"] = "Unknown";
-})(ProcedureState || (ProcedureState = {}));
-export var RepoState;
-(function (RepoState) {
-    /** Unknown case */
-    RepoState["Unknown"] = "Unknown";
-    /** Last clone / pull successful (or never cloned) */
-    RepoState["Ok"] = "Ok";
-    /** Last clone / pull failed */
-    RepoState["Failed"] = "Failed";
-    /** Currently cloning */
-    RepoState["Cloning"] = "Cloning";
-    /** Currently pulling */
-    RepoState["Pulling"] = "Pulling";
-    /** Currently building */
-    RepoState["Building"] = "Building";
-})(RepoState || (RepoState = {}));
-export var ResourceSyncState;
-(function (ResourceSyncState) {
-    /** Currently syncing */
-    ResourceSyncState["Syncing"] = "Syncing";
-    /** Updates pending */
-    ResourceSyncState["Pending"] = "Pending";
-    /** Last sync successful (or never synced). No Changes pending */
-    ResourceSyncState["Ok"] = "Ok";
-    /** Last sync failed */
-    ResourceSyncState["Failed"] = "Failed";
-    /** Other case */
-    ResourceSyncState["Unknown"] = "Unknown";
-})(ResourceSyncState || (ResourceSyncState = {}));
-export var ServerState;
-(function (ServerState) {
-    /** Server health check passing. */
-    ServerState["Ok"] = "Ok";
-    /** Server is unreachable. */
-    ServerState["NotOk"] = "NotOk";
-    /** Server is disabled. */
-    ServerState["Disabled"] = "Disabled";
-})(ServerState || (ServerState = {}));
-export var StackState;
-(function (StackState) {
-    /** The stack is currently re/deploying */
-    StackState["Deploying"] = "deploying";
-    /** All containers are running. */
-    StackState["Running"] = "running";
-    /** All containers are paused */
-    StackState["Paused"] = "paused";
-    /** All contianers are stopped */
-    StackState["Stopped"] = "stopped";
-    /** All containers are created */
-    StackState["Created"] = "created";
-    /** All containers are restarting */
-    StackState["Restarting"] = "restarting";
-    /** All containers are dead */
-    StackState["Dead"] = "dead";
-    /** All containers are removing */
-    StackState["Removing"] = "removing";
-    /** The containers are in a mix of states */
-    StackState["Unhealthy"] = "unhealthy";
-    /** The stack is not deployed */
-    StackState["Down"] = "down";
-    /** Server not reachable for status */
-    StackState["Unknown"] = "unknown";
-})(StackState || (StackState = {}));
 export var NodeSpecRoleEnum;
 (function (NodeSpecRoleEnum) {
     NodeSpecRoleEnum["EMPTY"] = "";
@@ -605,6 +520,11 @@ export var NodeReachability;
     NodeReachability["UNREACHABLE"] = "unreachable";
     NodeReachability["REACHABLE"] = "reachable";
 })(NodeReachability || (NodeReachability = {}));
+export var SwarmSpecCaConfigExternalCasProtocolEnum;
+(function (SwarmSpecCaConfigExternalCasProtocolEnum) {
+    SwarmSpecCaConfigExternalCasProtocolEnum["EMPTY"] = "";
+    SwarmSpecCaConfigExternalCasProtocolEnum["CFSSL"] = "cfssl";
+})(SwarmSpecCaConfigExternalCasProtocolEnum || (SwarmSpecCaConfigExternalCasProtocolEnum = {}));
 export var TaskSpecContainerSpecPrivilegesSeccompModeEnum;
 (function (TaskSpecContainerSpecPrivilegesSeccompModeEnum) {
     TaskSpecContainerSpecPrivilegesSeccompModeEnum["EMPTY"] = "";
@@ -704,6 +624,86 @@ export var TaskState;
     TaskState["REMOVE"] = "remove";
     TaskState["ORPHANED"] = "orphaned";
 })(TaskState || (TaskState = {}));
+export var PortTypeEnum;
+(function (PortTypeEnum) {
+    PortTypeEnum["EMPTY"] = "";
+    PortTypeEnum["TCP"] = "tcp";
+    PortTypeEnum["UDP"] = "udp";
+    PortTypeEnum["SCTP"] = "sctp";
+})(PortTypeEnum || (PortTypeEnum = {}));
+export var ProcedureState;
+(function (ProcedureState) {
+    /** Currently running */
+    ProcedureState["Running"] = "Running";
+    /** Last run successful */
+    ProcedureState["Ok"] = "Ok";
+    /** Last run failed */
+    ProcedureState["Failed"] = "Failed";
+    /** Other case (never run) */
+    ProcedureState["Unknown"] = "Unknown";
+})(ProcedureState || (ProcedureState = {}));
+export var RepoState;
+(function (RepoState) {
+    /** Unknown case */
+    RepoState["Unknown"] = "Unknown";
+    /** Last clone / pull successful (or never cloned) */
+    RepoState["Ok"] = "Ok";
+    /** Last clone / pull failed */
+    RepoState["Failed"] = "Failed";
+    /** Currently cloning */
+    RepoState["Cloning"] = "Cloning";
+    /** Currently pulling */
+    RepoState["Pulling"] = "Pulling";
+    /** Currently building */
+    RepoState["Building"] = "Building";
+})(RepoState || (RepoState = {}));
+export var ResourceSyncState;
+(function (ResourceSyncState) {
+    /** Currently syncing */
+    ResourceSyncState["Syncing"] = "Syncing";
+    /** Updates pending */
+    ResourceSyncState["Pending"] = "Pending";
+    /** Last sync successful (or never synced). No Changes pending */
+    ResourceSyncState["Ok"] = "Ok";
+    /** Last sync failed */
+    ResourceSyncState["Failed"] = "Failed";
+    /** Other case */
+    ResourceSyncState["Unknown"] = "Unknown";
+})(ResourceSyncState || (ResourceSyncState = {}));
+export var ServerState;
+(function (ServerState) {
+    /** Server health check passing. */
+    ServerState["Ok"] = "Ok";
+    /** Server is unreachable. */
+    ServerState["NotOk"] = "NotOk";
+    /** Server is disabled. */
+    ServerState["Disabled"] = "Disabled";
+})(ServerState || (ServerState = {}));
+export var StackState;
+(function (StackState) {
+    /** The stack is currently re/deploying */
+    StackState["Deploying"] = "deploying";
+    /** All containers are running. */
+    StackState["Running"] = "running";
+    /** All containers are paused */
+    StackState["Paused"] = "paused";
+    /** All contianers are stopped */
+    StackState["Stopped"] = "stopped";
+    /** All containers are created */
+    StackState["Created"] = "created";
+    /** All containers are restarting */
+    StackState["Restarting"] = "restarting";
+    /** All containers are dead */
+    StackState["Dead"] = "dead";
+    /** All containers are removing */
+    StackState["Removing"] = "removing";
+    /** The containers are in a mix of states */
+    StackState["Unhealthy"] = "unhealthy";
+    /** The stack is not deployed */
+    StackState["Down"] = "down";
+    /** Server not reachable for status */
+    StackState["Unknown"] = "unknown";
+})(StackState || (StackState = {}));
 export var SwarmState;
 (function (SwarmState) {
     /** Unknown case */
