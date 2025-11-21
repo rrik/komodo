@@ -19,13 +19,17 @@ pub async fn list_swarm_configs()
     )));
   }
 
-  serde_json::from_str(&res.stdout)
-    .context("Failed to parse 'docker config ls' response from json")
+  // The output is in JSONL, need to convert to standard JSON vec.
+  serde_json::from_str(&format!(
+    "[{}]",
+    res.stdout.trim().replace('\n', ",")
+  ))
+  .context("Failed to parse 'docker config ls' response from json")
 }
 
 pub async fn inspect_swarm_config(
   config: &str,
-) -> anyhow::Result<SwarmConfig> {
+) -> anyhow::Result<Vec<SwarmConfig>> {
   let res = run_komodo_standard_command(
     "Inspect Swarm Config",
     None,

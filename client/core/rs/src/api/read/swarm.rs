@@ -260,4 +260,4 @@ pub struct InspectSwarmConfig {
 }
 
 #[typeshare]
-pub type InspectSwarmConfigResponse = SwarmConfig;
+pub type InspectSwarmConfigResponse = Vec<SwarmConfig>;

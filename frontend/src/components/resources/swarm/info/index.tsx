@@ -12,8 +12,15 @@ import { SwarmSecrets } from "./secrets";
 import { SwarmServices } from "./services";
 import { SwarmTasks } from "./tasks";
 import { SwarmInspect } from "./inspect";
+import { SwarmConfigs } from "./configs";
 
-type SwarmInfoView = "Inspect" | "Nodes" | "Services" | "Tasks" | "Secrets";
+type SwarmInfoView =
+  | "Inspect"
+  | "Nodes"
+  | "Services"
+  | "Tasks"
+  | "Secrets"
+  | "Configs";
 
 export const SwarmInfo = ({
   id,
@@ -56,6 +63,9 @@ export const SwarmInfo = ({
       {
         value: "Secrets",
       },
+      {
+        value: "Configs",
+      },
     ],
     []
   );
@@ -83,6 +93,8 @@ export const SwarmInfo = ({
         return <SwarmTasks id={id} titleOther={Selector} _search={_search} />;
       case "Secrets":
         return <SwarmSecrets id={id} titleOther={Selector} _search={_search} />;
+      case "Configs":
+        return <SwarmConfigs id={id} titleOther={Selector} _search={_search} />;
     }
   };
 

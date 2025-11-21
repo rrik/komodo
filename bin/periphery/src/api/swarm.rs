@@ -122,7 +122,7 @@ impl Resolve<super::Args> for InspectSwarmConfig {
   async fn resolve(
     self,
     _: &super::Args,
-  ) -> anyhow::Result<SwarmConfig> {
+  ) -> anyhow::Result<Vec<SwarmConfig>> {
     inspect_swarm_config(&self.id).await
   }
 }

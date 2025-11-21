@@ -3602,7 +3602,7 @@ export interface Volume {
 }
 export type InspectDockerVolumeResponse = Volume;
 export type InspectStackContainerResponse = Container;
-export type InspectSwarmConfigResponse = SwarmConfig;
+export type InspectSwarmConfigResponse = SwarmConfig[];
 /** Orchestration configuration. */
 export interface SwarmSpecOrchestration {
     /**

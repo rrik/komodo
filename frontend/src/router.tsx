@@ -1,5 +1,6 @@
 import { Layout } from "@components/layouts";
 import { LOGIN_TOKENS, useAuth, useUser } from "@lib/hooks";
+import SwarmConfigPage from "@pages/swarm/config";
 import { Loader2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import {
@@ -142,6 +143,10 @@ export const Router = () => {
                 <Route
                   path=":id/swarm-secret/:secret"
                   element={<SwarmSecretPage />}
+                />
+                <Route
+                  path=":id/swarm-config/:config"
+                  element={<SwarmConfigPage />}
                 />
                 {/* Terminal Page */}
                 <Route

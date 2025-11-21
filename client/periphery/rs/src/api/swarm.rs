@@ -67,7 +67,7 @@ pub struct InspectSwarmSecret {
 // ========
 
 #[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
-#[response(SwarmConfig)]
+#[response(Vec<SwarmConfig>)]
 #[error(anyhow::Error)]
 pub struct InspectSwarmConfig {
   pub id: String,
