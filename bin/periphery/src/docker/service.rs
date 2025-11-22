@@ -81,6 +81,8 @@ fn convert_service_list_item(
     image,
     restart,
     runtime,
+    created_at: service.created_at,
+    updated_at: service.updated_at,
   }
 }
 

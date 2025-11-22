@@ -2,10 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { KeyRound, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
-import { Link } from "react-router-dom";
+import { SwarmLink } from "..";
 
 export const SwarmSecrets = ({
   id,
@@ -24,7 +24,7 @@ export const SwarmSecrets = ({
   const filtered = filterBySplit(
     secrets,
     search,
-    (secret) => secret.Spec?.Name ?? secret.ID ?? "Unknown"
+    (secret) => secret.Name ?? secret.ID ?? "Unknown"
   );
 
   return (
@@ -52,16 +52,15 @@ export const SwarmSecrets = ({
           {
             accessorKey: "Name",
             header: ({ column }) => (
-              <SortableHeader column={column} title="ID" />
+              <SortableHeader column={column} title="Name" />
             ),
             cell: ({ row }) => (
-              <Link
-                to={`/swarms/${id}/swarm-secret/${row.original.ID}`}
-                className="flex gap-2 items-center hover:underline"
-              >
-                <KeyRound className="w-4 h-4" />
-                {row.original.Spec?.Name ?? "Unknown"}
-              </Link>
+              <SwarmLink
+                type="Secret"
+                swarm_id={id}
+                resource_id={row.original.ID}
+                name={row.original.Name}
+              />
             ),
             size: 200,
           },
@@ -71,6 +70,48 @@ export const SwarmSecrets = ({
               <SortableHeader column={column} title="Id" />
             ),
             cell: ({ row }) => row.original.ID ?? "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "Driver",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Driver" />
+            ),
+            cell: ({ row }) =>
+              row.original.Driver ?? (
+                <div className="text-muted-foreground">None</div>
+              ),
+          },
+          {
+            accessorKey: "Templating",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Templating" />
+            ),
+            cell: ({ row }) =>
+              row.original.Templating ?? (
+                <div className="text-muted-foreground">None</div>
+              ),
+          },
+          {
+            accessorKey: "UpdatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Updated" />
+            ),
+            cell: ({ row }) =>
+              row.original.UpdatedAt
+                ? new Date(row.original.UpdatedAt).toLocaleString()
+                : "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "CreatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Created" />
+            ),
+            cell: ({ row }) =>
+              row.original.CreatedAt
+                ? new Date(row.original.CreatedAt).toLocaleString()
+                : "Unknown",
             size: 200,
           },
         ]}

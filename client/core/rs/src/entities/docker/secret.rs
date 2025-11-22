@@ -5,6 +5,35 @@ use typeshare::typeshare;
 
 use super::*;
 
+/// Swarm secret list item.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct SwarmSecretListItem {
+  #[serde(rename = "ID")]
+  pub id: Option<String>,
+
+  /// User-defined name of the secret.
+  #[serde(rename = "Name")]
+  pub name: Option<String>,
+
+  /// Name of the secrets driver used to fetch the secret's value from an external secret store.
+  #[serde(rename = "Driver")]
+  pub driver: Option<String>,
+
+  /// Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template.
+  /// If no driver is set, no templating is used.
+  #[serde(rename = "Templating")]
+  pub templating: Option<String>,
+
+  #[serde(rename = "CreatedAt")]
+  pub created_at: Option<String>,
+
+  #[serde(rename = "UpdatedAt")]
+  pub updated_at: Option<String>,
+}
+
 /// Swarm secret details.
 #[typeshare]
 #[derive(

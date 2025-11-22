@@ -34,6 +34,14 @@ pub struct SwarmNodeListItem {
   /// State of the node
   #[serde(rename = "State")]
   pub state: Option<NodeState>,
+
+  /// Date and time at which the node was added to the swarm in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.
+  #[serde(rename = "CreatedAt")]
+  pub created_at: Option<String>,
+
+  /// Date and time at which the node was last updated in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.
+  #[serde(rename = "UpdatedAt")]
+  pub updated_at: Option<String>,
 }
 
 /// Swarm node details.

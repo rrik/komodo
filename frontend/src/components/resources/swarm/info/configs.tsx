@@ -2,10 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { KeyRound, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
-import { Link } from "react-router-dom";
+import { SwarmLink } from "..";
 
 export const SwarmConfigs = ({
   id,
@@ -55,15 +55,13 @@ export const SwarmConfigs = ({
               <SortableHeader column={column} title="Name" />
             ),
             cell: ({ row }) => (
-              <Link
-                to={`/swarms/${id}/swarm-config/${row.original.ID}`}
-                className="flex gap-2 items-center hover:underline"
-              >
-                <KeyRound className="w-4 h-4" />
-                {row.original.Name ?? "Unknown"}
-              </Link>
+              <SwarmLink
+                type="Config"
+                swarm_id={id}
+                resource_id={row.original.ID}
+                name={row.original.Name}
+              />
             ),
-            size: 200,
           },
           {
             accessorKey: "ID",
@@ -71,7 +69,18 @@ export const SwarmConfigs = ({
               <SortableHeader column={column} title="Id" />
             ),
             cell: ({ row }) => row.original.ID ?? "Unknown",
-            size: 200,
+          },
+          {
+            accessorKey: "UpdatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Updated" />
+            ),
+          },
+          {
+            accessorKey: "CreatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Created" />
+            ),
           },
         ]}
       />

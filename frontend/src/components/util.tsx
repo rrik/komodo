@@ -632,7 +632,11 @@ export const ShowHideButton = ({
   );
 };
 
-type DockerResourceType = "container" | "network" | "image" | "volume";
+type DockerResourceType =
+  | "container"
+  | "network"
+  | "image"
+  | "volume";
 
 export const DOCKER_LINK_ICONS: {
   [type in DockerResourceType]: React.FC<{

@@ -40,6 +40,12 @@ pub struct SwarmServiceListItem {
   /// Number of replicas
   #[serde(rename = "Replicas")]
   pub replicas: Option<I64>,
+
+  #[serde(rename = "CreatedAt")]
+  pub created_at: Option<String>,
+
+  #[serde(rename = "UpdatedAt")]
+  pub updated_at: Option<String>,
 }
 
 /// Swarm service details.

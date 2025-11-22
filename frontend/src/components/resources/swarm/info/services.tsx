@@ -2,10 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { FolderCode, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
-import { Link } from "react-router-dom";
+import { SwarmLink } from "..";
 
 export const SwarmServices = ({
   id,
@@ -55,13 +55,12 @@ export const SwarmServices = ({
               <SortableHeader column={column} title="Name" />
             ),
             cell: ({ row }) => (
-              <Link
-                to={`/swarms/${id}/swarm-service/${row.original.ID}`}
-                className="flex gap-2 items-center hover:underline"
-              >
-                <FolderCode className="w-4 h-4" />
-                {row.original.Name ?? "Unknown"}
-              </Link>
+              <SwarmLink
+                type="Service"
+                swarm_id={id}
+                resource_id={row.original.ID}
+                name={row.original.Name}
+              />
             ),
             size: 200,
           },
@@ -71,6 +70,28 @@ export const SwarmServices = ({
               <SortableHeader column={column} title="Id" />
             ),
             cell: ({ row }) => row.original.ID ?? "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "UpdatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Updated" />
+            ),
+            cell: ({ row }) =>
+              row.original.UpdatedAt
+                ? new Date(row.original.UpdatedAt).toLocaleString()
+                : "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "CreatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Created" />
+            ),
+            cell: ({ row }) =>
+              row.original.CreatedAt
+                ? new Date(row.original.CreatedAt).toLocaleString()
+                : "Unknown",
             size: 200,
           },
         ]}

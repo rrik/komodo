@@ -2,10 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { ListTodo, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
-import { Link } from "react-router-dom";
+import { SwarmLink } from "..";
 
 export const SwarmTasks = ({
   id,
@@ -17,11 +17,25 @@ export const SwarmTasks = ({
   _search: [string, Dispatch<SetStateAction<string>>];
 }) => {
   const [search, setSearch] = _search;
-  const tasks =
+  const services =
+    useRead("ListSwarmServices", { swarm: id }, { refetchInterval: 10_000 })
+      .data ?? [];
+  const _tasks =
     useRead("ListSwarmTasks", { swarm: id }, { refetchInterval: 10_000 })
       .data ?? [];
 
-  const filtered = filterBySplit(tasks, search, (task) => task.ID ?? "Unknown");
+  const tasks = _tasks.map((task) => {
+    return {
+      ...task,
+      service: services.find((service) => task.ServiceID === service.ID),
+    };
+  });
+
+  const filtered = filterBySplit(
+    tasks,
+    search,
+    (task) => task.Name ?? task.service?.Name ?? "Unknown"
+  );
 
   return (
     <Section
@@ -51,14 +65,62 @@ export const SwarmTasks = ({
               <SortableHeader column={column} title="Id" />
             ),
             cell: ({ row }) => (
-              <Link
-                to={`/swarms/${id}/swarm-task/${row.original.ID}`}
-                className="flex gap-2 items-center hover:underline"
-              >
-                <ListTodo className="w-4 h-4" />
-                {row.original.ID ?? "Unknown"}
-              </Link>
+              <SwarmLink
+                type="Task"
+                swarm_id={id}
+                resource_id={row.original.ID}
+                name={row.original.ID}
+              />
             ),
+            size: 200,
+          },
+          {
+            accessorKey: "service.Name",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Service" />
+            ),
+            cell: ({ row }) => (
+              <SwarmLink
+                type="Service"
+                swarm_id={id}
+                resource_id={row.original.service?.ID}
+                name={row.original.service?.Name}
+              />
+            ),
+            size: 200,
+          },
+          {
+            accessorKey: "State",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="State" />
+            ),
+          },
+          {
+            accessorKey: "DesiredState",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Desired State" />
+            ),
+          },
+          {
+            accessorKey: "UpdatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Updated" />
+            ),
+            cell: ({ row }) =>
+              row.original.UpdatedAt
+                ? new Date(row.original.UpdatedAt).toLocaleString()
+                : "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "CreatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Created" />
+            ),
+            cell: ({ row }) =>
+              row.original.CreatedAt
+                ? new Date(row.original.CreatedAt).toLocaleString()
+                : "Unknown",
             size: 200,
           },
         ]}

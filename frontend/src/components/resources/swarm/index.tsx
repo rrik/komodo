@@ -1,6 +1,13 @@
 import { useRead } from "@lib/hooks";
 import { RequiredResourceComponents } from "@types";
-import { Component } from "lucide-react";
+import {
+  Component,
+  Diamond,
+  FolderCode,
+  KeyRound,
+  ListTodo,
+  Settings,
+} from "lucide-react";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
 import { SwarmTable } from "./table";
 import {
@@ -15,6 +22,7 @@ import { GroupActions } from "@components/group-actions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui/tooltip";
 import { Card } from "@ui/card";
 import { SwarmTabs } from "./tabs";
+import { Link } from "react-router-dom";
 
 export const useSwarm = (id?: string) =>
   useRead("ListSwarms", {}, { refetchInterval: 10_000 }).data?.find(
@@ -123,4 +131,44 @@ export const SwarmComponents: RequiredResourceComponents = {
       />
     );
   },
+};
+
+export type SwarmResourceType =
+  | "Node"
+  | "Service"
+  | "Task"
+  | "Secret"
+  | "Config";
+
+export const SWARM_ICONS: {
+  [type in SwarmResourceType]: React.FC<{ size?: number }>;
+} = {
+  Node: ({ size }) => <Diamond className={`w-${size} h-${size}`} />,
+  Service: ({ size }) => <FolderCode className={`w-${size} h-${size}`} />,
+  Task: ({ size }) => <ListTodo className={`w-${size} h-${size}`} />,
+  Secret: ({ size }) => <KeyRound className={`w-${size} h-${size}`} />,
+  Config: ({ size }) => <Settings className={`w-${size} h-${size}`} />,
+};
+
+export const SwarmLink = ({
+  type,
+  swarm_id,
+  resource_id,
+  name,
+}: {
+  type: SwarmResourceType;
+  swarm_id: string;
+  resource_id: string | undefined;
+  name: string | undefined;
+}) => {
+  const Icon = SWARM_ICONS[type];
+  return (
+    <Link
+      to={`/swarms/${swarm_id}/swarm-${type.toLowerCase()}/${resource_id}`}
+      className="flex gap-2 items-center hover:underline"
+    >
+      <Icon size={4} />
+      {name ?? "Unknown"}
+    </Link>
+  );
 };

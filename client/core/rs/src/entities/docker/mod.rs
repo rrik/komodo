@@ -7,8 +7,8 @@ use crate::entities::{
   docker::{
     config::SwarmConfigListItem, container::ContainerListItem,
     image::ImageListItem, network::NetworkListItem,
-    node::SwarmNodeListItem, secret::SwarmSecret,
-    service::SwarmServiceListItem, task::SwarmTask,
+    node::SwarmNodeListItem, secret::SwarmSecretListItem,
+    service::SwarmServiceListItem, task::SwarmTaskListItem,
     volume::VolumeListItem,
   },
   stack::ComposeProject,
@@ -33,8 +33,8 @@ pub mod volume;
 pub struct SwarmLists {
   pub nodes: Vec<SwarmNodeListItem>,
   pub services: Vec<SwarmServiceListItem>,
-  pub tasks: Vec<SwarmTask>,
-  pub secrets: Vec<SwarmSecret>,
+  pub tasks: Vec<SwarmTaskListItem>,
+  pub secrets: Vec<SwarmSecretListItem>,
   pub configs: Vec<SwarmConfigListItem>,
 }
 

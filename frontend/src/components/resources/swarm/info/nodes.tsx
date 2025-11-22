@@ -2,10 +2,10 @@ import { Section } from "@components/layouts";
 import { useRead } from "@lib/hooks";
 import { DataTable, SortableHeader } from "@ui/data-table";
 import { Dispatch, ReactNode, SetStateAction } from "react";
-import { Diamond, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@ui/input";
 import { filterBySplit } from "@lib/utils";
-import { Link } from "react-router-dom";
+import { SwarmLink } from "..";
 
 export const SwarmNodes = ({
   id,
@@ -55,13 +55,12 @@ export const SwarmNodes = ({
               <SortableHeader column={column} title="Hostname" />
             ),
             cell: ({ row }) => (
-              <Link
-                to={`/swarms/${id}/swarm-node/${row.original.ID}`}
-                className="flex gap-2 items-center hover:underline"
-              >
-                <Diamond className="w-4 h-4" />
-                {row.original.Hostname ?? "Unknown"}
-              </Link>
+              <SwarmLink
+                type="Node"
+                swarm_id={id}
+                resource_id={row.original.ID}
+                name={row.original.Hostname}
+              />
             ),
             size: 200,
           },
@@ -79,7 +78,6 @@ export const SwarmNodes = ({
               <SortableHeader column={column} title="Role" />
             ),
             cell: ({ row }) => row.original.Role ?? "Unknown",
-            size: 200,
           },
           {
             accessorKey: "Availability",
@@ -87,7 +85,6 @@ export const SwarmNodes = ({
               <SortableHeader column={column} title="Availability" />
             ),
             cell: ({ row }) => row.original.Availability ?? "Unknown",
-            size: 200,
           },
           {
             accessorKey: "State",
@@ -95,6 +92,28 @@ export const SwarmNodes = ({
               <SortableHeader column={column} title="State" />
             ),
             cell: ({ row }) => row.original.State ?? "Unknown",
+          },
+          {
+            accessorKey: "UpdatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Updated" />
+            ),
+            cell: ({ row }) =>
+              row.original.UpdatedAt
+                ? new Date(row.original.UpdatedAt).toLocaleString()
+                : "Unknown",
+            size: 200,
+          },
+          {
+            accessorKey: "CreatedAt",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Created" />
+            ),
+            cell: ({ row }) =>
+              row.original.CreatedAt
+                ? new Date(row.original.CreatedAt).toLocaleString()
+                : "Unknown",
+            size: 200,
           },
         ]}
       />

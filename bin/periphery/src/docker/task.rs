@@ -7,14 +7,14 @@ use super::*;
 impl DockerClient {
   pub async fn list_swarm_tasks(
     &self,
-  ) -> anyhow::Result<Vec<SwarmTask>> {
+  ) -> anyhow::Result<Vec<SwarmTaskListItem>> {
     let tasks = self
       .docker
       .list_tasks(Option::<ListTasksOptions>::None)
       .await
       .context("Failed to query for swarm tasks list")?
       .into_iter()
-      .map(convert_task)
+      .map(convert_task_list_item)
       .collect();
     Ok(tasks)
   }
@@ -31,6 +31,33 @@ impl DockerClient {
       .with_context(|| {
         format!("Failed to query for swarm task with id {task_id}")
       })
+  }
+}
+
+fn convert_task_list_item(
+  task: bollard::models::Task,
+) -> SwarmTaskListItem {
+  let (container_id, state) = task
+    .status
+    .map(|status| {
+      (
+        status
+          .container_status
+          .and_then(|status| status.container_id),
+        status.state.map(convert_task_state),
+      )
+    })
+    .unwrap_or_default();
+  SwarmTaskListItem {
+    id: task.id,
+    name: task.name,
+    node_id: task.node_id,
+    service_id: task.service_id,
+    container_id,
+    state,
+    desired_state: task.desired_state.map(convert_task_state),
+    created_at: task.created_at,
+    updated_at: task.updated_at,
   }
 }
 

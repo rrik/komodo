@@ -1,7 +1,7 @@
 use anyhow::Context;
 use bollard::query_parameters::ListSecretsOptions;
 use komodo_client::entities::docker::secret::{
-  SecretSpec, SwarmSecret,
+  SecretSpec, SwarmSecret, SwarmSecretListItem,
 };
 
 use super::DockerClient;
@@ -9,14 +9,14 @@ use super::DockerClient;
 impl DockerClient {
   pub async fn list_swarm_secrets(
     &self,
-  ) -> anyhow::Result<Vec<SwarmSecret>> {
+  ) -> anyhow::Result<Vec<SwarmSecretListItem>> {
     let secrets = self
       .docker
       .list_secrets(Option::<ListSecretsOptions>::None)
       .await
       .context("Failed to query for swarm secret list")?
       .into_iter()
-      .map(convert_secret)
+      .map(convert_secret_list_item)
       .collect();
     Ok(secrets)
   }
@@ -35,6 +35,29 @@ impl DockerClient {
           "Failed to query for swarm secret with id {secret_id}"
         )
       })
+  }
+}
+
+fn convert_secret_list_item(
+  secret: bollard::models::Secret,
+) -> SwarmSecretListItem {
+  let (name, driver, templating) = secret
+    .spec
+    .map(|spec| {
+      (
+        spec.name,
+        spec.driver.map(|driver| driver.name),
+        spec.templating.map(|driver| driver.name),
+      )
+    })
+    .unwrap_or_default();
+  SwarmSecretListItem {
+    id: secret.id,
+    name,
+    driver,
+    templating,
+    created_at: secret.created_at,
+    updated_at: secret.updated_at,
   }
 }
 

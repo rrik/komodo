@@ -4324,6 +4324,7 @@ export interface TaskStatus {
     ContainerStatus?: ContainerStatus;
     PortStatus?: PortStatus;
 }
+/** Swarm task details. */
 export interface SwarmTask {
     /** The ID of the task. */
     ID?: string;
@@ -4878,9 +4879,28 @@ export interface SwarmNodeListItem {
     Availability?: NodeSpecAvailabilityEnum;
     /** State of the node */
     State?: NodeState;
+    /** Date and time at which the node was added to the swarm in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds. */
+    CreatedAt?: string;
+    /** Date and time at which the node was last updated in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds. */
+    UpdatedAt?: string;
 }
 export type ListSwarmNodesResponse = SwarmNodeListItem[];
-export type ListSwarmSecretsResponse = SwarmSecret[];
+/** Swarm secret list item. */
+export interface SwarmSecretListItem {
+    ID?: string;
+    /** User-defined name of the secret. */
+    Name?: string;
+    /** Name of the secrets driver used to fetch the secret's value from an external secret store. */
+    Driver?: string;
+    /**
+     * Templating driver, if applicable  Templating controls whether and how to evaluate the config payload as a template.
+     * If no driver is set, no templating is used.
+     */
+    Templating?: string;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+}
+export type ListSwarmSecretsResponse = SwarmSecretListItem[];
 /** Swarm service list item. */
 export interface SwarmServiceListItem {
     ID?: string;
@@ -4894,9 +4914,28 @@ export interface SwarmServiceListItem {
     Restart?: TaskSpecRestartPolicyConditionEnum;
     /** Number of replicas */
     Replicas?: I64;
+    CreatedAt?: string;
+    UpdatedAt?: string;
 }
 export type ListSwarmServicesResponse = SwarmServiceListItem[];
-export type ListSwarmTasksResponse = SwarmTask[];
+/** Swarm task list item. */
+export interface SwarmTaskListItem {
+    /** The ID of the task. */
+    ID?: string;
+    /** Name of the task. */
+    Name?: string;
+    /** The ID of the node that this task is on. */
+    NodeID?: string;
+    /** The ID of the service this task is part of. */
+    ServiceID?: string;
+    /** The ID of container associated with this task. */
+    ContainerID?: string;
+    State?: TaskState;
+    DesiredState?: TaskState;
+    CreatedAt?: string;
+    UpdatedAt?: string;
+}
+export type ListSwarmTasksResponse = SwarmTaskListItem[];
 export declare enum SwarmState {
     /** Unknown case */
     Unknown = "Unknown",

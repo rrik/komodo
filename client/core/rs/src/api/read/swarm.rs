@@ -7,10 +7,10 @@ use crate::entities::{
   docker::{
     config::{SwarmConfig, SwarmConfigListItem},
     node::{SwarmNode, SwarmNodeListItem},
-    secret::SwarmSecret,
+    secret::{SwarmSecret, SwarmSecretListItem},
     service::{SwarmService, SwarmServiceListItem},
     swarm::SwarmInspectInfo,
-    task::SwarmTask,
+    task::{SwarmTask, SwarmTaskListItem},
   },
   swarm::{Swarm, SwarmActionState, SwarmListItem, SwarmQuery},
 };
@@ -242,7 +242,7 @@ pub struct ListSwarmTasks {
 }
 
 #[typeshare]
-pub type ListSwarmTasksResponse = Vec<SwarmTask>;
+pub type ListSwarmTasksResponse = Vec<SwarmTaskListItem>;
 
 //
 
@@ -284,7 +284,7 @@ pub struct ListSwarmSecrets {
 }
 
 #[typeshare]
-pub type ListSwarmSecretsResponse = Vec<SwarmSecret>;
+pub type ListSwarmSecretsResponse = Vec<SwarmSecretListItem>;
 
 //
 

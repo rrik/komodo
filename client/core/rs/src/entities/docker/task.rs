@@ -3,6 +3,46 @@ use typeshare::typeshare;
 
 use super::*;
 
+/// Swarm task list item.
+#[typeshare]
+#[derive(
+  Debug, Clone, Default, PartialEq, Serialize, Deserialize,
+)]
+pub struct SwarmTaskListItem {
+  /// The ID of the task.
+  #[serde(rename = "ID")]
+  pub id: Option<String>,
+
+  /// Name of the task.
+  #[serde(rename = "Name")]
+  pub name: Option<String>,
+
+  /// The ID of the node that this task is on.
+  #[serde(rename = "NodeID")]
+  pub node_id: Option<String>,
+
+  /// The ID of the service this task is part of.
+  #[serde(rename = "ServiceID")]
+  pub service_id: Option<String>,
+
+  /// The ID of container associated with this task.
+  #[serde(rename = "ContainerID")]
+  pub container_id: Option<String>,
+
+  #[serde(rename = "State")]
+  pub state: Option<TaskState>,
+
+  #[serde(rename = "DesiredState")]
+  pub desired_state: Option<TaskState>,
+
+  #[serde(rename = "CreatedAt")]
+  pub created_at: Option<String>,
+
+  #[serde(rename = "UpdatedAt")]
+  pub updated_at: Option<String>,
+}
+
+/// Swarm task details.
 #[typeshare]
 #[derive(
   Debug, Clone, Default, PartialEq, Serialize, Deserialize,
