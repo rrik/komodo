@@ -143,14 +143,26 @@ export type SwarmResourceType =
   | "Stack";
 
 export const SWARM_ICONS: {
-  [type in SwarmResourceType]: React.FC<{ size?: number }>;
+  [type in SwarmResourceType]: React.FC<{ size?: number; className?: string }>;
 } = {
-  Node: ({ size }) => <Diamond className={`w-${size} h-${size}`} />,
-  Service: ({ size }) => <FolderCode className={`w-${size} h-${size}`} />,
-  Task: ({ size }) => <ListTodo className={`w-${size} h-${size}`} />,
-  Secret: ({ size }) => <KeyRound className={`w-${size} h-${size}`} />,
-  Config: ({ size }) => <Settings className={`w-${size} h-${size}`} />,
-  Stack: ({ size }) => <SquareStack className={`w-${size} h-${size}`} />,
+  Node: ({ size, className }) => (
+    <Diamond className={cn(`w-${size} h-${size}`, className)} />
+  ),
+  Service: ({ size, className }) => (
+    <FolderCode className={cn(`w-${size} h-${size}`, className)} />
+  ),
+  Task: ({ size, className }) => (
+    <ListTodo className={cn(`w-${size} h-${size}`, className)} />
+  ),
+  Secret: ({ size, className }) => (
+    <KeyRound className={cn(`w-${size} h-${size}`, className)} />
+  ),
+  Config: ({ size, className }) => (
+    <Settings className={cn(`w-${size} h-${size}`, className)} />
+  ),
+  Stack: ({ size, className }) => (
+    <SquareStack className={cn(`w-${size} h-${size}`, className)} />
+  ),
 };
 
 export const SwarmLink = ({

@@ -130,13 +130,11 @@ export const soft_text_color_class_by_intention = (
 };
 
 export const swarm_state_intention: (
-  state?: Types.SwarmState,
-  hasVersionMismatch?: boolean
-) => ColorIntention = (state, hasVersionMismatch) => {
+  state?: Types.SwarmState
+) => ColorIntention = (state) => {
   switch (state) {
     case Types.SwarmState.Healthy:
-      // If there's a version mismatch and the server is "Ok", show warning instead
-      return hasVersionMismatch ? "Warning" : "Good";
+      return "Good";
     case Types.SwarmState.Unhealthy:
       return "Critical";
     case Types.SwarmState.Unknown:

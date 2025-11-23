@@ -1,5 +1,7 @@
 use anyhow::Context as _;
-use command::run_komodo_standard_command;
+use command::{
+  run_komodo_shell_command, run_komodo_standard_command,
+};
 use komodo_client::entities::{
   docker::{
     SwarmLists, config::SwarmConfig, node::SwarmNode,
@@ -144,7 +146,7 @@ impl Resolve<super::Args> for GetSwarmServiceLogSearch {
       "docker service logs --tail 5000{timestamps}{no_task_ids}{no_resolve}{details} {service} 2>&1 | {grep}",
     );
     Ok(
-      run_komodo_standard_command(
+      run_komodo_shell_command(
         "Search Swarm Service Log",
         None,
         command,
