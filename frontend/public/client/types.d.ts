@@ -4288,6 +4288,63 @@ export interface SwarmService {
     JobStatus?: ServiceJobStatus;
 }
 export type InspectSwarmServiceResponse = SwarmService;
+/**
+ * Swarm stack service list item.
+ * Returned by `docker stack services --format json <NAME>`
+ *
+ * https://docs.docker.com/reference/cli/docker/stack/services/#format
+ */
+export interface SwarmStackServiceListItem {
+    ID?: string;
+    /** Swarm stack task name. */
+    Name?: string;
+    /** The service mode. */
+    Mode?: string;
+    /** The service replicas, formatted as string. */
+    Replicas?: string;
+    /** The image associated with service */
+    Image?: string;
+    /** Task exposed ports, formatted as a string. */
+    Ports?: string;
+}
+/**
+ * Swarm stack task list item.
+ * Returned by `docker stack ps --format json <NAME>`
+ *
+ * https://docs.docker.com/reference/cli/docker/stack/ps/#format
+ */
+export interface SwarmStackTaskListItem {
+    ID?: string;
+    /** Swarm stack task name. */
+    Name?: string;
+    /** The image associated with task */
+    Image?: string;
+    /** The node the task is running on */
+    Node?: string;
+    DesiredState?: string;
+    CurrentState?: string;
+    /** An error message, if one exists */
+    Error?: string;
+    /** Task exposed ports, formatted as a string. */
+    Ports?: string;
+}
+/**
+ * All entities related to docker stack available over CLI.
+ * Returned by:
+ * ```
+ * docker stack services --format json <STACK>
+ * docker stack ps --format json <STACK>
+ * ```
+ */
+export interface SwarmStackLists {
+    /** Swarm stack name. */
+    Name: string;
+    /** Services part of the stack */
+    Services: SwarmStackServiceListItem[];
+    /** Tasks part of the stack */
+    Tasks: SwarmStackTaskListItem[];
+}
+export type InspectSwarmStackResponse = SwarmStackLists;
 export declare enum TaskState {
     NEW = "new",
     ALLOCATED = "allocated",
@@ -4852,7 +4909,7 @@ export type StackListItem = ResourceListItem<StackListItemInfo>;
 export type ListStacksResponse = StackListItem[];
 /**
  * Swarm config list item.
- * Returned by `docker swarm config ls --format json`
+ * Returned by `docker config ls --format json`
  */
 export interface SwarmConfigListItem {
     /** User-defined name of the config. */
@@ -4918,6 +4975,23 @@ export interface SwarmServiceListItem {
     UpdatedAt?: string;
 }
 export type ListSwarmServicesResponse = SwarmServiceListItem[];
+/**
+ * Swarm stack list item.
+ * Returned by `docker stack ls --format json`
+ *
+ * https://docs.docker.com/reference/cli/docker/stack/ls/#format
+ */
+export interface SwarmStackListItem {
+    /** Swarm stack name. */
+    Name?: string;
+    /** Number of services which are part of the stack */
+    Services?: string;
+    /** The stack orchestrator */
+    Orchestrator?: string;
+    /** The stack namespace */
+    Namespace?: string;
+}
+export type ListSwarmStacksResponse = SwarmStackListItem[];
 /** Swarm task list item. */
 export interface SwarmTaskListItem {
     /** The ID of the task. */
@@ -7350,6 +7424,16 @@ export interface InspectSwarmService {
     service: string;
 }
 /**
+ * Inspect a stack on the target Swarm.
+ * Response: [SwarmStackLists].
+ */
+export interface InspectSwarmStack {
+    /** Id or name */
+    swarm: string;
+    /** Swarm stack name */
+    stack: string;
+}
+/**
  * Inspect a Swarm task.
  * Response: [SwarmTask].
  */
@@ -7758,6 +7842,14 @@ export interface ListSwarmSecrets {
  * Response: [ListSwarmServicesResponse].
  */
 export interface ListSwarmServices {
+    /** Id or name */
+    swarm: string;
+}
+/**
+ * List stacks on the target Swarm.
+ * Response: [ListSwarmStacksResponse].
+ */
+export interface ListSwarmStacks {
     /** Id or name */
     swarm: string;
 }
@@ -9595,6 +9687,12 @@ export type ReadRequest = {
 } | {
     type: "InspectSwarmConfig";
     params: InspectSwarmConfig;
+} | {
+    type: "ListSwarmStacks";
+    params: ListSwarmStacks;
+} | {
+    type: "InspectSwarmStack";
+    params: InspectSwarmStack;
 } | {
     type: "GetServersSummary";
     params: GetServersSummary;

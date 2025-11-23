@@ -1,6 +1,6 @@
 use komodo_client::entities::docker::{
   SwarmLists, config::SwarmConfig, node::SwarmNode,
-  secret::SwarmSecret, service::SwarmService,
+  secret::SwarmSecret, service::SwarmService, stack::SwarmStackLists,
   swarm::SwarmInspectInfo, task::SwarmTask,
 };
 use resolver_api::Resolve;
@@ -71,4 +71,16 @@ pub struct InspectSwarmSecret {
 #[error(anyhow::Error)]
 pub struct InspectSwarmConfig {
   pub id: String,
+}
+
+// =======
+//  Stack
+// =======
+
+#[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
+#[response(SwarmStackLists)]
+#[error(anyhow::Error)]
+pub struct InspectSwarmStack {
+  /// The swarm stack name
+  pub name: String,
 }

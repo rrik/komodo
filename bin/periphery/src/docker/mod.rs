@@ -9,6 +9,7 @@ use komodo_client::entities::{
 
 pub mod compose;
 pub mod config;
+pub mod stack;
 pub mod stats;
 
 mod container;

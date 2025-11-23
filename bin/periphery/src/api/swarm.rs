@@ -1,13 +1,17 @@
 use anyhow::Context as _;
 use komodo_client::entities::docker::{
   SwarmLists, config::SwarmConfig, node::SwarmNode,
-  secret::SwarmSecret, service::SwarmService, task::SwarmTask,
+  secret::SwarmSecret, service::SwarmService, stack::SwarmStackLists,
+  task::SwarmTask,
 };
 use periphery_client::api::swarm::*;
 use resolver_api::Resolve;
 
 use crate::{
-  docker::config::{inspect_swarm_config, list_swarm_configs},
+  docker::{
+    config::{inspect_swarm_config, list_swarm_configs},
+    stack::{inspect_swarm_stack, list_swarm_stacks},
+  },
   state::docker_client,
 };
 
@@ -21,13 +25,14 @@ impl Resolve<super::Args> for PollSwarmStatus {
       .iter()
       .next()
       .context("Could not connect to docker client")?;
-    let (inspect, nodes, services, tasks, secrets, configs) = tokio::join!(
+    let (inspect, nodes, services, tasks, secrets, configs, stacks) = tokio::join!(
       client.inspect_swarm(),
       client.list_swarm_nodes(),
       client.list_swarm_services(),
       client.list_swarm_tasks(),
       client.list_swarm_secrets(),
       list_swarm_configs(),
+      list_swarm_stacks(),
     );
     Ok(PollSwarmStatusResponse {
       inspect: inspect.ok(),
@@ -37,6 +42,7 @@ impl Resolve<super::Args> for PollSwarmStatus {
         tasks: tasks.unwrap_or_default(),
         secrets: secrets.unwrap_or_default(),
         configs: configs.unwrap_or_default(),
+        stacks: stacks.unwrap_or_default(),
       },
     })
   }
@@ -124,5 +130,18 @@ impl Resolve<super::Args> for InspectSwarmConfig {
     _: &super::Args,
   ) -> anyhow::Result<Vec<SwarmConfig>> {
     inspect_swarm_config(&self.id).await
+  }
+}
+
+// =======
+//  Stack
+// =======
+
+impl Resolve<super::Args> for InspectSwarmStack {
+  async fn resolve(
+    self,
+    _: &super::Args,
+  ) -> anyhow::Result<SwarmStackLists> {
+    inspect_swarm_stack(self.name).await
   }
 }

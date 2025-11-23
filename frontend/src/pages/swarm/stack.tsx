@@ -7,20 +7,19 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MonacoEditor } from "@components/monaco";
 import { SWARM_ICONS, useSwarm } from "@components/resources/swarm";
 
-export default function SwarmSecretPage() {
-  const { id, secret: __secret } = useParams() as {
+export default function SwarmStackPage() {
+  const { id, stack: __stack } = useParams() as {
     id: string;
-    secret: string;
+    stack: string;
   };
-  const _secret = decodeURIComponent(__secret);
+  const _stack = decodeURIComponent(__stack);
+  console.log(_stack);
   const swarm = useSwarm(id);
-  const { data: secret, isPending } = useRead("InspectSwarmSecret", {
+  const { data: stack, isPending } = useRead("InspectSwarmStack", {
     swarm: id,
-    secret: _secret,
+    stack: _stack,
   });
-  useSetTitle(
-    `${swarm?.name} | Secret | ${secret?.Spec?.Name ?? secret?.ID ?? "Unknown"}`
-  );
+  useSetTitle(`${swarm?.name} | Stack | ${stack?.Name ?? "Unknown"}`);
   const nav = useNavigate();
 
   if (isPending) {
@@ -31,11 +30,11 @@ export default function SwarmSecretPage() {
     );
   }
 
-  if (!secret) {
-    return <div className="flex w-full py-4">Failed to inspect secret.</div>;
+  if (!stack) {
+    return <div className="flex w-full py-4">Failed to inspect stack.</div>;
   }
 
-  const Icon = SWARM_ICONS.Secret;
+  const Icon = SWARM_ICONS.Stack;
 
   return (
     <div className="flex flex-col gap-16 mb-24">
@@ -57,18 +56,18 @@ export default function SwarmSecretPage() {
           <div className="mt-1">
             <Icon size={8} />
           </div>
-          <PageHeaderName name={secret?.Spec?.Name ?? secret?.ID} />
+          <PageHeaderName name={stack?.Name} />
         </div>
 
         {/* INFO */}
         <div className="flex flex-wrap gap-4 items-center text-muted-foreground">
-          Swarm Secret
+          Swarm Stack
           <ResourceLink type="Swarm" id={id} />
         </div>
       </div>
 
       <MonacoEditor
-        value={JSON.stringify(secret, null, 2)}
+        value={JSON.stringify(stack, null, 2)}
         language="json"
         readOnly
       />

@@ -143,6 +143,7 @@ pub enum PeripheryRequest {
   InspectSwarmTask(InspectSwarmTask),
   InspectSwarmSecret(InspectSwarmSecret),
   InspectSwarmConfig(InspectSwarmConfig),
+  InspectSwarmStack(InspectSwarmStack),
 
   // Terminal
   ListTerminals(ListTerminals),

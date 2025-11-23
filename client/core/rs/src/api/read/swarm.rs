@@ -9,6 +9,7 @@ use crate::entities::{
     node::{SwarmNode, SwarmNodeListItem},
     secret::{SwarmSecret, SwarmSecretListItem},
     service::{SwarmService, SwarmServiceListItem},
+    stack::{SwarmStackListItem, SwarmStackLists},
     swarm::SwarmInspectInfo,
     task::{SwarmTask, SwarmTaskListItem},
   },
@@ -349,3 +350,45 @@ pub struct InspectSwarmConfig {
 
 #[typeshare]
 pub type InspectSwarmConfigResponse = Vec<SwarmConfig>;
+
+//
+
+/// List stacks on the target Swarm.
+/// Response: [ListSwarmStacksResponse].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(ListSwarmStacksResponse)]
+#[error(serror::Error)]
+pub struct ListSwarmStacks {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+}
+
+#[typeshare]
+pub type ListSwarmStacksResponse = Vec<SwarmStackListItem>;
+
+//
+
+/// Inspect a stack on the target Swarm.
+/// Response: [SwarmStackLists].
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(InspectSwarmStackResponse)]
+#[error(serror::Error)]
+pub struct InspectSwarmStack {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Swarm stack name
+  pub stack: String,
+}
+
+#[typeshare]
+pub type InspectSwarmStackResponse = SwarmStackLists;

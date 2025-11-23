@@ -2,10 +2,10 @@ import { ResourceLink } from "@components/resources/common";
 import { PageHeaderName } from "@components/util";
 import { useRead, useSetTitle } from "@lib/hooks";
 import { Button } from "@ui/button";
-import { ChevronLeft, KeyRound, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MonacoEditor } from "@components/monaco";
-import { useSwarm } from "@components/resources/swarm";
+import { SWARM_ICONS, useSwarm } from "@components/resources/swarm";
 
 export default function SwarmConfigPage() {
   const { id, config: __config } = useParams() as {
@@ -36,6 +36,8 @@ export default function SwarmConfigPage() {
     return <div className="flex w-full py-4">Failed to inspect config.</div>;
   }
 
+  const Icon = SWARM_ICONS.Config;
+
   return (
     <div className="flex flex-col gap-16 mb-24">
       {/* HEADER */}
@@ -54,7 +56,7 @@ export default function SwarmConfigPage() {
         {/* TITLE */}
         <div className="flex items-center gap-4">
           <div className="mt-1">
-            <KeyRound className="w-8 h-8" />
+            <Icon size={8} />
           </div>
           <PageHeaderName name={config?.Spec?.Name ?? config?.ID} />
         </div>

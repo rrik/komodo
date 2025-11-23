@@ -34,6 +34,8 @@ export type ReadResponses = {
     InspectSwarmSecret: Types.InspectSwarmSecretResponse;
     ListSwarmConfigs: Types.ListSwarmConfigsResponse;
     InspectSwarmConfig: Types.InspectSwarmConfigResponse;
+    ListSwarmStacks: Types.ListSwarmStacksResponse;
+    InspectSwarmStack: Types.InspectSwarmStackResponse;
     GetServersSummary: Types.GetServersSummaryResponse;
     GetServer: Types.GetServerResponse;
     GetServerState: Types.GetServerStateResponse;

@@ -377,3 +377,46 @@ impl Resolve<ReadArgs> for InspectSwarmConfig {
     .map_err(Into::into)
   }
 }
+
+impl Resolve<ReadArgs> for ListSwarmStacks {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<ListSwarmStacksResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    let cache =
+      swarm_status_cache().get_or_insert_default(&swarm.id).await;
+    if let Some(lists) = &cache.lists {
+      Ok(lists.stacks.clone())
+    } else {
+      Ok(Vec::new())
+    }
+  }
+}
+
+impl Resolve<ReadArgs> for InspectSwarmStack {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<InspectSwarmStackResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.into(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::InspectSwarmStack {
+        name: self.stack,
+      },
+    )
+    .await
+    .map_err(Into::into)
+  }
+}

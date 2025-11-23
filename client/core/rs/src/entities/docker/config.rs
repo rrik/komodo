@@ -6,7 +6,7 @@ use typeshare::typeshare;
 use super::*;
 
 /// Swarm config list item.
-/// Returned by `docker swarm config ls --format json`
+/// Returned by `docker config ls --format json`
 #[typeshare]
 #[derive(
   Debug, Clone, Default, PartialEq, Serialize, Deserialize,

@@ -1,6 +1,5 @@
 import { Layout } from "@components/layouts";
 import { LOGIN_TOKENS, useAuth, useUser } from "@lib/hooks";
-import SwarmConfigPage from "@pages/swarm/config";
 import { Loader2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import {
@@ -37,6 +36,8 @@ const SwarmNodePage = lazy(() => import("@pages/swarm/node"));
 const SwarmServicePage = lazy(() => import("@pages/swarm/service"));
 const SwarmTaskPage = lazy(() => import("@pages/swarm/task"));
 const SwarmSecretPage = lazy(() => import("@pages/swarm/secret"));
+const SwarmConfigPage = lazy(() => import("@pages/swarm/config"));
+const SwarmStackPage = lazy(() => import("@pages/swarm/stack"));
 
 const sanitize_query = (search: URLSearchParams) => {
   search.delete("token");
@@ -147,6 +148,10 @@ export const Router = () => {
                 <Route
                   path=":id/swarm-config/:config"
                   element={<SwarmConfigPage />}
+                />
+                <Route
+                  path=":id/swarm-stack/:stack"
+                  element={<SwarmStackPage />}
                 />
                 {/* Terminal Page */}
                 <Route

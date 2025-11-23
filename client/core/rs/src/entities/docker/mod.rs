@@ -8,8 +8,8 @@ use crate::entities::{
     config::SwarmConfigListItem, container::ContainerListItem,
     image::ImageListItem, network::NetworkListItem,
     node::SwarmNodeListItem, secret::SwarmSecretListItem,
-    service::SwarmServiceListItem, task::SwarmTaskListItem,
-    volume::VolumeListItem,
+    service::SwarmServiceListItem, stack::SwarmStackListItem,
+    task::SwarmTaskListItem, volume::VolumeListItem,
   },
   stack::ComposeProject,
 };
@@ -23,6 +23,7 @@ pub mod network;
 pub mod node;
 pub mod secret;
 pub mod service;
+pub mod stack;
 pub mod stats;
 pub mod swarm;
 pub mod task;
@@ -36,6 +37,7 @@ pub struct SwarmLists {
   pub tasks: Vec<SwarmTaskListItem>,
   pub secrets: Vec<SwarmSecretListItem>,
   pub configs: Vec<SwarmConfigListItem>,
+  pub stacks: Vec<SwarmStackListItem>,
 }
 
 /// Standard docker lists available from a Server.

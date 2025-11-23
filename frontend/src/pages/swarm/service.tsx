@@ -2,10 +2,10 @@ import { ResourceLink } from "@components/resources/common";
 import { PageHeaderName } from "@components/util";
 import { useRead, useSetTitle } from "@lib/hooks";
 import { Button } from "@ui/button";
-import { ChevronLeft, FolderCode, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MonacoEditor } from "@components/monaco";
-import { useSwarm } from "@components/resources/swarm";
+import { SWARM_ICONS, useSwarm } from "@components/resources/swarm";
 
 export default function SwarmServicePage() {
   const { id, service: __service } = useParams() as {
@@ -35,6 +35,8 @@ export default function SwarmServicePage() {
     return <div className="flex w-full py-4">Failed to inspect service.</div>;
   }
 
+  const Icon = SWARM_ICONS.Service;
+
   return (
     <div className="flex flex-col gap-16 mb-24">
       {/* HEADER */}
@@ -53,7 +55,7 @@ export default function SwarmServicePage() {
         {/* TITLE */}
         <div className="flex items-center gap-4">
           <div className="mt-1">
-            <FolderCode className="w-8 h-8" />
+            <Icon size={8} />
           </div>
           <PageHeaderName name={service.Spec?.Name ?? service.ID} />
         </div>

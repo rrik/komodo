@@ -7,6 +7,7 @@ import {
   KeyRound,
   ListTodo,
   Settings,
+  SquareStack,
 } from "lucide-react";
 import { DeleteResource, NewResource, ResourcePageHeader } from "../common";
 import { SwarmTable } from "./table";
@@ -138,7 +139,8 @@ export type SwarmResourceType =
   | "Service"
   | "Task"
   | "Secret"
-  | "Config";
+  | "Config"
+  | "Stack";
 
 export const SWARM_ICONS: {
   [type in SwarmResourceType]: React.FC<{ size?: number }>;
@@ -148,6 +150,7 @@ export const SWARM_ICONS: {
   Task: ({ size }) => <ListTodo className={`w-${size} h-${size}`} />,
   Secret: ({ size }) => <KeyRound className={`w-${size} h-${size}`} />,
   Config: ({ size }) => <Settings className={`w-${size} h-${size}`} />,
+  Stack: ({ size }) => <SquareStack className={`w-${size} h-${size}`} />,
 };
 
 export const SwarmLink = ({

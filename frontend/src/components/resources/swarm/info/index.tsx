@@ -13,10 +13,12 @@ import { SwarmServices } from "./services";
 import { SwarmTasks } from "./tasks";
 import { SwarmInspect } from "./inspect";
 import { SwarmConfigs } from "./configs";
+import { SwarmStacks } from "./stacks";
 
 type SwarmInfoView =
   | "Inspect"
   | "Nodes"
+  | "Stacks"
   | "Services"
   | "Tasks"
   | "Secrets"
@@ -55,6 +57,9 @@ export const SwarmInfo = ({
         value: "Nodes",
       },
       {
+        value: "Stacks",
+      },
+      {
         value: "Services",
       },
       {
@@ -85,6 +90,8 @@ export const SwarmInfo = ({
         return <SwarmInspect id={id} titleOther={Selector} />;
       case "Nodes":
         return <SwarmNodes id={id} titleOther={Selector} _search={_search} />;
+      case "Stacks":
+        return <SwarmStacks id={id} titleOther={Selector} _search={_search} />;
       case "Services":
         return (
           <SwarmServices id={id} titleOther={Selector} _search={_search} />

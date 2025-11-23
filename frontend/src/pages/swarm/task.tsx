@@ -2,10 +2,10 @@ import { ResourceLink } from "@components/resources/common";
 import { PageHeaderName } from "@components/util";
 import { useRead, useSetTitle } from "@lib/hooks";
 import { Button } from "@ui/button";
-import { ChevronLeft, ListTodo, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MonacoEditor } from "@components/monaco";
-import { useSwarm } from "@components/resources/swarm";
+import { SWARM_ICONS, useSwarm } from "@components/resources/swarm";
 
 export default function SwarmTaskPage() {
   const { id, task: __task } = useParams() as {
@@ -33,6 +33,8 @@ export default function SwarmTaskPage() {
     return <div className="flex w-full py-4">Failed to inspect task.</div>;
   }
 
+  const Icon = SWARM_ICONS.Task;
+
   return (
     <div className="flex flex-col gap-16 mb-24">
       {/* HEADER */}
@@ -51,7 +53,7 @@ export default function SwarmTaskPage() {
         {/* TITLE */}
         <div className="flex items-center gap-4">
           <div className="mt-1">
-            <ListTodo className="w-8 h-8" />
+            <Icon size={8} />
           </div>
           <PageHeaderName name={task.ID} />
         </div>
