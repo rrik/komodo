@@ -55,7 +55,7 @@ impl Resolve<super::Args> for GetComposeLog {
       services.join(" ")
     );
     Ok(
-      run_komodo_standard_command("get stack log", None, command)
+      run_komodo_standard_command("Get Stack Log", None, command)
         .await,
     )
   }
@@ -83,7 +83,7 @@ impl Resolve<super::Args> for GetComposeLogSearch {
       services.join(" ")
     );
     Ok(
-      run_komodo_shell_command("Get stack log grep", None, command)
+      run_komodo_shell_command("Search Stack Log", None, command)
         .await,
     )
   }

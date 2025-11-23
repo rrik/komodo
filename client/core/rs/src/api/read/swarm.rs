@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 use crate::entities::{
+  SearchCombinator, U64,
   docker::{
     config::{SwarmConfig, SwarmConfigListItem},
     node::{SwarmNode, SwarmNodeListItem},
@@ -14,6 +15,7 @@ use crate::entities::{
     task::{SwarmTask, SwarmTaskListItem},
   },
   swarm::{Swarm, SwarmActionState, SwarmListItem, SwarmQuery},
+  update::Log,
 };
 
 use super::KomodoReadRequest;
@@ -224,6 +226,97 @@ pub struct InspectSwarmService {
 
 #[typeshare]
 pub type InspectSwarmServiceResponse = SwarmService;
+
+//
+
+/// Get a swarm service's logs. Response: [GetSwarmServiceLogResponse].
+///
+/// Note. This call will hit the underlying server directly for most up to date log.
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(GetSwarmServiceLogResponse)]
+#[error(serror::Error)]
+pub struct GetSwarmServiceLog {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Select the swarm service to get logs for.
+  pub service: String,
+  /// The number of lines of the log tail to include.
+  /// Default: 100.
+  /// Max: 5000.
+  #[serde(default = "default_tail")]
+  pub tail: U64,
+  /// Enable `--timestamps`
+  #[serde(default)]
+  pub timestamps: bool,
+  /// Enable `--no-task-ids`
+  #[serde(default)]
+  pub no_task_ids: bool,
+  /// Enable `--no-resolve`
+  #[serde(default)]
+  pub no_resolve: bool,
+  /// Enable `--details`
+  #[serde(default)]
+  pub details: bool,
+}
+
+fn default_tail() -> u64 {
+  50
+}
+
+#[typeshare]
+pub type GetSwarmServiceLogResponse = Log;
+
+//
+
+/// Search the swarm service log's tail using `grep`. All lines go to stdout.
+/// Response: [SearchSwarmServiceLogResponse].
+///
+/// Note. This call will hit the underlying server directly for most up to date log.
+#[typeshare]
+#[derive(
+  Serialize, Deserialize, Debug, Clone, Resolve, EmptyTraits,
+)]
+#[empty_traits(KomodoReadRequest)]
+#[response(SearchSwarmServiceLogResponse)]
+#[error(serror::Error)]
+pub struct SearchSwarmServiceLog {
+  /// Id or name
+  #[serde(alias = "id", alias = "name")]
+  pub swarm: String,
+  /// Select the swarm service to get logs for.
+  pub service: String,
+  /// The terms to search for.
+  pub terms: Vec<String>,
+  /// When searching for multiple terms, can use `AND` or `OR` combinator.
+  ///
+  /// - `AND`: Only include lines with **all** terms present in that line.
+  /// - `OR`: Include lines that have one or more matches in the terms.
+  #[serde(default)]
+  pub combinator: SearchCombinator,
+  /// Invert the results, ie return all lines that DON'T match the terms / combinator.
+  #[serde(default)]
+  pub invert: bool,
+  /// Enable `--timestamps`
+  #[serde(default)]
+  pub timestamps: bool,
+  /// Enable `--no-task-ids`
+  #[serde(default)]
+  pub no_task_ids: bool,
+  /// Enable `--no-resolve`
+  #[serde(default)]
+  pub no_resolve: bool,
+  /// Enable `--details`
+  #[serde(default)]
+  pub details: bool,
+}
+
+#[typeshare]
+pub type SearchSwarmServiceLogResponse = Log;
 
 //
 

@@ -1,8 +1,12 @@
 use anyhow::Context as _;
-use komodo_client::entities::docker::{
-  SwarmLists, config::SwarmConfig, node::SwarmNode,
-  secret::SwarmSecret, service::SwarmService, stack::SwarmStackLists,
-  task::SwarmTask,
+use command::run_komodo_standard_command;
+use komodo_client::entities::{
+  docker::{
+    SwarmLists, config::SwarmConfig, node::SwarmNode,
+    secret::SwarmSecret, service::SwarmService,
+    stack::SwarmStackLists, task::SwarmTask,
+  },
+  update::Log,
 };
 use periphery_client::api::swarm::*;
 use resolver_api::Resolve;
@@ -12,6 +16,7 @@ use crate::{
     config::{inspect_swarm_config, list_swarm_configs},
     stack::{inspect_swarm_stack, list_swarm_stacks},
   },
+  helpers::format_log_grep,
   state::docker_client,
 };
 
@@ -81,6 +86,71 @@ impl Resolve<super::Args> for InspectSwarmService {
       .next()
       .context("Could not connect to docker client")?;
     client.inspect_swarm_service(&self.name).await
+  }
+}
+
+impl Resolve<super::Args> for GetSwarmServiceLog {
+  async fn resolve(self, _: &super::Args) -> anyhow::Result<Log> {
+    let GetSwarmServiceLog {
+      service,
+      tail,
+      timestamps,
+      no_task_ids,
+      no_resolve,
+      details,
+    } = self;
+    let timestamps =
+      timestamps.then_some(" --timestamps").unwrap_or_default();
+    let no_task_ids =
+      no_task_ids.then_some(" --no-task-ids").unwrap_or_default();
+    let no_resolve =
+      no_resolve.then_some(" --no-resolve").unwrap_or_default();
+    let details = details.then_some(" --details").unwrap_or_default();
+    let command = format!(
+      "docker service logs --tail {tail}{timestamps}{no_task_ids}{no_resolve}{details} {service}",
+    );
+    Ok(
+      run_komodo_standard_command(
+        "Get Swarm Service Log",
+        None,
+        command,
+      )
+      .await,
+    )
+  }
+}
+
+impl Resolve<super::Args> for GetSwarmServiceLogSearch {
+  async fn resolve(self, _: &super::Args) -> anyhow::Result<Log> {
+    let GetSwarmServiceLogSearch {
+      service,
+      terms,
+      combinator,
+      invert,
+      timestamps,
+      no_task_ids,
+      no_resolve,
+      details,
+    } = self;
+    let timestamps =
+      timestamps.then_some(" --timestamps").unwrap_or_default();
+    let no_task_ids =
+      no_task_ids.then_some(" --no-task-ids").unwrap_or_default();
+    let no_resolve =
+      no_resolve.then_some(" --no-resolve").unwrap_or_default();
+    let details = details.then_some(" --details").unwrap_or_default();
+    let grep = format_log_grep(&terms, combinator, invert);
+    let command = format!(
+      "docker service logs --tail 5000{timestamps}{no_task_ids}{no_resolve}{details} {service} 2>&1 | {grep}",
+    );
+    Ok(
+      run_komodo_standard_command(
+        "Search Swarm Service Log",
+        None,
+        command,
+      )
+      .await,
+    )
   }
 }
 

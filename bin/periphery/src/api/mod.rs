@@ -139,11 +139,13 @@ pub enum PeripheryRequest {
   // Swarm
   PollSwarmStatus(PollSwarmStatus),
   InspectSwarmNode(InspectSwarmNode),
-  InspectSwarmService(InspectSwarmService),
-  InspectSwarmTask(InspectSwarmTask),
-  InspectSwarmSecret(InspectSwarmSecret),
   InspectSwarmConfig(InspectSwarmConfig),
+  InspectSwarmSecret(InspectSwarmSecret),
   InspectSwarmStack(InspectSwarmStack),
+  InspectSwarmTask(InspectSwarmTask),
+  InspectSwarmService(InspectSwarmService),
+  GetSwarmServiceLog(GetSwarmServiceLog),
+  GetSwarmServiceLogSearch(GetSwarmServiceLogSearch),
 
   // Terminal
   ListTerminals(ListTerminals),

@@ -2575,6 +2575,8 @@ export type Swarm = Resource<SwarmConfig, SwarmInfo>;
 
 export type GetSwarmResponse = Swarm;
 
+export type GetSwarmServiceLogResponse = Log;
+
 /** System information of a server */
 export interface SystemInformation {
 	/** The system name */
@@ -5282,6 +5284,8 @@ export type SearchDeploymentLogResponse = Log;
 
 export type SearchStackLogResponse = Log;
 
+export type SearchSwarmServiceLogResponse = Log;
+
 export interface ServerQuerySpecifics {
 }
 
@@ -7597,6 +7601,32 @@ export interface GetSwarmActionState {
 }
 
 /**
+ * Get a swarm service's logs. Response: [GetSwarmServiceLogResponse].
+ * 
+ * Note. This call will hit the underlying server directly for most up to date log.
+ */
+export interface GetSwarmServiceLog {
+	/** Id or name */
+	swarm: string;
+	/** Select the swarm service to get logs for. */
+	service: string;
+	/**
+	 * The number of lines of the log tail to include.
+	 * Default: 100.
+	 * Max: 5000.
+	 */
+	tail: U64;
+	/** Enable `--timestamps` */
+	timestamps?: boolean;
+	/** Enable `--no-task-ids` */
+	no_task_ids?: boolean;
+	/** Enable `--no-resolve` */
+	no_resolve?: boolean;
+	/** Enable `--details` */
+	details?: boolean;
+}
+
+/**
  * Gets a summary of data relating to all swarms.
  * Response: [GetSwarmsSummaryResponse].
  */
@@ -9177,6 +9207,38 @@ export interface SearchStackLog {
 }
 
 /**
+ * Search the swarm service log's tail using `grep`. All lines go to stdout.
+ * Response: [SearchSwarmServiceLogResponse].
+ * 
+ * Note. This call will hit the underlying server directly for most up to date log.
+ */
+export interface SearchSwarmServiceLog {
+	/** Id or name */
+	swarm: string;
+	/** Select the swarm service to get logs for. */
+	service: string;
+	/** The terms to search for. */
+	terms: string[];
+	/**
+	 * When searching for multiple terms, can use `AND` or `OR` combinator.
+	 * 
+	 * - `AND`: Only include lines with **all** terms present in that line.
+	 * - `OR`: Include lines that have one or more matches in the terms.
+	 */
+	combinator?: SearchCombinator;
+	/** Invert the results, ie return all lines that DON'T match the terms / combinator. */
+	invert?: boolean;
+	/** Enable `--timestamps` */
+	timestamps?: boolean;
+	/** Enable `--no-task-ids` */
+	no_task_ids?: boolean;
+	/** Enable `--no-resolve` */
+	no_resolve?: boolean;
+	/** Enable `--details` */
+	details?: boolean;
+}
+
+/**
  * Send a custom alert message to configured Alerters. Response: [Update].
  * Alias: `alert`
  */
@@ -10085,16 +10147,18 @@ export type ReadRequest =
 	| { type: "ListFullSwarms", params: ListFullSwarms }
 	| { type: "ListSwarmNodes", params: ListSwarmNodes }
 	| { type: "InspectSwarmNode", params: InspectSwarmNode }
-	| { type: "ListSwarmServices", params: ListSwarmServices }
-	| { type: "InspectSwarmService", params: InspectSwarmService }
-	| { type: "ListSwarmTasks", params: ListSwarmTasks }
-	| { type: "InspectSwarmTask", params: InspectSwarmTask }
-	| { type: "ListSwarmSecrets", params: ListSwarmSecrets }
-	| { type: "InspectSwarmSecret", params: InspectSwarmSecret }
 	| { type: "ListSwarmConfigs", params: ListSwarmConfigs }
 	| { type: "InspectSwarmConfig", params: InspectSwarmConfig }
+	| { type: "ListSwarmSecrets", params: ListSwarmSecrets }
+	| { type: "InspectSwarmSecret", params: InspectSwarmSecret }
 	| { type: "ListSwarmStacks", params: ListSwarmStacks }
 	| { type: "InspectSwarmStack", params: InspectSwarmStack }
+	| { type: "ListSwarmTasks", params: ListSwarmTasks }
+	| { type: "InspectSwarmTask", params: InspectSwarmTask }
+	| { type: "ListSwarmServices", params: ListSwarmServices }
+	| { type: "InspectSwarmService", params: InspectSwarmService }
+	| { type: "GetSwarmServiceLog", params: GetSwarmServiceLog }
+	| { type: "SearchSwarmServiceLog", params: SearchSwarmServiceLog }
 	| { type: "GetServersSummary", params: GetServersSummary }
 	| { type: "GetServer", params: GetServer }
 	| { type: "GetServerState", params: GetServerState }

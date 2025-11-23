@@ -249,6 +249,62 @@ impl Resolve<ReadArgs> for InspectSwarmService {
   }
 }
 
+impl Resolve<ReadArgs> for GetSwarmServiceLog {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<GetSwarmServiceLogResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.logs(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::GetSwarmServiceLog {
+        service: self.service,
+        tail: self.tail,
+        timestamps: self.timestamps,
+        no_task_ids: self.no_task_ids,
+        no_resolve: self.no_resolve,
+        details: self.details,
+      },
+    )
+    .await
+    .map_err(Into::into)
+  }
+}
+
+impl Resolve<ReadArgs> for SearchSwarmServiceLog {
+  async fn resolve(
+    self,
+    ReadArgs { user }: &ReadArgs,
+  ) -> serror::Result<SearchSwarmServiceLogResponse> {
+    let swarm = get_check_permissions::<Swarm>(
+      &self.swarm,
+      user,
+      PermissionLevel::Read.logs(),
+    )
+    .await?;
+    swarm_request(
+      &swarm.config.server_ids,
+      periphery_client::api::swarm::GetSwarmServiceLogSearch {
+        service: self.service,
+        terms: self.terms,
+        combinator: self.combinator,
+        invert: self.invert,
+        timestamps: self.timestamps,
+        no_task_ids: self.no_task_ids,
+        no_resolve: self.no_resolve,
+        details: self.details,
+      },
+    )
+    .await
+    .map_err(Into::into)
+  }
+}
+
 impl Resolve<ReadArgs> for ListSwarmTasks {
   async fn resolve(
     self,
