@@ -17,6 +17,9 @@ export const SwarmTasks = ({
   _search: [string, Dispatch<SetStateAction<string>>];
 }) => {
   const [search, setSearch] = _search;
+  const nodes =
+    useRead("ListSwarmNodes", { swarm: id }, { refetchInterval: 10_000 })
+      .data ?? [];
   const services =
     useRead("ListSwarmServices", { swarm: id }, { refetchInterval: 10_000 })
       .data ?? [];
@@ -27,6 +30,7 @@ export const SwarmTasks = ({
   const tasks = _tasks.map((task) => {
     return {
       ...task,
+      node: nodes.find((node) => task.NodeID === node.ID),
       service: services.find((service) => task.ServiceID === service.ID),
     };
   });
@@ -85,6 +89,21 @@ export const SwarmTasks = ({
                 swarm_id={id}
                 resource_id={row.original.service?.ID}
                 name={row.original.service?.Name}
+              />
+            ),
+            size: 200,
+          },
+          {
+            accessorKey: "node.Hostname",
+            header: ({ column }) => (
+              <SortableHeader column={column} title="Node" />
+            ),
+            cell: ({ row }) => (
+              <SwarmLink
+                type="Node"
+                swarm_id={id}
+                resource_id={row.original.node?.ID}
+                name={row.original.node?.Hostname}
               />
             ),
             size: 200,

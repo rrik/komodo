@@ -3,7 +3,6 @@ import {
   ResourceLink,
   ResourcePageHeader,
 } from "@components/resources/common";
-import { PageHeaderName } from "@components/util";
 import {
   useLocalStorage,
   usePermissions,
@@ -12,7 +11,7 @@ import {
 } from "@lib/hooks";
 import { Button } from "@ui/button";
 import { ChevronLeft, Loader2 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { MonacoEditor } from "@components/monaco";
 import { SWARM_ICONS, useSwarm } from "@components/resources/swarm";
 import { ExportButton } from "@components/export";
@@ -27,99 +26,29 @@ import { MobileFriendlyTabsSelector } from "@ui/mobile-friendly-tabs";
 import { SwarmServiceLogs } from "./log";
 import { Section } from "@components/layouts";
 
-function SwarmServicePage() {
+export default function SwarmServicePage() {
   const { id, service: __service } = useParams() as {
     id: string;
     service: string;
   };
   const _service = decodeURIComponent(__service);
   const swarm = useSwarm(id);
-  const { data: service, isPending } = useRead("InspectSwarmService", {
+  const { data: services, isPending } = useRead("ListSwarmServices", {
     swarm: id,
-    service: _service,
   });
-  useSetTitle(
-    `${swarm?.name} | Service | ${service?.Spec?.Name ?? service?.ID ?? "Unknown"}`
-  );
-  const nav = useNavigate();
-
-  if (isPending) {
-    return (
-      <div className="flex justify-center w-full py-4">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!service) {
-    return <div className="flex w-full py-4">Failed to inspect service.</div>;
-  }
-
-  const Icon = SWARM_ICONS.Service;
-
-  return (
-    <div className="flex flex-col gap-16 mb-24">
-      {/* HEADER */}
-      <div className="flex flex-col gap-4">
-        {/* BACK */}
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            className="gap-2"
-            variant="secondary"
-            onClick={() => nav("/swarms/" + id)}
-          >
-            <ChevronLeft className="w-4" /> Back
-          </Button>
-        </div>
-
-        {/* TITLE */}
-        <div className="flex items-center gap-4">
-          <div className="mt-1">
-            <Icon size={8} />
-          </div>
-          <PageHeaderName name={service.Spec?.Name ?? service.ID} />
-        </div>
-
-        {/* INFO */}
-        <div className="flex flex-wrap gap-4 items-center text-muted-foreground">
-          Swarm Service
-          <ResourceLink type="Swarm" id={id} />
-        </div>
-      </div>
-
-      <MonacoEditor
-        value={JSON.stringify(service, null, 2)}
-        language="json"
-        readOnly
-      />
-    </div>
-  );
-}
-
-export default function SwarmServicePage2() {
-  const { id, service: __service } = useParams() as {
-    id: string;
-    service: string;
-  };
-  const _service = decodeURIComponent(__service);
-  const swarm = useSwarm(id);
-  const { canWrite } = usePermissions({
-    type: "Swarm",
-    id,
-  });
-  const { data: service, isPending } = useRead("InspectSwarmService", {
-    swarm: id,
-    service: _service,
-  });
+  const service = services?.find((service) => service.ID === _service);
   const tasks =
     useRead("ListSwarmTasks", {
       swarm: id,
     }).data?.filter((task) => service?.ID && task.ServiceID === service.ID) ??
     [];
+  const { canWrite } = usePermissions({
+    type: "Swarm",
+    id,
+  });
   useSetTitle(
-    `${swarm?.name} | Service | ${service?.Spec?.Name ?? service?.ID ?? "Unknown"}`
+    `${swarm?.name} | Service | ${service?.Name ?? service?.ID ?? "Unknown"}`
   );
-  const nav = useNavigate();
 
   if (isPending) {
     return (
@@ -161,7 +90,7 @@ export default function SwarmServicePage2() {
               intent={intention}
               icon={<Icon size={8} className={strokeColor} />}
               resource={undefined}
-              name={service.Spec?.Name}
+              name={service.Name}
               state={state}
               status={`${tasks.length} Tasks`}
             />
@@ -201,7 +130,7 @@ const SwarmServiceTabs = ({
   service: string;
 }) => {
   const [_view, setView] = useLocalStorage<SwarmServiceTabsView>(
-    `swarm-${swarm.id}-${service}-tabs-v2`,
+    `swarm-${swarm.id}-service-${service}-tabs-v2`,
     "Log"
   );
   const { specificLogs, specificInspect } = usePermissions({
@@ -296,8 +225,7 @@ const get_service_state_from_tasks = (
   tasks: Types.SwarmTaskListItem[]
 ): Types.SwarmState => {
   for (const task of tasks) {
-    const current = task.State?.split(" ")[0];
-    if (current !== task.DesiredState) {
+    if (task.State !== task.DesiredState) {
       return Types.SwarmState.Unhealthy;
     }
   }
