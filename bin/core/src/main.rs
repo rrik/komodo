@@ -8,10 +8,7 @@ use std::{net::SocketAddr, str::FromStr};
 use anyhow::Context;
 use axum::{Router, routing::get};
 use axum_server::{Handle, tls_rustls::RustlsConfig};
-use tower_http::{
-  cors::{Any, CorsLayer},
-  services::{ServeDir, ServeFile},
-};
+use tower_http::services::{ServeDir, ServeFile};
 use tracing::Instrument;
 
 use crate::config::{core_config, core_keys};
@@ -108,12 +105,7 @@ async fn app() -> anyhow::Result<()> {
     .nest("/ws", ws::router())
     .nest("/client", ts_client::router())
     .fallback_service(serve_frontend)
-    .layer(
-      CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any),
-    )
+    .layer(config::cors_layer())
     .into_make_service();
 
   let addr =

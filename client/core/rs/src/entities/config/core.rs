@@ -218,6 +218,11 @@ pub struct Env {
   /// Override `github_oauth.secret` from file
   pub komodo_github_oauth_secret_file: Option<PathBuf>,
 
+  /// Override `cors_allowed_origins`
+  pub komodo_cors_allowed_origins: Option<Vec<String>>,
+  /// Override `cors_allow_credentials`
+  pub komodo_cors_allow_credentials: Option<bool>,
+
   /// Override `database.uri`
   #[serde(alias = "komodo_mongo_uri")]
   pub komodo_database_uri: Option<String>,
@@ -511,6 +516,21 @@ pub struct CoreConfig {
   #[serde(default)]
   pub github_oauth: OauthCredentials,
 
+  // =======
+  // = CORS =
+  // =======
+  /// List of CORS allowed origins.
+  /// If empty, allows all origins (`*`).
+  /// Production setups should configure this explicitly.
+  /// Example: `["https://komodo.example.com", "https://app.example.com"]`.
+  #[serde(default)]
+  pub cors_allowed_origins: Vec<String>,
+
+  /// Tell CORS to allow credentials in requests.
+  /// Used if needed for authentication proxy.
+  #[serde(default)]
+  pub cors_allow_credentials: bool,
+
   // ============
   // = Webhooks =
   // ============
@@ -757,6 +777,8 @@ impl Default for CoreConfig {
       oidc_additional_audiences: Default::default(),
       google_oauth: Default::default(),
       github_oauth: Default::default(),
+      cors_allowed_origins: Default::default(),
+      cors_allow_credentials: Default::default(),
       webhook_secret: Default::default(),
       webhook_base_url: Default::default(),
       logging: Default::default(),
@@ -853,6 +875,8 @@ impl CoreConfig {
         id: empty_or_redacted(&config.github_oauth.id),
         secret: empty_or_redacted(&config.github_oauth.id),
       },
+      cors_allowed_origins: config.cors_allowed_origins,
+      cors_allow_credentials: config.cors_allow_credentials,
       webhook_secret: empty_or_redacted(&config.webhook_secret),
       webhook_base_url: config.webhook_base_url,
       database: config.database.sanitized(),

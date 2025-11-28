@@ -1,6 +1,7 @@
 use std::{path::PathBuf, sync::OnceLock};
 
 use anyhow::Context;
+use axum::http::HeaderValue;
 use colored::Colorize;
 use config::ConfigLoader;
 use environment_file::{
@@ -14,6 +15,7 @@ use komodo_client::entities::{
   logger::LogConfig,
 };
 use noise::key::{RotatableKeyPair, SpkiPublicKey};
+use tower_http::cors::CorsLayer;
 
 /// Should call in startup to ensure Core errors without valid private key.
 pub fn core_keys() -> &'static RotatableKeyPair {
@@ -87,6 +89,36 @@ pub fn periphery_public_keys() -> Option<&'static [SpkiPublicKey]> {
       )
     })
     .as_deref()
+}
+
+/// Creates a CORS layer based on the Core configuration.
+///
+/// - If `cors_allowed_origins` is empty: Allows all origins (backward compatibility)
+/// - If `cors_allowed_origins` is set: Only allows the specified origins
+/// - Methods and headers are always allowed (Any)
+/// - Credentials are only allowed if `cors_allow_credentials` is true
+pub fn cors_layer() -> CorsLayer {
+  let config = core_config();
+  let allowed_origins = if config.cors_allowed_origins.is_empty() {
+    vec![HeaderValue::from_static("*")]
+  } else {
+    config
+      .cors_allowed_origins
+      .iter()
+      .filter_map(|origin| {
+        HeaderValue::from_str(origin)
+          .inspect_err(|e| {
+            warn!("Invalid CORS allowed origin: {origin} | {e:?}")
+          })
+          .ok()
+      })
+      .collect()
+  };
+  CorsLayer::new()
+    .allow_origin(allowed_origins)
+    .allow_methods(tower_http::cors::Any)
+    .allow_headers(tower_http::cors::Any)
+    .allow_credentials(config.cors_allow_credentials)
 }
 
 pub fn core_config() -> &'static CoreConfig {
@@ -281,6 +313,12 @@ pub fn core_config() -> &'static CoreConfig {
         .komodo_frontend_path
         .unwrap_or(config.frontend_path),
       jwt_ttl: env.komodo_jwt_ttl.unwrap_or(config.jwt_ttl),
+      cors_allowed_origins: env
+        .komodo_cors_allowed_origins
+        .unwrap_or(config.cors_allowed_origins),
+      cors_allow_credentials: env
+        .komodo_cors_allow_credentials
+        .unwrap_or(config.cors_allow_credentials),
       sync_directory: env
         .komodo_sync_directory
         .unwrap_or(config.sync_directory),
