@@ -75,12 +75,7 @@ fn convert_node(node: bollard::models::Node) -> SwarmNode {
     version: node.version.map(super::convert_object_version),
     created_at: node.created_at,
     updated_at: node.updated_at,
-    spec: node.spec.map(|spec| NodeSpec {
-      name: spec.name,
-      labels: spec.labels,
-      role: spec.role.map(convert_role),
-      availability: spec.availability.map(convert_availability),
-    }),
+    spec: node.spec.map(convert_node_spec),
     description: node.description.map(|description| {
       NodeDescription {
         hostname: description.hostname,
@@ -126,6 +121,15 @@ fn convert_node(node: bollard::models::Node) -> SwarmNode {
         addr: manager_status.addr,
       }
     }),
+  }
+}
+
+fn convert_node_spec(spec: bollard::models::NodeSpec) -> NodeSpec {
+  NodeSpec {
+    name: spec.name,
+    labels: spec.labels,
+    role: spec.role.map(convert_role),
+    availability: spec.availability.map(convert_availability),
   }
 }
 

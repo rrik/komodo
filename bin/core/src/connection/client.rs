@@ -90,10 +90,7 @@ impl PeripheryConnectionArgs<'_> {
       }
     });
 
-    Ok(PeripheryClient {
-      id,
-      responses,
-    })
+    Ok(PeripheryClient { id, responses })
   }
 }
 

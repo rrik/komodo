@@ -198,7 +198,7 @@ impl Resolve<ReadArgs> for InspectSwarmNode {
     swarm_request(
       &swarm.config.server_ids,
       periphery_client::api::swarm::InspectSwarmNode {
-        name: self.node,
+        node: self.node,
       },
     )
     .await
@@ -241,7 +241,7 @@ impl Resolve<ReadArgs> for InspectSwarmService {
     swarm_request(
       &swarm.config.server_ids,
       periphery_client::api::swarm::InspectSwarmService {
-        name: self.service,
+        service: self.service,
       },
     )
     .await
@@ -340,7 +340,7 @@ impl Resolve<ReadArgs> for InspectSwarmTask {
     swarm_request(
       &swarm.config.server_ids,
       periphery_client::api::swarm::InspectSwarmTask {
-        id: self.task,
+        task: self.task,
       },
     )
     .await
@@ -383,7 +383,7 @@ impl Resolve<ReadArgs> for InspectSwarmSecret {
     swarm_request(
       &swarm.config.server_ids,
       periphery_client::api::swarm::InspectSwarmSecret {
-        id: self.secret,
+        secret: self.secret,
       },
     )
     .await
@@ -426,7 +426,7 @@ impl Resolve<ReadArgs> for InspectSwarmConfig {
     swarm_request(
       &swarm.config.server_ids,
       periphery_client::api::swarm::InspectSwarmConfig {
-        id: self.config,
+        config: self.config,
       },
     )
     .await
@@ -469,7 +469,7 @@ impl Resolve<ReadArgs> for InspectSwarmStack {
     swarm_request(
       &swarm.config.server_ids,
       periphery_client::api::swarm::InspectSwarmStack {
-        name: self.stack,
+        stack: self.stack,
       },
     )
     .await

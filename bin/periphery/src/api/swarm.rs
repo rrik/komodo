@@ -69,7 +69,7 @@ impl Resolve<super::Args> for InspectSwarmNode {
       .iter()
       .next()
       .context("Could not connect to docker client")?;
-    client.inspect_swarm_node(&self.name).await
+    client.inspect_swarm_node(&self.node).await
   }
 }
 
@@ -87,7 +87,7 @@ impl Resolve<super::Args> for InspectSwarmService {
       .iter()
       .next()
       .context("Could not connect to docker client")?;
-    client.inspect_swarm_service(&self.name).await
+    client.inspect_swarm_service(&self.service).await
   }
 }
 
@@ -170,7 +170,7 @@ impl Resolve<super::Args> for InspectSwarmTask {
       .iter()
       .next()
       .context("Could not connect to docker client")?;
-    client.inspect_swarm_task(&self.id).await
+    client.inspect_swarm_task(&self.task).await
   }
 }
 
@@ -188,7 +188,7 @@ impl Resolve<super::Args> for InspectSwarmSecret {
       .iter()
       .next()
       .context("Could not connect to docker client")?;
-    client.inspect_swarm_secret(&self.id).await
+    client.inspect_swarm_secret(&self.secret).await
   }
 }
 
@@ -201,7 +201,7 @@ impl Resolve<super::Args> for InspectSwarmConfig {
     self,
     _: &super::Args,
   ) -> anyhow::Result<Vec<SwarmConfig>> {
-    inspect_swarm_config(&self.id).await
+    inspect_swarm_config(&self.config).await
   }
 }
 
@@ -214,6 +214,6 @@ impl Resolve<super::Args> for InspectSwarmStack {
     self,
     _: &super::Args,
   ) -> anyhow::Result<SwarmStackLists> {
-    inspect_swarm_stack(self.name).await
+    inspect_swarm_stack(self.stack).await
   }
 }

@@ -1,9 +1,16 @@
+use std::collections::HashMap;
+
 use komodo_client::entities::{
   SearchCombinator,
   docker::{
-    SwarmLists, config::SwarmConfig, node::SwarmNode,
-    secret::SwarmSecret, service::SwarmService,
-    stack::SwarmStackLists, swarm::SwarmInspectInfo, task::SwarmTask,
+    SwarmLists,
+    config::SwarmConfig,
+    node::{NodeSpecAvailabilityEnum, NodeSpecRoleEnum, SwarmNode},
+    secret::SwarmSecret,
+    service::SwarmService,
+    stack::SwarmStackLists,
+    swarm::SwarmInspectInfo,
+    task::SwarmTask,
   },
   update::Log,
 };
@@ -30,7 +37,36 @@ pub struct PollSwarmStatusResponse {
 #[response(SwarmNode)]
 #[error(anyhow::Error)]
 pub struct InspectSwarmNode {
-  pub name: String,
+  pub node: String,
+}
+
+/// `docker node rm [OPTIONS] NODE [NODE...]`
+///
+/// https://docs.docker.com/reference/cli/docker/node/rm/
+#[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
+#[response(Log)]
+#[error(anyhow::Error)]
+pub struct RmSwarmNodes {
+  pub nodes: Vec<String>,
+  pub force: bool,
+}
+
+/// `docker node update [OPTIONS] NODE`
+///
+/// https://docs.docker.com/reference/cli/docker/node/update/
+#[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
+#[response(Log)]
+#[error(anyhow::Error)]
+pub struct UpdateSwarmNode {
+  pub node: String,
+  pub availability: Option<NodeSpecAvailabilityEnum>,
+  /// Add metadata to a swarm node using node labels (`key=value`).
+  /// You can specify a node label as a key with an empty value.
+  pub label_add: Option<HashMap<String, Option<String>>>,
+  /// Remove labels by the label key.
+  pub label_rm: Option<Vec<String>>,
+  /// Update the node role (`worker`, `manager`)
+  pub role: Option<NodeSpecRoleEnum>,
 }
 
 // =========
@@ -41,7 +77,7 @@ pub struct InspectSwarmNode {
 #[response(SwarmService)]
 #[error(anyhow::Error)]
 pub struct InspectSwarmService {
-  pub name: String,
+  pub service: String,
 }
 
 /// Get a swarm service's logs.
@@ -110,6 +146,16 @@ pub struct GetSwarmServiceLogSearch {
   pub details: bool,
 }
 
+/// `docker service rm SERVICE [SERVICE...]`
+///
+/// https://docs.docker.com/reference/cli/docker/service/rm/
+#[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
+#[response(Log)]
+#[error(anyhow::Error)]
+pub struct RmSwarmServices {
+  pub services: Vec<String>,
+}
+
 // ======
 //  Task
 // ======
@@ -118,7 +164,7 @@ pub struct GetSwarmServiceLogSearch {
 #[response(SwarmTask)]
 #[error(anyhow::Error)]
 pub struct InspectSwarmTask {
-  pub id: String,
+  pub task: String,
 }
 
 // ========
@@ -129,7 +175,7 @@ pub struct InspectSwarmTask {
 #[response(SwarmSecret)]
 #[error(anyhow::Error)]
 pub struct InspectSwarmSecret {
-  pub id: String,
+  pub secret: String,
 }
 
 // ========
@@ -140,7 +186,7 @@ pub struct InspectSwarmSecret {
 #[response(Vec<SwarmConfig>)]
 #[error(anyhow::Error)]
 pub struct InspectSwarmConfig {
-  pub id: String,
+  pub config: String,
 }
 
 // =======
@@ -152,5 +198,17 @@ pub struct InspectSwarmConfig {
 #[error(anyhow::Error)]
 pub struct InspectSwarmStack {
   /// The swarm stack name
-  pub name: String,
+  pub stack: String,
+}
+
+/// `docker stack rm [OPTIONS] STACK [STACK...]`
+///
+/// https://docs.docker.com/reference/cli/docker/stack/rm/
+#[derive(Debug, Clone, Serialize, Deserialize, Resolve)]
+#[response(Log)]
+#[error(anyhow::Error)]
+pub struct RmSwarmStacks {
+  pub stacks: Vec<String>,
+  /// Do not wait for stack removal
+  pub detach: bool,
 }

@@ -200,7 +200,9 @@ impl ToToml for Swarm {
       .map(|(key, value)| {
         #[allow(clippy::single_match)]
         match key.as_str() {
-          "server_ids" => return Ok((String::from("servers"), value)),
+          "server_ids" => {
+            return Ok((String::from("servers"), value));
+          }
           _ => {}
         }
         Ok((key, value))
