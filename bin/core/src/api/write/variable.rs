@@ -12,6 +12,7 @@ use crate::{
   helpers::{
     query::get_variable,
     update::{add_update, make_update},
+    validations::{validate_variable_name, validate_variable_value},
   },
   state::db_client,
 };
@@ -35,7 +36,7 @@ impl Resolve<WriteArgs> for CreateVariable {
   ) -> serror::Result<CreateVariableResponse> {
     if !user.admin {
       return Err(
-        anyhow!("Only admins can create variables")
+        anyhow!("Only Admins can create Variables")
           .status_code(StatusCode::FORBIDDEN),
       );
     }
@@ -46,6 +47,9 @@ impl Resolve<WriteArgs> for CreateVariable {
       description,
       is_secret,
     } = self;
+
+    validate_variable_name(&name)?;
+    validate_variable_value(&value)?;
 
     let variable = Variable {
       name,
@@ -58,7 +62,7 @@ impl Resolve<WriteArgs> for CreateVariable {
       .variables
       .insert_one(&variable)
       .await
-      .context("Failed to create variable on db")?;
+      .context("Failed to create Variable on db")?;
 
     let mut update = make_update(
       ResourceTarget::system(),
@@ -67,7 +71,8 @@ impl Resolve<WriteArgs> for CreateVariable {
     );
 
     update
-      .push_simple_log("create variable", format!("{variable:#?}"));
+      .push_simple_log("Create Variable", format!("{variable:#?}"));
+
     update.finalize();
 
     add_update(update).await?;
@@ -91,12 +96,15 @@ impl Resolve<WriteArgs> for UpdateVariableValue {
   ) -> serror::Result<UpdateVariableValueResponse> {
     if !user.admin {
       return Err(
-        anyhow!("Only admins can update variables")
+        anyhow!("Only Admins can update Variables")
           .status_code(StatusCode::FORBIDDEN),
       );
     }
 
     let UpdateVariableValue { name, value } = self;
+
+    validate_variable_name(&name)?;
+    validate_variable_value(&value)?;
 
     let variable = get_variable(&name).await?;
 
@@ -156,10 +164,11 @@ impl Resolve<WriteArgs> for UpdateVariableDescription {
   ) -> serror::Result<UpdateVariableDescriptionResponse> {
     if !user.admin {
       return Err(
-        anyhow!("Only admins can update variables")
+        anyhow!("Only Admins can update Variables")
           .status_code(StatusCode::FORBIDDEN),
       );
     }
+
     db_client()
       .variables
       .update_one(
@@ -168,6 +177,7 @@ impl Resolve<WriteArgs> for UpdateVariableDescription {
       )
       .await
       .context("Failed to update variable description on db")?;
+
     Ok(get_variable(&self.name).await?)
   }
 }
@@ -188,10 +198,11 @@ impl Resolve<WriteArgs> for UpdateVariableIsSecret {
   ) -> serror::Result<UpdateVariableIsSecretResponse> {
     if !user.admin {
       return Err(
-        anyhow!("Only admins can update variables")
+        anyhow!("Only Admins can update Variables")
           .status_code(StatusCode::FORBIDDEN),
       );
     }
+
     db_client()
       .variables
       .update_one(
@@ -199,7 +210,8 @@ impl Resolve<WriteArgs> for UpdateVariableIsSecret {
         doc! { "$set": { "is_secret": self.is_secret } },
       )
       .await
-      .context("Failed to update variable is secret on db")?;
+      .context("Failed to update Variable 'is_secret' on db")?;
+
     Ok(get_variable(&self.name).await?)
   }
 }
@@ -219,16 +231,18 @@ impl Resolve<WriteArgs> for DeleteVariable {
   ) -> serror::Result<DeleteVariableResponse> {
     if !user.admin {
       return Err(
-        anyhow!("Only admins can delete variables")
+        anyhow!("Only Admins can delete Variables")
           .status_code(StatusCode::FORBIDDEN),
       );
     }
+
     let variable = get_variable(&self.name).await?;
+    
     db_client()
       .variables
       .delete_one(doc! { "name": &self.name })
       .await
-      .context("Failed to delete variable on db")?;
+      .context("Failed to delete Variable on db")?;
 
     let mut update = make_update(
       ResourceTarget::system(),

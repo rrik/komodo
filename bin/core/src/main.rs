@@ -6,9 +6,7 @@ extern crate tracing;
 use std::{net::SocketAddr, str::FromStr};
 
 use anyhow::Context;
-use axum::{Router, routing::get};
 use axum_server::{Handle, tls_rustls::RustlsConfig};
-use tower_http::services::{ServeDir, ServeFile};
 use tracing::Instrument;
 
 use crate::config::{core_config, core_keys};
@@ -20,7 +18,6 @@ mod cloud;
 mod config;
 mod connection;
 mod helpers;
-mod listener;
 mod monitor;
 mod network;
 mod periphery;
@@ -32,7 +29,6 @@ mod startup;
 mod state;
 mod sync;
 mod ts_client;
-mod ws;
 
 async fn app() -> anyhow::Result<()> {
   dotenvy::dotenv().ok();
@@ -86,27 +82,7 @@ async fn app() -> anyhow::Result<()> {
   .instrument(startup_span)
   .await;
 
-  // Setup static frontend services
-  let frontend_path = &config.frontend_path;
-  let frontend_index =
-    ServeFile::new(format!("{frontend_path}/index.html"));
-  let serve_frontend = ServeDir::new(frontend_path)
-    .not_found_service(frontend_index.clone());
-
-  let app = Router::new()
-    .route("/version", get(|| async { env!("CARGO_PKG_VERSION") }))
-    .nest("/auth", api::auth::router())
-    .nest("/user", api::user::router())
-    .nest("/read", api::read::router())
-    .nest("/write", api::write::router())
-    .nest("/execute", api::execute::router())
-    .nest("/terminal", api::terminal::router())
-    .nest("/listener", listener::router())
-    .nest("/ws", ws::router())
-    .nest("/client", ts_client::router())
-    .fallback_service(serve_frontend)
-    .layer(config::cors_layer())
-    .into_make_service();
+  let app = api::app().into_make_service();
 
   let addr =
     format!("{}:{}", core_config().bind_ip, core_config().port);

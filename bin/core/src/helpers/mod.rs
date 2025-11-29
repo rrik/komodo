@@ -33,8 +33,7 @@ pub mod query;
 pub mod swarm;
 pub mod terminal;
 pub mod update;
-
-// pub mod resource;
+pub mod validations;
 
 pub fn empty_or_only_spaces(word: &str) -> bool {
   if word.is_empty() {

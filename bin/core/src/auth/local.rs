@@ -1,10 +1,8 @@
-use std::str::FromStr;
-
 use anyhow::{Context, anyhow};
 use async_timing_util::unix_timestamp_ms;
 use database::{
   hash_password,
-  mungos::mongodb::bson::{Document, doc, oid::ObjectId},
+  mungos::mongodb::bson::{Document, doc},
 };
 use komodo_client::{
   api::auth::{
@@ -18,6 +16,7 @@ use resolver_api::Resolve;
 use crate::{
   api::auth::AuthArgs,
   config::core_config,
+  helpers::validations::{validate_password, validate_username},
   state::{db_client, jwt_client},
 };
 
@@ -33,19 +32,8 @@ impl Resolve<AuthArgs> for SignUpLocalUser {
       return Err(anyhow!("Local auth is not enabled").into());
     }
 
-    if self.username.is_empty() {
-      return Err(anyhow!("Username cannot be empty string").into());
-    }
-
-    if ObjectId::from_str(&self.username).is_ok() {
-      return Err(
-        anyhow!("Username cannot be valid ObjectId").into(),
-      );
-    }
-
-    if self.password.is_empty() {
-      return Err(anyhow!("Password cannot be empty string").into());
-    }
+    validate_username(&self.username)?;
+    validate_password(&self.password)?;
 
     let db = db_client();
 
@@ -90,15 +78,15 @@ impl Resolve<AuthArgs> for SignUpLocalUser {
       .users
       .insert_one(user)
       .await
-      .context("failed to create user")?
+      .context("Failed to create user on database")?
       .inserted_id
       .as_object_id()
-      .context("inserted_id is not ObjectId")?
+      .context("The 'inserted_id' is not ObjectId")?
       .to_string();
 
     jwt_client()
-      .encode(user_id.clone())
-      .context("failed to generate jwt for user")
+      .encode(user_id)
+      .context("Failed to generate JWT for user")
       .map_err(Into::into)
   }
 }
@@ -111,6 +99,8 @@ impl Resolve<AuthArgs> for LoginLocalUser {
     if !core_config().local_auth {
       return Err(anyhow!("local auth is not enabled").into());
     }
+
+    validate_username(&self.username)?;
 
     let user = db_client()
       .users
@@ -127,7 +117,7 @@ impl Resolve<AuthArgs> for LoginLocalUser {
     else {
       return Err(
         anyhow!(
-          "non-local auth users can not log in with a password"
+          "Non-local auth users can not log in with a password"
         )
         .into(),
       );
@@ -141,8 +131,8 @@ impl Resolve<AuthArgs> for LoginLocalUser {
     }
 
     jwt_client()
-      .encode(user.id.clone())
-      .context("failed at generating jwt for user")
+      .encode(user.id)
+      .context("Failed to generate JWT for user")
       .map_err(Into::into)
   }
 }
