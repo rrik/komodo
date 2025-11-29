@@ -166,6 +166,8 @@ pub struct Env {
 
   /// Override `local_auth`
   pub komodo_local_auth: Option<bool>,
+  /// Override `min_password_length`
+  pub komodo_min_password_length: Option<u16>,
   /// Override `init_admin_username`
   pub komodo_init_admin_username: Option<String>,
   /// Override `init_admin_username` from file
@@ -410,14 +412,20 @@ pub struct CoreConfig {
   // ================
   // = Auth / Login =
   // ================
-  /// enable login with local auth
+  /// Enable login with local auth
   #[serde(default)]
   pub local_auth: bool,
+
+  /// Configure a minimum password length.
+  /// Default: 1
+  #[serde(default = "default_min_password_length")]
+  pub min_password_length: u16,
 
   /// Upon fresh launch, initalize an Admin user with this username.
   /// If this is not provided, no initial user will be created.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub init_admin_username: Option<String>,
+
   /// Upon fresh launch, initalize an Admin user with this password.
   /// Default: `changeme`
   #[serde(default = "default_init_admin_password")]
@@ -701,6 +709,10 @@ fn default_jwt_ttl() -> Timelength {
   Timelength::OneDay
 }
 
+fn default_min_password_length() -> u16 {
+  1
+}
+
 fn default_init_admin_password() -> String {
   String::from("changeme")
 }
@@ -759,6 +771,7 @@ impl Default for CoreConfig {
       frontend_path: default_frontend_path(),
       database: Default::default(),
       local_auth: Default::default(),
+      min_password_length: default_min_password_length(),
       init_admin_username: Default::default(),
       init_admin_password: default_init_admin_password(),
       transparent_mode: Default::default(),
@@ -846,6 +859,7 @@ impl CoreConfig {
       disable_non_admin_create: config.disable_non_admin_create,
       lock_login_credentials_for: config.lock_login_credentials_for,
       local_auth: config.local_auth,
+      min_password_length: config.min_password_length,
       init_admin_username: config
         .init_admin_username
         .map(|u| empty_or_redacted(&u)),

@@ -17,7 +17,11 @@ use reqwest::StatusCode;
 use resolver_api::Resolve;
 use serror::AddStatusCodeError;
 
-use crate::{config::core_config, state::db_client};
+use crate::{
+  config::core_config,
+  helpers::validations::{validate_password, validate_username},
+  state::db_client,
+};
 
 use super::WriteArgs;
 
@@ -38,24 +42,13 @@ impl Resolve<WriteArgs> for CreateLocalUser {
   ) -> serror::Result<CreateLocalUserResponse> {
     if !admin.admin {
       return Err(
-        anyhow!("This method is admin-only.")
+        anyhow!("This method is Admin Only.")
           .status_code(StatusCode::FORBIDDEN),
       );
     }
 
-    if self.username.is_empty() {
-      return Err(anyhow!("Username cannot be empty.").into());
-    }
-
-    if ObjectId::from_str(&self.username).is_ok() {
-      return Err(
-        anyhow!("Username cannot be valid ObjectId").into(),
-      );
-    }
-
-    if self.password.is_empty() {
-      return Err(anyhow!("Password cannot be empty.").into());
-    }
+    validate_username(&self.username)?;
+    validate_password(&self.password)?;
 
     let db = db_client();
 
@@ -130,17 +123,11 @@ impl Resolve<WriteArgs> for UpdateUserUsername {
         );
       }
     }
-    if self.username.is_empty() {
-      return Err(anyhow!("Username cannot be empty.").into());
-    }
 
-    if ObjectId::from_str(&self.username).is_ok() {
-      return Err(
-        anyhow!("Username cannot be valid ObjectId").into(),
-      );
-    }
+    validate_username(&self.username)?;
 
     let db = db_client();
+
     if db
       .users
       .find_one(doc! { "username": &self.username })
@@ -150,8 +137,10 @@ impl Resolve<WriteArgs> for UpdateUserUsername {
     {
       return Err(anyhow!("Username already taken.").into());
     }
+
     let id = ObjectId::from_str(&user.id)
       .context("User id not valid ObjectId.")?;
+
     db.users
       .update_one(
         doc! { "_id": id },
@@ -159,6 +148,7 @@ impl Resolve<WriteArgs> for UpdateUserUsername {
       )
       .await
       .context("Failed to update user username on database.")?;
+
     Ok(NoData {})
   }
 }
@@ -185,7 +175,11 @@ impl Resolve<WriteArgs> for UpdateUserPassword {
         );
       }
     }
+
+    validate_password(&self.password)?;
+
     db_client().set_user_password(user, &self.password).await?;
+
     Ok(NoData {})
   }
 }
@@ -211,15 +205,19 @@ impl Resolve<WriteArgs> for DeleteUser {
           .status_code(StatusCode::FORBIDDEN),
       );
     }
+
     if admin.username == self.user || admin.id == self.user {
       return Err(anyhow!("User cannot delete themselves.").into());
     }
+
     let query = if let Ok(id) = ObjectId::from_str(&self.user) {
       doc! { "_id": id }
     } else {
       doc! { "username": self.user }
     };
+
     let db = db_client();
+
     let Some(user) = db
       .users
       .find_one(query.clone())
@@ -230,21 +228,25 @@ impl Resolve<WriteArgs> for DeleteUser {
         anyhow!("No user found with given id / username").into(),
       );
     };
+
     if user.super_admin {
       return Err(
         anyhow!("Cannot delete a super admin user.").into(),
       );
     }
+
     if user.admin && !admin.super_admin {
       return Err(
         anyhow!("Only a Super Admin can delete an admin user.")
           .into(),
       );
     }
+
     db.users
       .delete_one(query)
       .await
       .context("Failed to delete user from database")?;
+
     // Also remove user id from all user groups
     if let Err(e) = db
       .user_groups
@@ -253,6 +255,7 @@ impl Resolve<WriteArgs> for DeleteUser {
     {
       warn!("Failed to remove deleted user from user groups | {e:?}");
     };
+
     Ok(user)
   }
 }

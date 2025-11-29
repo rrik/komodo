@@ -5,10 +5,9 @@ use hmac::{Hmac, Mac};
 use serde::Deserialize;
 use sha2::Sha256;
 
-use crate::{
-  config::core_config,
-  listener::{ExtractBranch, VerifySecret},
-};
+use crate::config::core_config;
+
+use super::{ExtractBranch, VerifySecret};
 
 type HmacSha256 = Hmac<Sha256>;
 

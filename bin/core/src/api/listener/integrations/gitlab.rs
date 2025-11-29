@@ -1,10 +1,9 @@
 use anyhow::{Context, anyhow};
 use serde::Deserialize;
 
-use crate::{
-  config::core_config,
-  listener::{ExtractBranch, VerifySecret},
-};
+use crate::config::core_config;
+
+use super::{ExtractBranch, VerifySecret};
 
 /// Listener implementation for Gitlab type API
 pub struct Gitlab;

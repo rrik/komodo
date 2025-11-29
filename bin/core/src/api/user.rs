@@ -14,13 +14,16 @@ use komodo_client::{
   api::user::*,
   entities::{api_key::ApiKey, komodo_timestamp, user::User},
 };
+use reqwest::StatusCode;
 use resolver_api::Resolve;
 use response::Response;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use serror::AddStatusCodeError;
 use typeshare::typeshare;
 use uuid::Uuid;
 
+use crate::helpers::validations::validate_api_key_name;
 use crate::{
   auth::auth_request, helpers::query::get_user, state::db_client,
 };
@@ -94,6 +97,9 @@ impl Resolve<UserArgs> for PushRecentlyViewed {
     let user = get_user(&user.id).await?;
 
     let (resource_type, id) = self.resource.extract_variant_id();
+
+    let field = format!("recents.{resource_type}");
+
     let update = match user.recents.get(&resource_type) {
       Some(recents) => {
         let mut recents = recents
@@ -101,13 +107,16 @@ impl Resolve<UserArgs> for PushRecentlyViewed {
           .filter(|_id| !id.eq(*_id))
           .take(RECENTLY_VIEWED_MAX - 1)
           .collect::<VecDeque<_>>();
+
         recents.push_front(id);
-        doc! { format!("recents.{resource_type}"): to_bson(&recents)? }
+
+        doc! { &field: to_bson(&recents)? }
       }
       None => {
-        doc! { format!("recents.{resource_type}"): [id] }
+        doc! { &field: [id] }
       }
     };
+
     update_one_by_id(
       &db_client().users,
       &user.id,
@@ -115,9 +124,7 @@ impl Resolve<UserArgs> for PushRecentlyViewed {
       None,
     )
     .await
-    .with_context(|| {
-      format!("failed to update recents.{resource_type}")
-    })?;
+    .with_context(|| format!("Failed to update user '{field}'"))?;
 
     Ok(PushRecentlyViewedResponse {})
   }
@@ -137,7 +144,8 @@ impl Resolve<UserArgs> for SetLastSeenUpdate {
       None,
     )
     .await
-    .context("failed to update user last_update_view")?;
+    .context("Failed to update user 'last_update_view'")?;
+
     Ok(SetLastSeenUpdateResponse {})
   }
 }
@@ -157,10 +165,12 @@ impl Resolve<UserArgs> for CreateApiKey {
   ) -> serror::Result<CreateApiKeyResponse> {
     let user = get_user(&user.id).await?;
 
+    validate_api_key_name(&self.name)?;
+
     let key = format!("K-{}", random_string(SECRET_LENGTH));
     let secret = format!("S-{}", random_string(SECRET_LENGTH));
     let secret_hash = bcrypt::hash(&secret, BCRYPT_COST)
-      .context("failed at hashing secret string")?;
+      .context("Failed at hashing secret string")?;
 
     let api_key = ApiKey {
       name: self.name,
@@ -170,11 +180,13 @@ impl Resolve<UserArgs> for CreateApiKey {
       created_at: komodo_timestamp(),
       expires: self.expires,
     };
+
     db_client()
       .api_keys
       .insert_one(api_key)
       .await
-      .context("failed to create api key on db")?;
+      .context("Failed to create api key on database")?;
+
     Ok(CreateApiKeyResponse { key, secret })
   }
 }
@@ -190,20 +202,27 @@ impl Resolve<UserArgs> for DeleteApiKey {
     UserArgs { user }: &UserArgs,
   ) -> serror::Result<DeleteApiKeyResponse> {
     let client = db_client();
+
     let key = client
       .api_keys
       .find_one(doc! { "key": &self.key })
       .await
-      .context("failed at db query")?
-      .context("no api key with key found")?;
+      .context("Failed at database query")?
+      .context("No api key with key found")?;
+
     if user.id != key.user_id {
-      return Err(anyhow!("api key does not belong to user").into());
+      return Err(
+        anyhow!("Api key does not belong to user")
+          .status_code(StatusCode::FORBIDDEN),
+      );
     }
+
     client
       .api_keys
       .delete_one(doc! { "key": key.key })
       .await
-      .context("failed to delete api key from db")?;
+      .context("Failed to delete api key from database")?;
+
     Ok(DeleteApiKeyResponse {})
   }
 }

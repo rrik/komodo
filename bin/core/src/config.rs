@@ -374,6 +374,9 @@ pub fn core_config() -> &'static CoreConfig {
         .komodo_lock_login_credentials_for
         .unwrap_or(config.lock_login_credentials_for),
       local_auth: env.komodo_local_auth.unwrap_or(config.local_auth),
+      min_password_length: env
+        .komodo_min_password_length
+        .unwrap_or(config.min_password_length),
       logging: LogConfig {
         level: env
           .komodo_logging_level
