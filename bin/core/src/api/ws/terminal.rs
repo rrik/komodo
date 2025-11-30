@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use axum::{
   extract::{FromRequestParts, WebSocketUpgrade, ws},
-  http::request,
+  http::{HeaderMap, request},
   response::IntoResponse,
 };
 use bytes::Bytes;
@@ -22,11 +22,12 @@ use crate::{
 #[instrument("ConnectTerminal", skip(ws))]
 pub async fn handler(
   Qs(query): Qs<ConnectTerminalQuery>,
+  headers: HeaderMap,
   ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
   ws.on_upgrade(|socket| async move {
     let Some((mut client_socket, user)) =
-      super::user_ws_login(socket).await
+      super::user_ws_login(socket, &headers).await
     else {
       return;
     };

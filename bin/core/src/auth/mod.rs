@@ -5,14 +5,16 @@ use axum::{
   response::Response,
 };
 use database::mungos::mongodb::bson::doc;
+use futures_util::TryFutureExt;
 use komodo_client::entities::{komodo_timestamp, user::User};
+use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use serror::AddStatusCode;
+use serror::AddStatusCodeError as _;
 
 use crate::{
   helpers::query::get_user,
-  state::{db_client, jwt_client},
+  state::{auth_rate_limiter, db_client, jwt_client},
 };
 
 use self::jwt::JwtClaims;
@@ -37,8 +39,12 @@ pub async fn auth_request(
   next: Next,
 ) -> serror::Result<Response> {
   let user = authenticate_check_enabled(&headers)
-    .await
-    .status_code(StatusCode::UNAUTHORIZED)?;
+    .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
+    .with_failure_rate_limit_using_headers(
+      auth_rate_limiter(),
+      &headers,
+    )
+    .await?;
   req.extensions_mut().insert(user);
   Ok(next.run(req).await)
 }
@@ -83,7 +89,7 @@ pub async fn authenticate_check_enabled(
   if user.enabled {
     Ok(user)
   } else {
-    Err(anyhow!("user not enabled"))
+    Err(anyhow!("User not enabled"))
   }
 }
 

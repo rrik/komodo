@@ -18,6 +18,7 @@ use komodo_client::entities::{
   stats::{SystemInformation, SystemStats},
   swarm::SwarmState,
 };
+use rate_limit::RateLimiter;
 
 use crate::{
   auth::jwt::JwtClient,
@@ -206,4 +207,20 @@ pub fn all_resources_cache() -> &'static ArcSwap<AllResourcesById> {
   static ALL_RESOURCES: OnceLock<ArcSwap<AllResourcesById>> =
     OnceLock::new();
   ALL_RESOURCES.get_or_init(Default::default)
+}
+
+pub fn auth_rate_limiter() -> &'static RateLimiter {
+  static AUTH_RATE_LIMITER: OnceLock<Arc<RateLimiter>> =
+    OnceLock::new();
+  AUTH_RATE_LIMITER.get_or_init(|| {
+    let config = core_config();
+    if config.auth_rate_limit_disabled {
+      warn!("Auth rate limiting is disabled")
+    }
+    RateLimiter::new(
+      config.auth_rate_limit_disabled,
+      config.auth_rate_limit_max_attempts as usize,
+      config.auth_rate_limit_window_seconds,
+    )
+  })
 }

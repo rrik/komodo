@@ -126,7 +126,7 @@ impl StringValidatorMatches {
           ));
         }
         if ObjectId::from_str(input).is_ok() {
-          return Err(anyhow!("Cannot be valid ObjectId").into());
+          return Err(anyhow!("Cannot be valid ObjectId"));
         }
         Ok(())
       }

@@ -220,6 +220,13 @@ pub struct Env {
   /// Override `github_oauth.secret` from file
   pub komodo_github_oauth_secret_file: Option<PathBuf>,
 
+  /// Override `auth_rate_limit_disabled`
+  pub komodo_auth_rate_limit_disabled: Option<bool>,
+  /// Override `auth_rate_limit_max_attempts`
+  pub komodo_auth_rate_limit_max_attempts: Option<u16>,
+  /// Override `auth_rate_limit_window_seconds`
+  pub komodo_auth_rate_limit_window_seconds: Option<u64>,
+
   /// Override `cors_allowed_origins`
   pub komodo_cors_allowed_origins: Option<Vec<String>>,
   /// Override `cors_allow_credentials`
@@ -524,6 +531,20 @@ pub struct CoreConfig {
   #[serde(default)]
   pub github_oauth: OauthCredentials,
 
+  // =================
+  // = Rate Limiting =
+  // =================
+  /// Disable the auth rate limiter.
+  #[serde(default)]
+  pub auth_rate_limit_disabled: bool,
+
+  /// Set the max allowed attempts per IP
+  #[serde(default = "default_auth_rate_limit_max_attempts")]
+  pub auth_rate_limit_max_attempts: u16,
+
+  #[serde(default = "default_auth_rate_limit_window_seconds")]
+  pub auth_rate_limit_window_seconds: u64,
+
   // =======
   // = CORS =
   // =======
@@ -717,6 +738,14 @@ fn default_init_admin_password() -> String {
   String::from("changeme")
 }
 
+fn default_auth_rate_limit_max_attempts() -> u16 {
+  5
+}
+
+fn default_auth_rate_limit_window_seconds() -> u64 {
+  60
+}
+
 fn default_sync_directory() -> PathBuf {
   PathBuf::from("/syncs")
 }
@@ -790,6 +819,11 @@ impl Default for CoreConfig {
       oidc_additional_audiences: Default::default(),
       google_oauth: Default::default(),
       github_oauth: Default::default(),
+      auth_rate_limit_disabled: Default::default(),
+      auth_rate_limit_max_attempts:
+        default_auth_rate_limit_max_attempts(),
+      auth_rate_limit_window_seconds:
+        default_auth_rate_limit_window_seconds(),
       cors_allowed_origins: Default::default(),
       cors_allow_credentials: Default::default(),
       webhook_secret: Default::default(),
@@ -889,6 +923,11 @@ impl CoreConfig {
         id: empty_or_redacted(&config.github_oauth.id),
         secret: empty_or_redacted(&config.github_oauth.id),
       },
+      auth_rate_limit_disabled: config.auth_rate_limit_disabled,
+      auth_rate_limit_max_attempts: config
+        .auth_rate_limit_max_attempts,
+      auth_rate_limit_window_seconds: config
+        .auth_rate_limit_window_seconds,
       cors_allowed_origins: config.cors_allowed_origins,
       cors_allow_credentials: config.cors_allow_credentials,
       webhook_secret: empty_or_redacted(&config.webhook_secret),

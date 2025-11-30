@@ -146,6 +146,11 @@ internet_interface = ""
 ## Default: false
 local_auth = false
 
+## Configure a minimum password length.
+## Env: KOMODO_MIN_PASSWORD_LENGTH
+## Default: 1
+min_password_length = 1
+
 ## Initialize the first admin user when starting up Komodo for the first time.
 ## Env: KOMODO_INIT_ADMIN_USERNAME or KOMODO_INIT_ADMIN_USERNAME_FILE
 ## Default: None
@@ -293,6 +298,31 @@ github_oauth.id = ""
 ## Env: KOMODO_GITHUB_OAUTH_SECRET or KOMODO_GITHUB_OAUTH_SECRET_FILE
 ## Required if github_oauth is enabled.
 github_oauth.secret = ""
+
+######################
+# AUTH RATE LIMITING #
+######################
+
+## By default, all authenticated requests have a global failure rate limiter
+## by client IP address (X-FORWARDED-FOR, X-REAL-IP headers).
+## If clients try too many calls which fail to authenticate,
+## they will be temporarily blocked from making further attempts,
+## mitigating brute force attacks. 
+
+## Disable the auth rate limiting.
+## Env: KOMODO_AUTH_RATE_LIMIT_DISABLED
+## Default: false
+auth_rate_limit_disabled = false
+
+## Configure the max attempts allowed within the given 'window_seconds'.
+## Env: KOMODO_AUTH_RATE_LIMIT_MAX_ATTEMPTS
+## Default: 5
+auth_rate_limit_max_attempts = 5
+
+## Set the rate limiting window in seconds.
+## Env: KOMODO_AUTH_RATE_LIMIT_WINDOW_SECONDS
+## Default: 60
+auth_rate_limit_window_seconds = 60
 
 ########
 # CORS #

@@ -1,4 +1,5 @@
 use anyhow::{Context, anyhow};
+use axum::http::HeaderMap;
 use serde::Deserialize;
 
 use crate::config::core_config;
@@ -11,7 +12,7 @@ pub struct Gitlab;
 impl VerifySecret for Gitlab {
   #[instrument("VerifyGitlabSecret", skip_all)]
   fn verify_secret(
-    headers: axum::http::HeaderMap,
+    headers: &HeaderMap,
     _body: &str,
     custom_secret: &str,
   ) -> anyhow::Result<()> {

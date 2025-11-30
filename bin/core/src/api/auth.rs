@@ -3,6 +3,7 @@ use std::{sync::OnceLock, time::Instant};
 use axum::{Router, extract::Path, http::HeaderMap, routing::post};
 use derive_variants::{EnumVariants, ExtractVariant};
 use komodo_client::{api::auth::*, entities::user::User};
+use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use resolver_api::Resolve;
 use response::Response;
@@ -21,7 +22,7 @@ use crate::{
   },
   config::core_config,
   helpers::query::get_user,
-  state::jwt_client,
+  state::{auth_rate_limiter, jwt_client},
 };
 
 use super::Variant;
@@ -135,12 +136,15 @@ impl Resolve<AuthArgs> for GetLoginOptions {
 impl Resolve<AuthArgs> for ExchangeForJwt {
   async fn resolve(
     self,
-    _: &AuthArgs,
+    AuthArgs { headers }: &AuthArgs,
   ) -> serror::Result<ExchangeForJwtResponse> {
     jwt_client()
       .redeem_exchange_token(&self.token)
+      .with_failure_rate_limit_using_headers(
+        auth_rate_limiter(),
+        headers,
+      )
       .await
-      .map_err(Into::into)
   }
 }
 
@@ -149,11 +153,18 @@ impl Resolve<AuthArgs> for GetUser {
     self,
     AuthArgs { headers }: &AuthArgs,
   ) -> serror::Result<User> {
-    let user_id = get_user_id_from_headers(headers)
-      .await
-      .status_code(StatusCode::UNAUTHORIZED)?;
-    get_user(&user_id)
-      .await
-      .status_code(StatusCode::UNAUTHORIZED)
+    async {
+      let user_id = get_user_id_from_headers(headers)
+        .await
+        .status_code(StatusCode::UNAUTHORIZED)?;
+      get_user(&user_id)
+        .await
+        .status_code(StatusCode::UNAUTHORIZED)
+    }
+    .with_failure_rate_limit_using_headers(
+      auth_rate_limiter(),
+      headers,
+    )
+    .await
   }
 }

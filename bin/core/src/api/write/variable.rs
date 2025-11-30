@@ -6,7 +6,7 @@ use komodo_client::{
 };
 use reqwest::StatusCode;
 use resolver_api::Resolve;
-use serror::AddStatusCodeError;
+use serror::{AddStatusCode as _, AddStatusCodeError};
 
 use crate::{
   helpers::{
@@ -48,8 +48,10 @@ impl Resolve<WriteArgs> for CreateVariable {
       is_secret,
     } = self;
 
-    validate_variable_name(&name)?;
-    validate_variable_value(&value)?;
+    validate_variable_name(&name)
+      .status_code(StatusCode::BAD_REQUEST)?;
+    validate_variable_value(&value)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     let variable = Variable {
       name,
@@ -103,8 +105,10 @@ impl Resolve<WriteArgs> for UpdateVariableValue {
 
     let UpdateVariableValue { name, value } = self;
 
-    validate_variable_name(&name)?;
-    validate_variable_value(&value)?;
+    validate_variable_name(&name)
+      .status_code(StatusCode::BAD_REQUEST)?;
+    validate_variable_value(&value)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     let variable = get_variable(&name).await?;
 
@@ -237,7 +241,7 @@ impl Resolve<WriteArgs> for DeleteVariable {
     }
 
     let variable = get_variable(&self.name).await?;
-    
+
     db_client()
       .variables
       .delete_one(doc! { "name": &self.name })

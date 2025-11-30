@@ -186,7 +186,7 @@ impl ToToml for Swarm {
           .servers
           .get(server_id)
           .map(|s| s.name.clone())
-          .unwrap_or(String::new()),
+          .unwrap_or_default(),
       );
     }
   }

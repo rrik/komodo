@@ -14,9 +14,9 @@ pub async fn list_swarm_configs()
   .await;
 
   if !res.success {
-    return Err(anyhow!("{}", res.combined()).context(format!(
-      "Failed to list swarm configs using 'docker config ls'"
-    )));
+    return Err(anyhow!("{}", res.combined()).context(
+      "Failed to list swarm configs using 'docker config ls'",
+    ));
   }
 
   // The output is in JSONL, need to convert to standard JSON vec.

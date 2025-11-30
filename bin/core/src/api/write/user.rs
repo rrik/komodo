@@ -15,7 +15,7 @@ use komodo_client::{
 };
 use reqwest::StatusCode;
 use resolver_api::Resolve;
-use serror::AddStatusCodeError;
+use serror::{AddStatusCode as _, AddStatusCodeError};
 
 use crate::{
   config::core_config,
@@ -47,8 +47,10 @@ impl Resolve<WriteArgs> for CreateLocalUser {
       );
     }
 
-    validate_username(&self.username)?;
-    validate_password(&self.password)?;
+    validate_username(&self.username)
+      .status_code(StatusCode::BAD_REQUEST)?;
+    validate_password(&self.password)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     let db = db_client();
 
@@ -176,7 +178,8 @@ impl Resolve<WriteArgs> for UpdateUserPassword {
       }
     }
 
-    validate_password(&self.password)?;
+    validate_password(&self.password)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     db_client().set_user_password(user, &self.password).await?;
 

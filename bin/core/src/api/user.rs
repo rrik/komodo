@@ -19,7 +19,7 @@ use resolver_api::Resolve;
 use response::Response;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use serror::AddStatusCodeError;
+use serror::{AddStatusCode, AddStatusCodeError};
 use typeshare::typeshare;
 use uuid::Uuid;
 
@@ -165,7 +165,8 @@ impl Resolve<UserArgs> for CreateApiKey {
   ) -> serror::Result<CreateApiKeyResponse> {
     let user = get_user(&user.id).await?;
 
-    validate_api_key_name(&self.name)?;
+    validate_api_key_name(&self.name)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     let key = format!("K-{}", random_string(SECRET_LENGTH));
     let secret = format!("S-{}", random_string(SECRET_LENGTH));

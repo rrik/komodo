@@ -1,20 +1,23 @@
 use anyhow::{Context, anyhow};
 use axum::{
-  Router, extract::Query, response::Redirect, routing::get,
+  Router, extract::Query, http::HeaderMap, response::Redirect,
+  routing::get,
 };
 use database::mongo_indexed::Document;
 use database::mungos::mongodb::bson::doc;
+use futures_util::TryFutureExt;
 use komodo_client::entities::{
   komodo_timestamp, random_string,
   user::{User, UserConfig},
 };
+use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use serror::AddStatusCode;
+use serror::{AddStatusCode, AddStatusCodeError as _};
 
 use crate::{
   config::core_config,
-  state::{db_client, jwt_client},
+  state::{auth_rate_limiter, db_client, jwt_client},
 };
 
 use self::client::github_oauth_client;
@@ -28,20 +31,25 @@ pub fn router() -> Router {
     .route(
       "/login",
       get(|Query(query): Query<RedirectQuery>| async {
-        Redirect::to(
-          &github_oauth_client()
-            .as_ref()
-            // OK: the router is only mounted in case that the client is populated
-            .unwrap()
-            .get_login_redirect_url(query.redirect)
-            .await,
-        )
+        let uri = github_oauth_client()
+          .as_ref()
+          .context("Github Oauth not configured")
+          .status_code(StatusCode::UNAUTHORIZED)?
+          .get_login_redirect_url(query.redirect)
+          .await;
+        serror::Result::Ok(Redirect::to(&uri))
       }),
     )
     .route(
       "/callback",
-      get(|query| async {
-        callback(query).await.status_code(StatusCode::UNAUTHORIZED)
+      get(|query, headers: HeaderMap| async move {
+        callback(query)
+          .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
+          .with_failure_rate_limit_using_headers(
+            auth_rate_limiter(),
+            &headers,
+          )
+          .await
       }),
     )
 }

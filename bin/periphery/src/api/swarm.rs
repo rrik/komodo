@@ -101,13 +101,26 @@ impl Resolve<super::Args> for GetSwarmServiceLog {
       no_resolve,
       details,
     } = self;
-    let timestamps =
-      timestamps.then_some(" --timestamps").unwrap_or_default();
-    let no_task_ids =
-      no_task_ids.then_some(" --no-task-ids").unwrap_or_default();
-    let no_resolve =
-      no_resolve.then_some(" --no-resolve").unwrap_or_default();
-    let details = details.then_some(" --details").unwrap_or_default();
+    let timestamps = if timestamps {
+      " --timestamps"
+    } else {
+      Default::default()
+    };
+    let no_task_ids = if no_task_ids {
+      " --no-task-ids"
+    } else {
+      Default::default()
+    };
+    let no_resolve = if no_resolve {
+      " --no-resolve"
+    } else {
+      Default::default()
+    };
+    let details = if details {
+      " --details"
+    } else {
+      Default::default()
+    };
     let command = format!(
       "docker service logs --tail {tail}{timestamps}{no_task_ids}{no_resolve}{details} {service}",
     );
@@ -134,13 +147,26 @@ impl Resolve<super::Args> for GetSwarmServiceLogSearch {
       no_resolve,
       details,
     } = self;
-    let timestamps =
-      timestamps.then_some(" --timestamps").unwrap_or_default();
-    let no_task_ids =
-      no_task_ids.then_some(" --no-task-ids").unwrap_or_default();
-    let no_resolve =
-      no_resolve.then_some(" --no-resolve").unwrap_or_default();
-    let details = details.then_some(" --details").unwrap_or_default();
+    let timestamps = if timestamps {
+      " --timestamps"
+    } else {
+      Default::default()
+    };
+    let no_task_ids = if no_task_ids {
+      " --no-task-ids"
+    } else {
+      Default::default()
+    };
+    let no_resolve = if no_resolve {
+      " --no-resolve"
+    } else {
+      Default::default()
+    };
+    let details = if details {
+      " --details"
+    } else {
+      Default::default()
+    };
     let grep = format_log_grep(&terms, combinator, invert);
     let command = format!(
       "docker service logs --tail 5000{timestamps}{no_task_ids}{no_resolve}{details} {service} 2>&1 | {grep}",

@@ -1,15 +1,19 @@
 use crate::{
   auth::{auth_api_key_check_enabled, auth_jwt_check_enabled},
   helpers::query::get_user,
+  state::auth_rate_limiter,
 };
-use anyhow::anyhow;
+use anyhow::{Context, anyhow};
 use axum::{
   Router,
   extract::ws::{self, WebSocket},
+  http::HeaderMap,
   routing::get,
 };
-use futures_util::SinkExt;
 use komodo_client::{entities::user::User, ws::WsLoginMessage};
+use rate_limit::WithFailureRateLimit;
+use reqwest::StatusCode;
+use serror::{AddStatusCode, AddStatusCodeError};
 
 mod terminal;
 mod update;
@@ -25,89 +29,66 @@ pub fn router() -> Router {
 
 async fn user_ws_login(
   mut socket: WebSocket,
+  headers: &HeaderMap,
 ) -> Option<(WebSocket, User)> {
-  let login_msg = match socket.recv().await {
-    Some(Ok(ws::Message::Text(login_msg))) => {
-      LoginMessage::Ok(login_msg.to_string())
-    }
-    Some(Ok(msg)) => {
-      LoginMessage::Err(format!("invalid login message: {msg:?}"))
-    }
-    Some(Err(e)) => {
-      LoginMessage::Err(format!("failed to get login message: {e:?}"))
-    }
-    None => {
-      LoginMessage::Err("failed to get login message".to_string())
-    }
-  };
-  let login_msg = match login_msg {
-    LoginMessage::Ok(login_msg) => login_msg,
-    LoginMessage::Err(msg) => {
-      let _ = socket.send(ws::Message::text(msg)).await;
-      let _ = socket.close().await;
-      return None;
-    }
-  };
-  match WsLoginMessage::from_json_str(&login_msg) {
-    // Login using a jwt
-    Ok(WsLoginMessage::Jwt { jwt }) => {
-      match auth_jwt_check_enabled(&jwt).await {
-        Ok(user) => {
-          let _ = socket.send(ws::Message::text("LOGGED_IN")).await;
-          Some((socket, user))
-        }
-        Err(e) => {
-          let _ = socket
-            .send(ws::Message::text(format!(
-              "failed to authenticate user using jwt | {e:#}"
-            )))
-            .await;
-          let _ = socket.close().await;
-          None
-        }
+  let res = async {
+    let message = match socket
+      .recv()
+      .await
+      .context("Failed to receive message over socket: Closed")
+      .status_code(StatusCode::BAD_REQUEST)?
+      .context("Failed to recieve message over socket: Error")
+      .status_code(StatusCode::BAD_REQUEST)?
+    {
+      ws::Message::Text(utf8_bytes) => utf8_bytes.to_string(),
+      ws::Message::Binary(bytes) => String::from_utf8(bytes.into())
+        .context("Received invalid message bytes: Not UTF-8")
+        .status_code(StatusCode::BAD_REQUEST)?,
+      message => {
+        return Err(
+          anyhow!("Received invalid message: {message:?}")
+            .status_code(StatusCode::BAD_REQUEST),
+        );
+      }
+    };
+
+    match WsLoginMessage::from_json_str(&message)
+      .context("Invalid login message")
+      .status_code(StatusCode::BAD_REQUEST)?
+    {
+      WsLoginMessage::Jwt { jwt } => auth_jwt_check_enabled(&jwt)
+        .await
+        .status_code(StatusCode::UNAUTHORIZED),
+      WsLoginMessage::ApiKeys { key, secret } => {
+        auth_api_key_check_enabled(&key, &secret)
+          .await
+          .status_code(StatusCode::UNAUTHORIZED)
       }
     }
-    // login using api keys
-    Ok(WsLoginMessage::ApiKeys { key, secret }) => {
-      match auth_api_key_check_enabled(&key, &secret).await {
-        Ok(user) => {
-          let _ = socket.send(ws::Message::text("LOGGED_IN")).await;
-          Some((socket, user))
-        }
-        Err(e) => {
-          let _ = socket
-            .send(ws::Message::text(format!(
-              "failed to authenticate user using api keys | {e:#}"
-            )))
-            .await;
-          let _ = socket.close().await;
-          None
-        }
-      }
+  }
+  .with_failure_rate_limit_using_headers(auth_rate_limiter(), headers)
+  .await;
+  match res {
+    Ok(user) => {
+      let _ = socket.send(ws::Message::text("LOGGED_IN")).await;
+      Some((socket, user))
     }
     Err(e) => {
       let _ = socket
         .send(ws::Message::text(format!(
-          "failed to parse login message: {e:#}"
+          "[{}]: {:#}",
+          e.status, e.error
         )))
         .await;
-      let _ = socket.close().await;
       None
     }
   }
 }
 
-enum LoginMessage {
-  /// The text message
-  Ok(String),
-  /// The err message
-  Err(String),
-}
-
 async fn check_user_valid(user_id: &str) -> anyhow::Result<User> {
   let user = get_user(user_id).await?;
   if !user.enabled {
-    return Err(anyhow!("user not enabled"));
+    return Err(anyhow!("User not enabled"));
   }
   Ok(user)
 }
