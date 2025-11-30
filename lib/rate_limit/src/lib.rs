@@ -12,10 +12,9 @@ use tokio::sync::RwLock;
 
 /// Trait to extend fallible futures with stateful
 /// rate limiting.
-pub trait WithFailureRateLimit<R, E>
+pub trait WithFailureRateLimit<R>
 where
-  Self: Future<Output = Result<R, E>> + Sized,
-  E: Into<serror::Error> + Send,
+  Self: Future<Output = serror::Result<R>> + Sized,
 {
   /// Ensure the given IP 'ip' is
   /// not violating the givin 'limiter' rate limit rules
@@ -37,7 +36,7 @@ where
   ) -> impl Future<Output = serror::Result<R>> {
     async {
       if limiter.disabled {
-        return self.await.map_err(Into::into);
+        return self.await;
       }
 
       // Only locks if entry at key does not exist yet.
@@ -49,8 +48,14 @@ where
       let now = Instant::now();
       let window_start = now - limiter.window;
 
-      let count =
-        read.iter().filter(|&&time| time > window_start).count();
+      let (first, count) =
+        read.iter().filter(|&&time| time > window_start).fold(
+          (Option::<Instant>::None, 0),
+          |(first, count), &time| {
+            (Some(first.unwrap_or(time)), count + 1)
+          },
+        );
+      
       // Drop the read lock immediately
       drop(read);
 
@@ -60,8 +65,9 @@ where
         attempts.write().await.retain(|&time| time > window_start);
         return Err(
           anyhow!(
-            "Too many attempts. Try again in {:?}",
+            "Too many attempts. Try again in {:.0?}",
             limiter.window
+              - first.map(|first| now - first).unwrap_or_default(),
           )
           .status_code(StatusCode::TOO_MANY_REQUESTS),
         );
@@ -71,15 +77,21 @@ where
         // The succeeding branch has no write locks
         // after the initial attempt array initializes.
         Ok(res) => Ok(res),
-        Err(e) => {
+        Err(mut e) => {
           // Failing branch takes exclusive write lock.
           let mut write = attempts.write().await;
           // Use this opportunity to clear the attempts cache
           write.retain(|&time| time > window_start);
           // Always push after failed attempts, eg failed api key check.
           write.push(now);
-          // Return original error converted to serror::Error
-          Err(e.into())
+          // Add 1 to count because it doesn't include this attempt.
+          let remaining_attempts = limiter.max_attempts - (count + 1);
+          // Return original error with remaining attempts shown
+          e.error = anyhow!(
+            "{:#} | You have {remaining_attempts} attempts remaining",
+            e.error,
+          );
+          Err(e)
         }
       }
     }
@@ -93,7 +105,7 @@ where
     async {
       // Can skip header ip extraction if disabled
       if limiter.disabled {
-        return self.await.map_err(Into::into);
+        return self.await;
       }
       let ip = get_ip_from_headers(headers)?;
       self.with_failure_rate_limit_using_ip(limiter, &ip).await
@@ -101,10 +113,8 @@ where
   }
 }
 
-impl<F, R, E> WithFailureRateLimit<R, E> for F
-where
-  F: Future<Output = Result<R, E>> + Sized,
-  E: Into<serror::Error> + Send,
+impl<F, R> WithFailureRateLimit<R> for F where
+  F: Future<Output = serror::Result<R>> + Sized
 {
 }
 

@@ -1,3 +1,5 @@
+use std::sync::{Arc, OnceLock};
+
 use anyhow::{Context, anyhow};
 use async_timing_util::unix_timestamp_ms;
 use database::{
@@ -11,7 +13,7 @@ use komodo_client::{
   },
   entities::user::{User, UserConfig},
 };
-use rate_limit::WithFailureRateLimit;
+use rate_limit::{RateLimiter, WithFailureRateLimit};
 use reqwest::StatusCode;
 use resolver_api::Resolve;
 use serror::{AddStatusCode as _, AddStatusCodeError};
@@ -117,6 +119,23 @@ async fn sign_up_local_user(
     .map_err(Into::into)
 }
 
+/// Local login method has a dedicated rate limiter
+/// so the UI background calls using existing JWT do
+/// not influence the number of attempts user has
+/// to log in.
+fn login_local_user_rate_limiter() -> &'static RateLimiter {
+  static LOGIN_LOCAL_USER_RATE_LIMITER: OnceLock<Arc<RateLimiter>> =
+    OnceLock::new();
+  LOGIN_LOCAL_USER_RATE_LIMITER.get_or_init(|| {
+    let config = core_config();
+    RateLimiter::new(
+      config.auth_rate_limit_disabled,
+      config.auth_rate_limit_max_attempts as usize,
+      config.auth_rate_limit_window_seconds,
+    )
+  })
+}
+
 impl Resolve<AuthArgs> for LoginLocalUser {
   async fn resolve(
     self,
@@ -124,7 +143,7 @@ impl Resolve<AuthArgs> for LoginLocalUser {
   ) -> serror::Result<LoginLocalUserResponse> {
     login_local_user(self)
       .with_failure_rate_limit_using_headers(
-        auth_rate_limiter(),
+        login_local_user_rate_limiter(),
         headers,
       )
       .await
