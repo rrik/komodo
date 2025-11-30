@@ -17,6 +17,8 @@ use serde::{Deserialize, Serialize};
 use serror::{AddStatusCode as _, AddStatusCodeError as _};
 use tokio::sync::Mutex;
 
+use crate::auth::EXCHANGE_TOKEN_CLOCK_SKEW_TOLERANCE_MS;
+
 type ExchangeTokenMap = Mutex<HashMap<String, (JwtResponse, u128)>>;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -103,7 +105,12 @@ impl JwtClient {
       .remove(exchange_token)
       .context("Invalid exchange token")
       .status_code(StatusCode::UNAUTHORIZED)?;
-    if unix_timestamp_ms() < valid_until {
+    // Apply clock skew tolerance.
+    // Token is valid if expiration is greater than (now - tolerance)
+    if valid_until
+      > unix_timestamp_ms()
+        .saturating_sub(EXCHANGE_TOKEN_CLOCK_SKEW_TOLERANCE_MS)
+    {
       Ok(jwt)
     } else {
       Err(
