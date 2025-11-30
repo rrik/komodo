@@ -64,14 +64,14 @@ impl JwtClient {
       exp,
     };
     let jwt = encode(&self.header, &claims, &self.encoding_key)
-      .context("failed at signing claim")?;
+      .context("Failed at signing claim")?;
     Ok(JwtResponse { user_id, jwt })
   }
 
   pub fn decode(&self, jwt: &str) -> anyhow::Result<JwtClaims> {
     decode::<JwtClaims>(jwt, &self.decoding_key, &self.validation)
       .map(|res| res.claims)
-      .context("failed to decode token claims")
+      .context("Failed to decode token claims")
   }
 
   pub async fn create_exchange_token(

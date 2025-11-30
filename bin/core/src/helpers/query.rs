@@ -56,8 +56,8 @@ pub async fn get_user(user: &str) -> anyhow::Result<User> {
     .users
     .find_one(id_or_username_filter(user))
     .await
-    .context("failed to query mongo for user")?
-    .with_context(|| format!("no user found with {user}"))
+    .context("Failed to query mongo for user")?
+    .with_context(|| format!("No user found matching '{user}'"))
 }
 
 pub async fn get_server_with_state(

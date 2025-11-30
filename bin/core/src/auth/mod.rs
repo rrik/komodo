@@ -59,23 +59,21 @@ pub async fn get_user_id_from_headers(
   ) {
     (Some(jwt), _, _) => {
       // USE JWT
-      let jwt = jwt.to_str().context("jwt is not str")?;
-      auth_jwt_get_user_id(jwt)
-        .await
-        .context("failed to authenticate jwt")
+      let jwt = jwt.to_str().context("JWT is not valid UTF-8")?;
+      auth_jwt_get_user_id(jwt).await
     }
     (None, Some(key), Some(secret)) => {
       // USE API KEY / SECRET
-      let key = key.to_str().context("key is not str")?;
-      let secret = secret.to_str().context("secret is not str")?;
-      auth_api_key_get_user_id(key, secret)
-        .await
-        .context("failed to authenticate api key")
+      let key =
+        key.to_str().context("X-API-KEY is not valid UTF-8")?;
+      let secret =
+        secret.to_str().context("X-API-SECRET is not valid UTF-8")?;
+      auth_api_key_get_user_id(key, secret).await
     }
     _ => {
       // AUTH FAIL
       Err(anyhow!(
-        "must attach either AUTHORIZATION header with jwt OR pass X-API-KEY and X-API-SECRET"
+        "Must attach either AUTHORIZATION header with jwt OR pass X-API-KEY and X-API-SECRET"
       ))
     }
   }
@@ -85,22 +83,26 @@ pub async fn authenticate_check_enabled(
   headers: &HeaderMap,
 ) -> anyhow::Result<User> {
   let user_id = get_user_id_from_headers(headers).await?;
-  let user = get_user(&user_id).await?;
+  let user = get_user(&user_id)
+    .await
+    .map_err(|_| anyhow!("Invalid user credentials"))?;
   if user.enabled {
     Ok(user)
   } else {
-    Err(anyhow!("User not enabled"))
+    Err(anyhow!("Invalid user credentials"))
   }
 }
 
 pub async fn auth_jwt_get_user_id(
   jwt: &str,
 ) -> anyhow::Result<String> {
-  let claims: JwtClaims = jwt_client().decode(jwt)?;
+  let claims: JwtClaims = jwt_client()
+    .decode(jwt)
+    .map_err(|_| anyhow!("Invalid user credentials"))?;
   if claims.exp > unix_timestamp_ms() {
     Ok(claims.id)
   } else {
-    Err(anyhow!("token has expired"))
+    Err(anyhow!("Invalid user credentials"))
   }
 }
 
@@ -119,19 +121,19 @@ pub async fn auth_api_key_get_user_id(
     .api_keys
     .find_one(doc! { "key": key })
     .await
-    .context("failed to query db")?
-    .context("no api key matching key")?;
+    .context("Failed to query db")?
+    .context("Invalid user credentials")?;
   if key.expires != 0 && key.expires < komodo_timestamp() {
-    return Err(anyhow!("api key expired"));
+    return Err(anyhow!("Invalid user credentials"));
   }
   if bcrypt::verify(secret, &key.secret)
-    .context("failed to verify secret hash")?
+    .map_err(|_| anyhow!("Invalid user credentials"))?
   {
     // secret matches
     Ok(key.user_id)
   } else {
     // secret mismatch
-    Err(anyhow!("invalid api secret"))
+    Err(anyhow!("Invalid user credentials"))
   }
 }
 
@@ -148,6 +150,6 @@ async fn check_enabled(user_id: String) -> anyhow::Result<User> {
   if user.enabled {
     Ok(user)
   } else {
-    Err(anyhow!("user not enabled"))
+    Err(anyhow!("Invalid user credentials"))
   }
 }
