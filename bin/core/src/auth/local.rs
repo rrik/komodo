@@ -14,7 +14,7 @@ use komodo_client::{
 use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use resolver_api::Resolve;
-use serror::AddStatusCode as _;
+use serror::{AddStatusCode as _, AddStatusCodeError};
 
 use crate::{
   api::auth::AuthArgs,
@@ -58,7 +58,10 @@ async fn sign_up_local_user(
     db.users.find_one(Document::new()).await?.is_none();
 
   if !no_users_exist && config.disable_user_registration {
-    return Err(anyhow!("User registration is disabled").into());
+    return Err(
+      anyhow!("User registration is disabled")
+        .status_code(StatusCode::UNAUTHORIZED),
+    );
   }
 
   if db
@@ -68,7 +71,14 @@ async fn sign_up_local_user(
     .context("Failed to query for existing users")?
     .is_some()
   {
-    return Err(anyhow!("Username already taken.").into());
+    // When user registration is enabled, there is no way around allowing
+    // potential attackers to gain some insight about which usernames exist
+    // if they are allowed to register accounts. Since this can be easily inferred,
+    // might as well be clear. The auth rate limiter is critical here.
+    return Err(
+      anyhow!("Username already taken.")
+        .status_code(StatusCode::BAD_REQUEST),
+    );
   }
 
   let ts = unix_timestamp_ms() as i64;
@@ -125,7 +135,10 @@ async fn login_local_user(
   req: LoginLocalUser,
 ) -> serror::Result<LoginLocalUserResponse> {
   if !core_config().local_auth {
-    return Err(anyhow!("Local auth is not enabled").into());
+    return Err(
+      anyhow!("Local auth is not enabled")
+        .status_code(StatusCode::UNAUTHORIZED),
+    );
   }
 
   validate_username(&req.username)
@@ -135,30 +148,34 @@ async fn login_local_user(
     .users
     .find_one(doc! { "username": &req.username })
     .await
-    .context("failed at db query for users")?
-    .with_context(|| {
-      format!("did not find user with username {}", req.username)
-    })?;
+    .context("Failed at db query for users")?
+    .context("Invalid login credentials")
+    .status_code(StatusCode::UNAUTHORIZED)?;
 
   let UserConfig::Local {
     password: user_pw_hash,
   } = user.config
   else {
     return Err(
-      anyhow!("Non-local auth users can not log in with a password")
-        .into(),
+      anyhow!("Invalid login credentials")
+        .status_code(StatusCode::UNAUTHORIZED),
     );
   };
 
   let verified = bcrypt::verify(req.password, &user_pw_hash)
-    .context("failed at verify password")?;
+    .context("Invalid login credentials")
+    .status_code(StatusCode::UNAUTHORIZED)?;
 
   if !verified {
-    return Err(anyhow!("invalid credentials").into());
+    return Err(
+      anyhow!("Invalid login credentials")
+        .status_code(StatusCode::UNAUTHORIZED),
+    );
   }
 
   jwt_client()
     .encode(user.id)
+    // This is in internal error (500), not auth error
     .context("Failed to generate JWT for user")
     .map_err(Into::into)
 }
