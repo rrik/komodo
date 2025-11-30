@@ -164,43 +164,6 @@ export const useUserReset = () => {
   };
 };
 
-export const useRead = <
-  T extends Types.ReadRequest["type"],
-  R extends Extract<Types.ReadRequest, { type: T }>,
-  P extends R["params"],
-  C extends Omit<
-    UseQueryOptions<
-      ReadResponses[R["type"]],
-      unknown,
-      ReadResponses[R["type"]],
-      (T | P)[]
-    >,
-    "queryFn" | "queryKey"
-  >,
->(
-  type: T,
-  params: P,
-  config?: C
-) => {
-  const hasJwt = !!LOGIN_TOKENS.jwt();
-  return useQuery({
-    queryKey: [type, params],
-    queryFn: () => komodo_client().read<T, R>(type, params),
-    enabled: hasJwt && config?.enabled !== false,
-    ...config,
-  });
-};
-
-export const useInvalidate = () => {
-  const qc = useQueryClient();
-  return <
-    Type extends Types.ReadRequest["type"],
-    Params extends Extract<Types.ReadRequest, { type: Type }>["params"],
-  >(
-    ...keys: Array<[Type] | [Type, Params]>
-  ) => keys.forEach((key) => qc.invalidateQueries({ queryKey: key }));
-};
-
 export const useManageUser = <
   T extends Types.UserRequest["type"],
   R extends Extract<Types.UserRequest, { type: T }>,
@@ -236,6 +199,80 @@ export const useManageUser = <
     },
     ...config,
   });
+};
+
+export const useAuth = <
+  T extends Types.AuthRequest["type"],
+  R extends Extract<Types.AuthRequest, { type: T }>,
+  P extends R["params"],
+  C extends Omit<
+    UseMutationOptions<AuthResponses[T], unknown, P, unknown>,
+    "mutationKey" | "mutationFn"
+  >,
+>(
+  type: T,
+  config?: C
+) => {
+  const { toast } = useToast();
+  return useMutation({
+    mutationKey: [type],
+    mutationFn: (params: P) => komodo_client().auth<T, R>(type, params),
+    onError: (e: { result: { error?: string; trace?: string[] } }, v, c) => {
+      console.log("Auth error:", e);
+      const msg = e.result.error ?? "Unknown error. See console.";
+      const detail = e.result?.trace
+        ?.map((msg) => msg[0].toUpperCase() + msg.slice(1))
+        .join(" | ");
+      let msg_log = msg ? msg[0].toUpperCase() + msg.slice(1) + " | " : "";
+      if (detail) {
+        msg_log += detail + " | ";
+      }
+      toast({
+        title: `Auth request ${type} failed`,
+        description: `${msg_log}See console for details`,
+        variant: "destructive",
+      });
+      config?.onError && config.onError(e, v, c);
+    },
+    ...config,
+  });
+};
+
+export const useRead = <
+  T extends Types.ReadRequest["type"],
+  R extends Extract<Types.ReadRequest, { type: T }>,
+  P extends R["params"],
+  C extends Omit<
+    UseQueryOptions<
+      ReadResponses[R["type"]],
+      unknown,
+      ReadResponses[R["type"]],
+      (T | P)[]
+    >,
+    "queryFn" | "queryKey"
+  >,
+>(
+  type: T,
+  params: P,
+  config?: C
+) => {
+  const hasJwt = !!LOGIN_TOKENS.jwt();
+  return useQuery({
+    queryKey: [type, params],
+    queryFn: () => komodo_client().read<T, R>(type, params),
+    enabled: hasJwt && config?.enabled !== false,
+    ...config,
+  });
+};
+
+export const useInvalidate = () => {
+  const qc = useQueryClient();
+  return <
+    Type extends Types.ReadRequest["type"],
+    Params extends Extract<Types.ReadRequest, { type: Type }>["params"],
+  >(
+    ...keys: Array<[Type] | [Type, Params]>
+  ) => keys.forEach((key) => qc.invalidateQueries({ queryKey: key }));
 };
 
 export const useWrite = <
@@ -303,43 +340,6 @@ export const useExecute = <
       }
       toast({
         title: `Execute request ${type} failed`,
-        description: `${msg_log}See console for details`,
-        variant: "destructive",
-      });
-      config?.onError && config.onError(e, v, c);
-    },
-    ...config,
-  });
-};
-
-export const useAuth = <
-  T extends Types.AuthRequest["type"],
-  R extends Extract<Types.AuthRequest, { type: T }>,
-  P extends R["params"],
-  C extends Omit<
-    UseMutationOptions<AuthResponses[T], unknown, P, unknown>,
-    "mutationKey" | "mutationFn"
-  >,
->(
-  type: T,
-  config?: C
-) => {
-  const { toast } = useToast();
-  return useMutation({
-    mutationKey: [type],
-    mutationFn: (params: P) => komodo_client().auth<T, R>(type, params),
-    onError: (e: { result: { error?: string; trace?: string[] } }, v, c) => {
-      console.log("Auth error:", e);
-      const msg = e.result.error ?? "Unknown error. See console.";
-      const detail = e.result?.trace
-        ?.map((msg) => msg[0].toUpperCase() + msg.slice(1))
-        .join(" | ");
-      let msg_log = msg ? msg[0].toUpperCase() + msg.slice(1) + " | " : "";
-      if (detail) {
-        msg_log += detail + " | ";
-      }
-      toast({
-        title: `Auth request ${type} failed`,
         description: `${msg_log}See console for details`,
         variant: "destructive",
       });

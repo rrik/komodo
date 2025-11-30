@@ -17,7 +17,7 @@ pub struct Github;
 impl VerifySecret for Github {
   #[instrument("VerifyGithubSecret", skip_all)]
   fn verify_secret(
-    headers: HeaderMap,
+    headers: &HeaderMap,
     body: &str,
     custom_secret: &str,
   ) -> anyhow::Result<()> {

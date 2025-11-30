@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use axum::{
   extract::{WebSocketUpgrade, ws::Message},
+  http::HeaderMap,
   response::IntoResponse,
 };
 use futures_util::{SinkExt, StreamExt};
@@ -16,17 +17,22 @@ use crate::helpers::{
   channel::update_channel, query::get_user_permission_on_target,
 };
 
-pub async fn handler(ws: WebSocketUpgrade) -> impl IntoResponse {
+pub async fn handler(
+  headers: HeaderMap,
+  ws: WebSocketUpgrade,
+) -> impl IntoResponse {
   // get a reveiver for internal update messages.
   let mut receiver = update_channel().receiver.resubscribe();
 
   // handle http -> ws updgrade
   ws.on_upgrade(|socket| async move {
-    let Some((socket, user)) = super::user_ws_login(socket).await else {
-      return
+    let Some((client_socket, user)) =
+      super::user_ws_login(socket, &headers).await
+    else {
+      return;
     };
 
-    let (mut ws_sender, mut ws_reciever) = socket.split();
+    let (mut ws_sender, mut ws_reciever) = client_socket.split();
 
     let cancel = CancellationToken::new();
     let cancel_clone = cancel.clone();

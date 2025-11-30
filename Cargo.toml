@@ -28,6 +28,7 @@ interpolate = { path = "lib/interpolate" }
 secret_file = { path = "lib/secret_file" }
 validations = { path = "lib/validations" }
 formatting = { path = "lib/formatting" }
+rate_limit = { path = "lib/rate_limit" }
 transport = { path = "lib/transport" }
 database = { path = "lib/database" }
 encoding = { path = "lib/encoding" }

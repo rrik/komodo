@@ -99,26 +99,28 @@ pub fn periphery_public_keys() -> Option<&'static [SpkiPublicKey]> {
 /// - Credentials are only allowed if `cors_allow_credentials` is true
 pub fn cors_layer() -> CorsLayer {
   let config = core_config();
-  let allowed_origins = if config.cors_allowed_origins.is_empty() {
-    vec![HeaderValue::from_static("*")]
-  } else {
-    config
-      .cors_allowed_origins
-      .iter()
-      .filter_map(|origin| {
-        HeaderValue::from_str(origin)
-          .inspect_err(|e| {
-            warn!("Invalid CORS allowed origin: {origin} | {e:?}")
-          })
-          .ok()
-      })
-      .collect()
-  };
-  CorsLayer::new()
-    .allow_origin(allowed_origins)
+  let mut cors = CorsLayer::new()
     .allow_methods(tower_http::cors::Any)
     .allow_headers(tower_http::cors::Any)
-    .allow_credentials(config.cors_allow_credentials)
+    .allow_credentials(config.cors_allow_credentials);
+  if config.cors_allowed_origins.is_empty() {
+    cors = cors.allow_origin(tower_http::cors::Any)
+  } else {
+    cors = cors.allow_origin(
+      config
+        .cors_allowed_origins
+        .iter()
+        .filter_map(|origin| {
+          HeaderValue::from_str(origin)
+            .inspect_err(|e| {
+              warn!("Invalid CORS allowed origin: {origin} | {e:?}")
+            })
+            .ok()
+        })
+        .collect::<Vec<_>>(),
+    );
+  };
+  cors
 }
 
 pub fn core_config() -> &'static CoreConfig {
@@ -313,6 +315,15 @@ pub fn core_config() -> &'static CoreConfig {
         .komodo_frontend_path
         .unwrap_or(config.frontend_path),
       jwt_ttl: env.komodo_jwt_ttl.unwrap_or(config.jwt_ttl),
+      auth_rate_limit_disabled: env
+        .komodo_auth_rate_limit_disabled
+        .unwrap_or(config.auth_rate_limit_disabled),
+      auth_rate_limit_max_attempts: env
+        .komodo_auth_rate_limit_max_attempts
+        .unwrap_or(config.auth_rate_limit_max_attempts),
+      auth_rate_limit_window_seconds: env
+        .komodo_auth_rate_limit_window_seconds
+        .unwrap_or(config.auth_rate_limit_window_seconds),
       cors_allowed_origins: env
         .komodo_cors_allowed_origins
         .unwrap_or(config.cors_allowed_origins),

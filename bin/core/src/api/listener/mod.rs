@@ -32,7 +32,7 @@ trait CustomSecret: KomodoResource {
 /// Implemented on the integration struct, eg [integrations::github::Github]
 trait VerifySecret {
   fn verify_secret(
-    headers: HeaderMap,
+    headers: &HeaderMap,
     body: &str,
     custom_secret: &str,
   ) -> anyhow::Result<()>;

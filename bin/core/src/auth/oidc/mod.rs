@@ -2,11 +2,13 @@ use std::sync::OnceLock;
 
 use anyhow::{Context, anyhow};
 use axum::{
-  Router, extract::Query, response::Redirect, routing::get,
+  Router, extract::Query, http::HeaderMap, response::Redirect,
+  routing::get,
 };
 use client::oidc_client;
 use dashmap::DashMap;
 use database::mungos::mongodb::bson::{Document, doc};
+use futures_util::TryFutureExt;
 use komodo_client::entities::{
   komodo_timestamp, random_string,
   user::{User, UserConfig},
@@ -17,13 +19,14 @@ use openidconnect::{
   PkceCodeChallenge, PkceCodeVerifier, Scope, TokenResponse,
   core::{CoreAuthenticationFlow, CoreGenderClaim},
 };
+use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use serror::AddStatusCode;
+use serror::{AddStatusCode as _, AddStatusCodeError};
 
 use crate::{
   config::core_config,
-  state::{db_client, jwt_client},
+  state::{auth_rate_limiter, db_client, jwt_client},
 };
 
 use super::RedirectQuery;
@@ -68,8 +71,14 @@ pub fn router() -> Router {
     )
     .route(
       "/callback",
-      get(|query| async {
-        callback(query).await.status_code(StatusCode::UNAUTHORIZED)
+      get(|query, headers: HeaderMap| async move {
+        callback(query)
+          .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
+          .with_failure_rate_limit_using_headers(
+            auth_rate_limiter(),
+            &headers,
+          )
+          .await
       }),
     )
 }

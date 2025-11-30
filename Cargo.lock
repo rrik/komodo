@@ -2931,6 +2931,7 @@ dependencies = [
  "openidconnect",
  "partial_derive2",
  "periphery_client",
+ "rate_limit",
  "regex",
  "reqwest",
  "resolver_api",
@@ -4141,6 +4142,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
  "getrandom 0.3.3",
+]
+
+[[package]]
+name = "rate_limit"
+version = "2.0.0-dev-91"
+dependencies = [
+ "anyhow",
+ "axum",
+ "cache",
+ "serror",
+ "tokio",
 ]
 
 [[package]]

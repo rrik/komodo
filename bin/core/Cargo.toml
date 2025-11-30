@@ -22,6 +22,7 @@ interpolate.workspace = true
 secret_file.workspace = true
 validations.workspace = true
 formatting.workspace = true
+rate_limit.workspace = true
 transport.workspace = true
 database.workspace = true
 encoding.workspace = true

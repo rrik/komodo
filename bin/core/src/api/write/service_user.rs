@@ -9,7 +9,7 @@ use komodo_client::{
 };
 use reqwest::StatusCode;
 use resolver_api::Resolve;
-use serror::AddStatusCodeError;
+use serror::{AddStatusCode as _, AddStatusCodeError as _};
 
 use crate::{
   api::user::UserArgs,
@@ -40,7 +40,8 @@ impl Resolve<WriteArgs> for CreateServiceUser {
       );
     }
 
-    validate_username(&self.username)?;
+    validate_username(&self.username)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     let config = UserConfig::Service {
       description: self.description,
@@ -153,7 +154,8 @@ impl Resolve<WriteArgs> for CreateApiKeyForServiceUser {
       );
     }
 
-    validate_api_key_name(&self.name)?;
+    validate_api_key_name(&self.name)
+      .status_code(StatusCode::BAD_REQUEST)?;
 
     let service_user =
       find_one_by_id(&db_client().users, &self.user_id)

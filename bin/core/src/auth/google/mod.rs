@@ -1,21 +1,24 @@
 use anyhow::{Context, anyhow};
 use async_timing_util::unix_timestamp_ms;
 use axum::{
-  Router, extract::Query, response::Redirect, routing::get,
+  Router, extract::Query, http::HeaderMap, response::Redirect,
+  routing::get,
 };
 use database::mongo_indexed::Document;
 use database::mungos::mongodb::bson::doc;
+use futures_util::TryFutureExt;
 use komodo_client::entities::{
   random_string,
   user::{User, UserConfig},
 };
+use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use serror::AddStatusCode;
+use serror::{AddStatusCode, AddStatusCodeError as _};
 
 use crate::{
   config::core_config,
-  state::{db_client, jwt_client},
+  state::{auth_rate_limiter, db_client, jwt_client},
 };
 
 use self::client::google_oauth_client;
@@ -29,20 +32,25 @@ pub fn router() -> Router {
     .route(
       "/login",
       get(|Query(query): Query<RedirectQuery>| async move {
-        Redirect::to(
-          &google_oauth_client()
-            .as_ref()
-            // OK: its not mounted unless the client is populated
-            .unwrap()
-            .get_login_redirect_url(query.redirect)
-            .await,
-        )
+        let uri = google_oauth_client()
+          .as_ref()
+          .context("Google Oauth not configured")
+          .status_code(StatusCode::UNAUTHORIZED)?
+          .get_login_redirect_url(query.redirect)
+          .await;
+        serror::Result::Ok(Redirect::to(&uri))
       }),
     )
     .route(
       "/callback",
-      get(|query| async {
-        callback(query).await.status_code(StatusCode::UNAUTHORIZED)
+      get(|query, headers: HeaderMap| async move {
+        callback(query)
+          .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
+          .with_failure_rate_limit_using_headers(
+            auth_rate_limiter(),
+            &headers,
+          )
+          .await
       }),
     )
 }

@@ -105,6 +105,29 @@ impl<K: PartialEq + Eq + Hash + std::fmt::Debug + Clone, T: Clone>
   pub async fn remove(&self, key: &K) -> Option<T> {
     self.0.write().await.remove(key)
   }
+
+  ///Retains only the elements specified by the predicate.
+  ///
+  /// In other words, remove all pairs (k, v) for which f(&k, &mut v) returns false. The elements are visited in unsorted (and unspecified) order.
+  pub async fn retain(&self, retain: impl FnMut(&K, &mut T) -> bool) {
+    self.0.write().await.retain(retain);
+  }
+
+  pub async fn get_or_insert_with(
+    &self,
+    key: &K,
+    default: impl FnOnce() -> T,
+  ) -> T {
+    let mut lock = self.0.write().await;
+    match lock.get(key).cloned() {
+      Some(item) => item,
+      None => {
+        let item: T = default();
+        lock.insert(key.clone(), item.clone());
+        item
+      }
+    }
+  }
 }
 
 impl<
@@ -113,15 +136,7 @@ impl<
 > CloneCache<K, T>
 {
   pub async fn get_or_insert_default(&self, key: &K) -> T {
-    let mut lock = self.0.write().await;
-    match lock.get(key).cloned() {
-      Some(item) => item,
-      None => {
-        let item: T = Default::default();
-        lock.insert(key.clone(), item.clone());
-        item
-      }
-    }
+    self.get_or_insert_with(key, T::default).await
   }
 }
 

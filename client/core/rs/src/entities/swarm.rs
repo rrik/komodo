@@ -52,7 +52,9 @@ pub struct SwarmInfo {}
 pub type _PartialSwarmConfig = PartialSwarmConfig;
 
 #[typeshare]
-#[derive(Serialize, Deserialize, Debug, Clone, Builder, Partial)]
+#[derive(
+  Debug, Clone, Default, Serialize, Deserialize, Builder, Partial,
+)]
 #[partial_derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[partial(skip_serializing_none, from, diff)]
 pub struct SwarmConfig {
@@ -72,15 +74,6 @@ pub struct SwarmConfig {
   ))]
   #[builder(default)]
   pub links: Vec<String>,
-}
-
-impl Default for SwarmConfig {
-  fn default() -> Self {
-    Self {
-      server_ids: Default::default(),
-      links: Default::default(),
-    }
-  }
 }
 
 #[typeshare]

@@ -3,12 +3,13 @@ use komodo_client::entities::{
   action::Action, build::Build, procedure::Procedure, repo::Repo,
   resource::Resource, stack::Stack, sync::ResourceSync,
 };
+use rate_limit::WithFailureRateLimit;
 use reqwest::StatusCode;
 use serde::Deserialize;
 use serror::AddStatusCode;
 use tracing::Instrument;
 
-use crate::resource::KomodoResource;
+use crate::{resource::KomodoResource, state::auth_rate_limiter};
 
 use super::{
   CustomSecret, ExtractBranch, VerifySecret,
@@ -49,7 +50,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
     post(
       |Path(Id { id }), headers: HeaderMap, body: String| async move {
         let build =
-          auth_webhook::<P, Build>(&id, headers, &body).await?;
+          auth_webhook::<P, Build>(&id, &headers, &body).await?;
         tokio::spawn(async move {
           let span = info_span!("BuildWebhook", id);
           async {
@@ -75,7 +76,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
     post(
       |Path(IdAndOption::<RepoWebhookOption> { id, option }), headers: HeaderMap, body: String| async move {
         let repo =
-          auth_webhook::<P, Repo>(&id, headers, &body).await?;
+          auth_webhook::<P, Repo>(&id, &headers, &body).await?;
         tokio::spawn(async move {
           let span = info_span!("RepoWebhook", id);
           async {
@@ -101,7 +102,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
     post(
       |Path(IdAndOption::<StackWebhookOption> { id, option }), headers: HeaderMap, body: String| async move {
         let stack =
-          auth_webhook::<P, Stack>(&id, headers, &body).await?;
+          auth_webhook::<P, Stack>(&id, &headers, &body).await?;
         tokio::spawn(async move {
           let span = info_span!("StackWebhook", id);
           async {
@@ -127,7 +128,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
     post(
       |Path(IdAndOption::<SyncWebhookOption> { id, option }), headers: HeaderMap, body: String| async move {
         let sync =
-          auth_webhook::<P, ResourceSync>(&id, headers, &body).await?;
+          auth_webhook::<P, ResourceSync>(&id, &headers, &body).await?;
         tokio::spawn(async move {
           let span = info_span!("ResourceSyncWebhook", id);
           async {
@@ -153,7 +154,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
     post(
       |Path(IdAndBranch { id, branch }), headers: HeaderMap, body: String| async move {
         let procedure =
-          auth_webhook::<P, Procedure>(&id, headers, &body).await?;
+          auth_webhook::<P, Procedure>(&id, &headers, &body).await?;
         tokio::spawn(async move {
           let span = info_span!("ProcedureWebhook", id);
           async {
@@ -179,7 +180,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
     post(
       |Path(IdAndBranch { id, branch }), headers: HeaderMap, body: String| async move {
         let action =
-          auth_webhook::<P, Action>(&id, headers, &body).await?;
+          auth_webhook::<P, Action>(&id, &headers, &body).await?;
         tokio::spawn(async move {
           let span = info_span!("ActionWebhook", id);
           async {
@@ -204,17 +205,21 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
 
 async fn auth_webhook<P, R>(
   id: &str,
-  headers: HeaderMap,
+  headers: &HeaderMap,
   body: &str,
 ) -> serror::Result<Resource<R::Config, R::Info>>
 where
   P: VerifySecret,
   R: KomodoResource + CustomSecret,
 {
-  let resource = crate::resource::get::<R>(id)
-    .await
-    .status_code(StatusCode::BAD_REQUEST)?;
-  P::verify_secret(headers, body, R::custom_secret(&resource))
-    .status_code(StatusCode::UNAUTHORIZED)?;
-  Ok(resource)
+  async {
+    let resource = crate::resource::get::<R>(id)
+      .await
+      .status_code(StatusCode::BAD_REQUEST)?;
+    P::verify_secret(headers, body, R::custom_secret(&resource))
+      .status_code(StatusCode::UNAUTHORIZED)?;
+    serror::Result::Ok(resource)
+  }
+  .with_failure_rate_limit_using_headers(auth_rate_limiter(), headers)
+  .await
 }

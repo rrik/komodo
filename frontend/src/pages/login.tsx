@@ -20,7 +20,6 @@ import { ThemeToggle } from "@ui/theme";
 import { KOMODO_BASE_URL } from "@main";
 import { KeyRound, X } from "lucide-react";
 import { cn } from "@lib/utils";
-import { useToast } from "@ui/use-toast";
 import { Types } from "komodo_client";
 
 type OauthProvider = "Github" | "Google" | "OIDC";
@@ -39,7 +38,6 @@ const login_with_oauth = (provider: OauthProvider) => {
 export default function Login() {
   const options = useLoginOptions().data;
   const userInvalidate = useUserInvalidate();
-  const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
   // If signing in another user, need to redirect away from /login manually
@@ -60,42 +58,10 @@ export default function Login() {
     "SignUpLocalUser",
     {
       onSuccess,
-      onError: (e: any) => {
-        const message = e?.response?.data?.error as string | undefined;
-        if (message) {
-          toast({
-            title: `Failed to sign up user. '${message}'`,
-            variant: "destructive",
-          });
-          console.error(e);
-        } else {
-          toast({
-            title: "Failed to sign up user. See console log for details.",
-            variant: "destructive",
-          });
-          console.error(e);
-        }
-      },
     }
   );
   const { mutate: login, isPending: loginPending } = useAuth("LoginLocalUser", {
     onSuccess,
-    onError: (e: any) => {
-      const message = e?.response?.data?.error as string | undefined;
-      if (message) {
-        toast({
-          title: `Failed to login user. '${message}'`,
-          variant: "destructive",
-        });
-        console.error(e);
-      } else {
-        toast({
-          title: "Failed to login user. See console log for details.",
-          variant: "destructive",
-        });
-        console.error(e);
-      }
-    },
   });
 
   const getFormCredentials = () => {
@@ -111,12 +77,12 @@ export default function Login() {
     if (!creds) return;
     login(creds);
   };
-  
+
   const handleSubmit = (e: any) => {
     e.preventDefault();
     handleLogin();
   };
-  
+
   const handleSignUp = () => {
     const creds = getFormCredentials();
     if (!creds) return;
@@ -188,11 +154,7 @@ export default function Login() {
             </div>
           </CardHeader>
           {options?.local && (
-            <form
-              ref={formRef}
-              onSubmit={handleSubmit}
-              autoComplete="on"
-            >
+            <form ref={formRef} onSubmit={handleSubmit} autoComplete="on">
               <CardContent className="flex flex-col justify-center w-full gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="username">Username</Label>
