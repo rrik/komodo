@@ -26,7 +26,14 @@ pub mod oidc;
 
 mod local;
 
+/// Length of random token in Oauth / OIDC 'state'
 const STATE_PREFIX_LENGTH: usize = 20;
+/// JWT Clock skew tolerance in milliseconds (5 minutes for JWTs)
+const JWT_CLOCK_SKEW_TOLERANCE_MS: u128 = 5 * 60 * 1000;
+/// Api Key Clock skew tolerance in milliseconds (5 minutes for Api Keys)
+const API_KEY_CLOCK_SKEW_TOLERANCE_MS: i64 = 5 * 60 * 1000;
+/// Exchange Token Clock skew tolerance in milliseconds (1 minutes for Exchange tokens)
+const EXCHANGE_TOKEN_CLOCK_SKEW_TOLERANCE_MS: u128 = 60 * 1000;
 
 #[derive(Debug, Deserialize)]
 struct RedirectQuery {
@@ -99,7 +106,11 @@ pub async fn auth_jwt_get_user_id(
   let claims: JwtClaims = jwt_client()
     .decode(jwt)
     .map_err(|_| anyhow!("Invalid user credentials"))?;
-  if claims.exp > unix_timestamp_ms() {
+  // Apply clock skew tolerance.
+  // Token is valid if expiration is greater than (now - tolerance)
+  if claims.exp
+    > unix_timestamp_ms().saturating_sub(JWT_CLOCK_SKEW_TOLERANCE_MS)
+  {
     Ok(claims.id)
   } else {
     Err(anyhow!("Invalid user credentials"))
@@ -123,7 +134,13 @@ pub async fn auth_api_key_get_user_id(
     .await
     .context("Failed to query db")?
     .context("Invalid user credentials")?;
-  if key.expires != 0 && key.expires < komodo_timestamp() {
+  // Apply clock skew tolerance.
+  // Token is invalid if expiration is less than (now - tolerance)
+  if key.expires != 0
+    && key.expires
+      < komodo_timestamp()
+        .saturating_sub(API_KEY_CLOCK_SKEW_TOLERANCE_MS)
+  {
     return Err(anyhow!("Invalid user credentials"));
   }
   if bcrypt::verify(secret, &key.secret)
