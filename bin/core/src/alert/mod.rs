@@ -466,9 +466,9 @@ fn standard_alert_content(alert: &Alert) -> String {
       format!(
         "{level} | {message}{}",
         if details.is_empty() {
-          format_args!("")
+          String::new()
         } else {
-          format_args!("\n{details}")
+          format!("\n{details}")
         }
       )
     }
