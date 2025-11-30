@@ -12,7 +12,9 @@ use komodo_client::{
   api::auth::JwtResponse,
   entities::{config::core::CoreConfig, random_string},
 };
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use serror::{AddStatusCode as _, AddStatusCodeError as _};
 use tokio::sync::Mutex;
 
 type ExchangeTokenMap = Mutex<HashMap<String, (JwtResponse, u128)>>;
@@ -93,17 +95,21 @@ impl JwtClient {
   pub async fn redeem_exchange_token(
     &self,
     exchange_token: &str,
-  ) -> anyhow::Result<JwtResponse> {
+  ) -> serror::Result<JwtResponse> {
     let (jwt, valid_until) = self
       .exchange_tokens
       .lock()
       .await
       .remove(exchange_token)
-      .context("invalid exchange token: unrecognized")?;
+      .context("Invalid exchange token")
+      .status_code(StatusCode::UNAUTHORIZED)?;
     if unix_timestamp_ms() < valid_until {
       Ok(jwt)
     } else {
-      Err(anyhow!("invalid exchange token: expired"))
+      Err(
+        anyhow!("Invalid exchange token")
+          .status_code(StatusCode::UNAUTHORIZED),
+      )
     }
   }
 }
