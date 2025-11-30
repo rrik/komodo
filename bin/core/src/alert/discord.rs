@@ -232,9 +232,9 @@ pub async fn send_alert(
       format!(
         "{level} | {message}{}",
         if details.is_empty() {
-          format_args!("")
+          String::new()
         } else {
-          format_args!("\n{details}")
+          format!("\n{details}")
         }
       )
     }
