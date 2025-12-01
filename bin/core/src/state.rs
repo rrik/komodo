@@ -1,6 +1,6 @@
 use std::sync::{Arc, OnceLock};
 
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use arc_swap::ArcSwap;
 use cache::CloneCache;
 use komodo_client::entities::{
@@ -32,20 +32,34 @@ use crate::{
 static DB_CLIENT: OnceLock<database::Client> = OnceLock::new();
 
 pub fn db_client() -> &'static database::Client {
-  DB_CLIENT
-    .get()
-    .expect("db_client accessed before initialized")
+  DB_CLIENT.get().unwrap_or_else(|| {
+    error!(
+      "FATAL: db_client accessed before initialized | Ensure init_db_client() is called during startup | Exiting..."
+    );
+    std::process::exit(1)
+  })
 }
 
 /// Must be called in app startup sequence.
 pub async fn init_db_client() {
-  let client = database::Client::new(&core_config().database)
-    .await
-    .context("failed to initialize database client")
-    .unwrap();
-  DB_CLIENT
-    .set(client)
-    .expect("db_client initialized more than once");
+  let init = async {
+    let client = database::Client::new(&core_config().database)
+      .await
+      .context("failed to initialize database client")?;
+    DB_CLIENT.set(client).map_err(|_| {
+    anyhow!(
+      "db_client initialized more than once - this should not happen"
+    )
+  })?;
+    anyhow::Ok(())
+  }
+  .await;
+  if let Err(e) = init {
+    error!(
+      "FATAL: Failed to initialize database::Client | {e:#} | Exiting..."
+    );
+    std::process::exit(1)
+  }
 }
 
 pub fn jwt_client() -> &'static JwtClient {
@@ -53,8 +67,10 @@ pub fn jwt_client() -> &'static JwtClient {
   JWT_CLIENT.get_or_init(|| match JwtClient::new(core_config()) {
     Ok(client) => client,
     Err(e) => {
-      error!("failed to initialialize JwtClient | {e:#}");
-      panic!("Exiting");
+      error!(
+        "FATAL: Failed to initialialize JwtClient | {e:#} | Exiting..."
+      );
+      std::process::exit(1)
     }
   })
 }
