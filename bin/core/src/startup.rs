@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use anyhow::Context;
 use colored::Colorize;
 use database::mungos::{
   find::find_collect,
@@ -125,8 +126,15 @@ async fn in_progress_update_cleanup() {
       "Komodo shutdown during execution. If this is a build, the builder may not have been terminated.",
     ),
   );
-  // This static log won't fail to serialize, unwrap ok.
-  let log = to_document(&log).unwrap();
+  let log = match to_document(&log)
+    .context("Failed to serialize log to document")
+  {
+    Ok(log) => log,
+    Err(e) => {
+      error!("Failed to cleanup in progress update | {e:#}");
+      return;
+    }
+  };
   if let Err(e) = db_client()
     .updates
     .update_many(
@@ -292,19 +300,34 @@ async fn ensure_init_user_and_resources() {
   // Init admin user if set in config.
   if let Some(username) = &config.init_admin_username {
     info!("Creating init admin user...");
-    SignUpLocalUser {
+    if let Err(e) = (SignUpLocalUser {
       username: username.clone(),
       password: config.init_admin_password.clone(),
-    }
+    })
     .resolve(&AuthArgs::default())
     .await
-    .expect("Failed to initialize default admin user.");
-    db.users
+    {
+      error!("Failed to create init admin user | {:#}", e.error);
+      return;
+    }
+    match db
+      .users
       .find_one(doc! { "username": username })
       .await
-      .expect("Failed to query database for initial user")
-      .expect("Failed to find initial user after creation");
-  };
+      .context(
+        "Failed to query database for init admin user after creation",
+      ) {
+      Ok(Some(_)) => {
+        info!("Successfully created init admin user.")
+      }
+      Ok(None) => {
+        error!("Failed to find init admin user after creation");
+      }
+      Err(e) => {
+        error!("{e:#}");
+      }
+    }
+  }
 
   if config.disable_init_resources {
     info!("System resources init {}", "DISABLED".red());
@@ -487,38 +510,55 @@ async fn clean_up_server_templates() {
   let db = db_client();
   tokio::join!(
     async {
-      db.permissions
+      if let Err(e) = db
+        .permissions
         .delete_many(doc! {
           "resource_target.type": "ServerTemplate",
         })
         .await
-        .expect(
-          "Failed to clean up server template permissions on db",
+      {
+        error!(
+          "Failed to clean up server template permissions on database | {e:#}"
         );
+      }
     },
     async {
-      db.updates
+      if let Err(e) = db
+        .updates
         .delete_many(doc! { "target.type": "ServerTemplate" })
         .await
-        .expect("Failed to clean up server template updates on db");
+      {
+        error!(
+          "Failed to clean up server template updates on database | {e:#}"
+        );
+      }
     },
     async {
-      db.users
+      if let Err(e) = db.users
         .update_many(
           Document::new(),
           doc! { "$unset": { "recents.ServerTemplate": 1, "all.ServerTemplate": 1 } }
         )
         .await
-        .expect("Failed to clean up server template updates on db");
+      {
+        error!(
+          "Failed to clean up server template user references on database | {e:#}"
+        );
+      }
     },
     async {
-      db.user_groups
+      if let Err(e) = db
+        .user_groups
         .update_many(
           Document::new(),
           doc! { "$unset": { "all.ServerTemplate": 1 } },
         )
         .await
-        .expect("Failed to clean up server template updates on db");
+      {
+        error!(
+          "Failed to clean up server template user group references on database | {e:#}"
+        );
+      }
     },
   );
 }
