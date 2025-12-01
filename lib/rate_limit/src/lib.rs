@@ -55,7 +55,7 @@ where
             (Some(first.unwrap_or(time)), count + 1)
           },
         );
-      
+
       // Drop the read lock immediately
       drop(read);
 
