@@ -65,7 +65,7 @@ where
         attempts.write().await.retain(|&time| time > window_start);
         return Err(
           anyhow!(
-            "Too many attempts. Try again in {:.0?}",
+            "Too many attempts | Try again in {:.0?}",
             limiter.window
               - first.map(|first| now - first).unwrap_or_default(),
           )
