@@ -1,5 +1,6 @@
 use std::{
   collections::HashSet,
+  hash::Hash,
   sync::{Mutex, OnceLock},
 };
 
@@ -37,9 +38,8 @@ use crate::{
 };
 
 /// (StackId, Service)
-fn stack_alert_sent_cache()
--> &'static Mutex<HashSet<(String, String)>> {
-  static CACHE: OnceLock<Mutex<HashSet<(String, String)>>> =
+fn stack_alert_sent_cache() -> &'static AlertCache<(String, String)> {
+  static CACHE: OnceLock<AlertCache<(String, String)>> =
     OnceLock::new();
   CACHE.get_or_init(Default::default)
 }
@@ -51,6 +51,7 @@ pub async fn update_stack_cache(
   images: &[ImageListItem],
 ) {
   let stack_status_cache = stack_status_cache();
+  let stack_alert_sent_cache = stack_alert_sent_cache();
   for stack in stacks {
     let services = extract_services_from_stack(&stack);
     let mut services_with_containers = services.iter().map(|StackServiceNames { service_name, container_name, image }| {
@@ -86,16 +87,12 @@ pub async fn update_stack_cache(
       if update_available {
         if !stack.config.auto_update
           && stack.config.send_alerts
-          && container.is_some()
-          && container.as_ref().unwrap().state == ContainerStateStatusEnum::Running
-          && !stack_alert_sent_cache()
-            .lock()
-            .unwrap()
+          && let Some(container) = &container
+          && container.state == ContainerStateStatusEnum::Running
+          && !stack_alert_sent_cache
             .contains(&(stack.id.clone(), service_name.clone()))
         {
-          stack_alert_sent_cache()
-            .lock()
-            .unwrap()
+          stack_alert_sent_cache
             .insert((stack.id.clone(), service_name.clone()));
           let ts = komodo_timestamp();
           let alert = Alert {
@@ -125,9 +122,10 @@ pub async fn update_stack_cache(
           });
         }
       } else {
-        stack_alert_sent_cache()
-          .lock()
-          .unwrap()
+        // If it sees there is no longer update available, remove
+        // from the sent cache, so on next `update_available = true`
+        // the cache is empty and a fresh alert will be sent.
+        stack_alert_sent_cache
           .remove(&(stack.id.clone(), service_name.clone()));
       }
       StackService {
@@ -238,8 +236,8 @@ pub async fn update_stack_cache(
   }
 }
 
-fn deployment_alert_sent_cache() -> &'static Mutex<HashSet<String>> {
-  static CACHE: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+fn deployment_alert_sent_cache() -> &'static AlertCache<String> {
+  static CACHE: OnceLock<AlertCache<String>> = OnceLock::new();
   CACHE.get_or_init(Default::default)
 }
 
@@ -251,6 +249,8 @@ pub async fn update_deployment_cache(
   builds: &[Build],
 ) {
   let deployment_status_cache = deployment_status_cache();
+  let deployment_alert_sent_cache = deployment_alert_sent_cache();
+
   for deployment in deployments {
     let container = containers
       .iter()
@@ -364,16 +364,10 @@ pub async fn update_deployment_cache(
         }
       } else if state == DeploymentState::Running
         && deployment.config.send_alerts
-        && !deployment_alert_sent_cache()
-          .lock()
-          .unwrap()
-          .contains(&deployment.id)
+        && deployment_alert_sent_cache.contains(&deployment.id)
       {
         // Add that it is already sent to the cache, so another alert won't be sent.
-        deployment_alert_sent_cache()
-          .lock()
-          .unwrap()
-          .insert(deployment.id.clone());
+        deployment_alert_sent_cache.insert(deployment.id.clone());
         let ts = komodo_timestamp();
         let alert = Alert {
           id: Default::default(),
@@ -402,10 +396,7 @@ pub async fn update_deployment_cache(
       // If it sees there is no longer update available, remove
       // from the sent cache, so on next `update_available = true`
       // the cache is empty and a fresh alert will be sent.
-      deployment_alert_sent_cache()
-        .lock()
-        .unwrap()
-        .remove(&deployment.id);
+      deployment_alert_sent_cache.remove(&deployment.id);
     }
     deployment_status_cache
       .insert(
@@ -422,5 +413,42 @@ pub async fn update_deployment_cache(
         .into(),
       )
       .await;
+  }
+}
+
+struct AlertCache<K>(Mutex<HashSet<K>>);
+
+impl<K> Default for AlertCache<K> {
+  fn default() -> Self {
+    Self(Default::default())
+  }
+}
+
+impl<K: Eq + Hash> AlertCache<K> {
+  /// Checks the cache for an existing key entry.
+  /// If the cache is poisoned, will always return 'true' and include error log.
+  fn contains(&self, key: &K) -> bool {
+    self
+      .0
+      .lock()
+      .map(|cache| cache.contains(key))
+      .map_err(|_| error!("Alert Cache poisoned, this blocks container state change alerts, please restart Komodo Core."))
+      .unwrap_or(true)
+  }
+
+  fn insert(&self, key: K) {
+    let _ = self
+      .0
+      .lock()
+      .map(|mut cache| cache.insert(key))
+      .map_err(|_| error!("Alert Cache poisoned, this blocks container state change alerts, please restart Komodo Core."));
+  }
+
+  fn remove(&self, key: &K) {
+    let _ = self
+      .0
+      .lock()
+      .map(|mut cache| cache.remove(key))
+      .map_err(|_| error!("Alert Cache poisoned, this blocks container state change alerts, please restart Komodo Core."));
   }
 }
