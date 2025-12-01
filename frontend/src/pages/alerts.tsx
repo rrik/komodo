@@ -101,7 +101,7 @@ export default function AlertsPage() {
                 </SelectItem>
                 <SelectSeparator />
                 {Object.keys(ALERT_TYPES_BY_RESOURCE).map((type) => {
-                  const Icon = ResourceComponents[type].Icon;
+                  const Icon = ResourceComponents[type as UsableResource].Icon;
                   return (
                     <SelectItem key={type} value={type}>
                       <div className="flex items-center gap-2">

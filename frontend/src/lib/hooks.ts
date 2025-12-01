@@ -507,9 +507,8 @@ export const useKeyListener = (listenKey: string, onPress: () => void) => {
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
       // This will ignore Shift + listenKey if it is sent from input / textarea
-      const target = e.target as any;
-      if (target.matches("input") || target.matches("textarea")) return;
-
+      const target = e.target as HTMLElement | null;
+      if (target?.matches("input") || target?.matches("textarea")) return;
       if (e.key === listenKey) {
         e.preventDefault();
         onPress();
@@ -524,9 +523,8 @@ export const useShiftKeyListener = (listenKey: string, onPress: () => void) => {
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
       // This will ignore Shift + listenKey if it is sent from input / textarea
-      const target = e.target as any;
-      if (target.matches("input") || target.matches("textarea")) return;
-
+      const target = e.target as HTMLElement | null;
+      if (target?.matches("input") || target?.matches("textarea")) return;
       if (e.shiftKey && e.key === listenKey) {
         e.preventDefault();
         onPress();
