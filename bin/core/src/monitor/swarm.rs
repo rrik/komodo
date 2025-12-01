@@ -20,17 +20,17 @@ use periphery_client::api::swarm::{
 use tokio::sync::Mutex;
 
 use crate::{
+  config::monitoring_interval,
   helpers::swarm::swarm_request_custom_timeout,
   state::{CachedSwarmStatus, db_client, swarm_status_cache},
 };
 
 const ADDITIONAL_MS: u128 = 1000;
 
-pub fn spawn_swarm_monitoring_loop(
-  interval: async_timing_util::Timelength,
-) {
+pub fn spawn_swarm_monitoring_loop() {
   tokio::spawn(async move {
     refresh_swarm_cache(komodo_timestamp()).await;
+    let interval = monitoring_interval();
     loop {
       let ts = (wait_until_timelength(interval, ADDITIONAL_MS).await
         - ADDITIONAL_MS) as i64;

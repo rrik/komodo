@@ -21,7 +21,7 @@ use serror::Serror;
 use tokio::sync::Mutex;
 
 use crate::{
-  config::core_config,
+  config::monitoring_interval,
   helpers::periphery_client,
   monitor::{alert::check_alerts, record::record_server_stats},
   state::{
@@ -46,19 +46,14 @@ pub use swarm::update_cache_for_swarm;
 const ADDITIONAL_MS: u128 = 500;
 
 pub fn spawn_monitoring_loops() {
-  let interval = core_config()
-    .monitoring_interval
-    .try_into()
-    .expect("Invalid monitoring interval");
-  spawn_server_monitoring_loop(interval);
-  swarm::spawn_swarm_monitoring_loop(interval);
+  spawn_server_monitoring_loop();
+  swarm::spawn_swarm_monitoring_loop();
 }
 
-fn spawn_server_monitoring_loop(
-  interval: async_timing_util::Timelength,
-) {
+fn spawn_server_monitoring_loop() {
   tokio::spawn(async move {
     refresh_server_cache(komodo_timestamp()).await;
+    let interval = monitoring_interval();
     loop {
       let ts = (wait_until_timelength(interval, ADDITIONAL_MS).await
         - ADDITIONAL_MS) as i64;

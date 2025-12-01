@@ -123,6 +123,20 @@ pub fn cors_layer() -> CorsLayer {
   cors
 }
 
+pub fn monitoring_interval() -> async_timing_util::Timelength {
+  static MONITORING_INTERVAL: OnceLock<
+    async_timing_util::Timelength,
+  > = OnceLock::new();
+  *MONITORING_INTERVAL.get_or_init(|| {
+    core_config().monitoring_interval.try_into().unwrap_or_else(
+      |_| {
+        error!("Invalid 'monitoring_interval', using default 15-sec");
+        async_timing_util::Timelength::FifteenSeconds
+      },
+    )
+  })
+}
+
 pub fn core_config() -> &'static CoreConfig {
   static CORE_CONFIG: OnceLock<CoreConfig> = OnceLock::new();
   CORE_CONFIG.get_or_init(|| {
