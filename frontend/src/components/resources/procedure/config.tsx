@@ -552,9 +552,8 @@ const Stage = ({
                             execution: {
                               type,
                               params:
-                                TARGET_COMPONENTS[
-                                  type as Types.Execution["type"]
-                                ].params,
+                                TARGET_COMPONENTS[type as MinExecutionType]
+                                  .params,
                             },
                           } as Types.EnabledExecution)
                         : item
@@ -575,7 +574,8 @@ const Stage = ({
                 index,
               },
             }) => {
-              const Component = TARGET_COMPONENTS[type].Component;
+              const Component =
+                TARGET_COMPONENTS[type as MinExecutionType].Component;
               return (
                 <Component
                   disabled={disabled}

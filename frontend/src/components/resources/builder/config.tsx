@@ -456,7 +456,7 @@ const ProviderDialog = ({
             : provider
       ) as Types.GitProvider[] | Types.DockerRegistry[],
     });
-  const remove_account = (account_index) =>
+  const remove_account = (account_index: number) =>
     set({
       [arr_field]: providers.map(
         (provider: Types.GitProvider | Types.DockerRegistry, provider_index) =>
@@ -495,7 +495,7 @@ const ProviderDialog = ({
             : provider
       ) as Types.GitProvider[] | Types.DockerRegistry[],
     });
-  const remove_organization = (organization_index) =>
+  const remove_organization = (organization_index: number) =>
     set({
       [arr_field]: providers.map(
         (provider: Types.DockerRegistry, provider_index) =>

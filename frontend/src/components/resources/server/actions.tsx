@@ -36,7 +36,11 @@ export const Prune = ({
                 ? "pruning_system"
                 : "";
 
-  const pending = isPending || action_state?.[pruningKey];
+  const pending =
+    isPending ||
+    (pruningKey && action_state?.[pruningKey]
+      ? action_state?.[pruningKey]
+      : undefined);
 
   if (type === "Images" || type === "Networks" || type === "Buildx") {
     return (

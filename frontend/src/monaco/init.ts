@@ -45,7 +45,7 @@ export async function init_monaco() {
     typeRoots: ["index.d.ts"],
     allowTopLevelAwait: true,
     moduleDetection: "force",
-  } as monaco.languages.typescript.CompilerOptions & ExtraOptions);
+  } as monaco.languages.typescript.CompilerOptions & Partial<ExtraOptions>);
 
   monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
     diagnosticCodesToIgnore: [
