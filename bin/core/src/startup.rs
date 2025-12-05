@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+  net::{IpAddr, Ipv4Addr},
+  str::FromStr,
+};
 
 use anyhow::Context;
 use colored::Colorize;
@@ -304,7 +307,10 @@ async fn ensure_init_user_and_resources() {
       username: username.clone(),
       password: config.init_admin_password.clone(),
     })
-    .resolve(&AuthArgs::default())
+    .resolve(&AuthArgs {
+      headers: Default::default(),
+      ip: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
+    })
     .await
     {
       error!("Failed to create init admin user | {:#}", e.error);

@@ -1,6 +1,8 @@
+use std::net::SocketAddr;
+
 use anyhow::anyhow;
 use axum::{
-  extract::{FromRequestParts, WebSocketUpgrade, ws},
+  extract::{ConnectInfo, FromRequestParts, WebSocketUpgrade, ws},
   http::{HeaderMap, request},
   response::IntoResponse,
 };
@@ -22,12 +24,14 @@ use crate::{
 #[instrument("ConnectTerminal", skip(ws))]
 pub async fn handler(
   Qs(query): Qs<ConnectTerminalQuery>,
+  ConnectInfo(info): ConnectInfo<SocketAddr>,
   headers: HeaderMap,
   ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
-  ws.on_upgrade(|socket| async move {
+  let ip = info.ip();
+  ws.on_upgrade(move |socket| async move {
     let Some((mut client_socket, user)) =
-      super::user_ws_login(socket, &headers).await
+      super::user_ws_login(socket, &headers, ip).await
     else {
       return;
     };

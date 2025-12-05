@@ -29,12 +29,13 @@ impl Resolve<AuthArgs> for SignUpLocalUser {
   #[instrument("SignUpLocalUser", skip(self))]
   async fn resolve(
     self,
-    AuthArgs { headers }: &AuthArgs,
+    AuthArgs { headers, ip }: &AuthArgs,
   ) -> serror::Result<SignUpLocalUserResponse> {
     sign_up_local_user(self)
       .with_failure_rate_limit_using_headers(
         auth_rate_limiter(),
         headers,
+        Some(*ip),
       )
       .await
   }
@@ -139,12 +140,13 @@ fn login_local_user_rate_limiter() -> &'static RateLimiter {
 impl Resolve<AuthArgs> for LoginLocalUser {
   async fn resolve(
     self,
-    AuthArgs { headers }: &AuthArgs,
+    AuthArgs { headers, ip }: &AuthArgs,
   ) -> serror::Result<LoginLocalUserResponse> {
     login_local_user(self)
       .with_failure_rate_limit_using_headers(
         login_local_user_rate_limiter(),
         headers,
+        Some(*ip),
       )
       .await
   }

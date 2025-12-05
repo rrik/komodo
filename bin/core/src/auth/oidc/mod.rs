@@ -1,8 +1,11 @@
-use std::sync::OnceLock;
+use std::{net::SocketAddr, sync::OnceLock};
 
 use anyhow::{Context, anyhow};
 use axum::{
-  Router, extract::Query, http::HeaderMap, response::Redirect,
+  Router,
+  extract::{ConnectInfo, Query},
+  http::HeaderMap,
+  response::Redirect,
   routing::get,
 };
 use client::oidc_client;
@@ -71,15 +74,20 @@ pub fn router() -> Router {
     )
     .route(
       "/callback",
-      get(|query, headers: HeaderMap| async move {
-        callback(query)
-          .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
-          .with_failure_rate_limit_using_headers(
-            auth_rate_limiter(),
-            &headers,
-          )
-          .await
-      }),
+      get(
+        |query,
+         headers: HeaderMap,
+         ConnectInfo(info): ConnectInfo<SocketAddr>| async move {
+          callback(query)
+            .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
+            .with_failure_rate_limit_using_headers(
+              auth_rate_limiter(),
+              &headers,
+              Some(info.ip()),
+            )
+            .await
+        },
+      ),
     )
 }
 
