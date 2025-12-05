@@ -1,6 +1,8 @@
+use std::net::SocketAddr;
+
 use anyhow::anyhow;
 use axum::{
-  extract::{WebSocketUpgrade, ws::Message},
+  extract::{ConnectInfo, WebSocketUpgrade, ws::Message},
   http::HeaderMap,
   response::IntoResponse,
 };
@@ -19,15 +21,17 @@ use crate::helpers::{
 
 pub async fn handler(
   headers: HeaderMap,
+  ConnectInfo(info): ConnectInfo<SocketAddr>,
   ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
   // get a reveiver for internal update messages.
   let mut receiver = update_channel().receiver.resubscribe();
+  let ip = info.ip();
 
   // handle http -> ws updgrade
-  ws.on_upgrade(|socket| async move {
+  ws.on_upgrade(move |socket| async move {
     let Some((client_socket, user)) =
-      super::user_ws_login(socket, &headers).await
+      super::user_ws_login(socket, &headers, ip).await
     else {
       return;
     };

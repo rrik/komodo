@@ -1,4 +1,11 @@
-use axum::{Router, extract::Path, http::HeaderMap, routing::post};
+use std::net::{IpAddr, SocketAddr};
+
+use axum::{
+  Router,
+  extract::{ConnectInfo, Path},
+  http::HeaderMap,
+  routing::post,
+};
 use komodo_client::entities::{
   action::Action, build::Build, procedure::Procedure, repo::Repo,
   resource::Resource, stack::Stack, sync::ResourceSync,
@@ -48,9 +55,9 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
   .route(
     "/build/{id}",
     post(
-      |Path(Id { id }), headers: HeaderMap, body: String| async move {
+      |Path(Id { id }), headers: HeaderMap, ConnectInfo(info): ConnectInfo<SocketAddr>, body: String| async move {
         let build =
-          auth_webhook::<P, Build>(&id, &headers, &body).await?;
+          auth_webhook::<P, Build>(&id, &headers, info.ip(), &body).await?;
         tokio::spawn(async move {
           let span = info_span!("BuildWebhook", id);
           async {
@@ -74,9 +81,9 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
   .route(
     "/repo/{id}/{option}",
     post(
-      |Path(IdAndOption::<RepoWebhookOption> { id, option }), headers: HeaderMap, body: String| async move {
+      |Path(IdAndOption::<RepoWebhookOption> { id, option }), headers: HeaderMap, ConnectInfo(info): ConnectInfo<SocketAddr>, body: String| async move {
         let repo =
-          auth_webhook::<P, Repo>(&id, &headers, &body).await?;
+          auth_webhook::<P, Repo>(&id, &headers, info.ip(), &body).await?;
         tokio::spawn(async move {
           let span = info_span!("RepoWebhook", id);
           async {
@@ -100,9 +107,9 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
   .route(
     "/stack/{id}/{option}",
     post(
-      |Path(IdAndOption::<StackWebhookOption> { id, option }), headers: HeaderMap, body: String| async move {
+      |Path(IdAndOption::<StackWebhookOption> { id, option }), headers: HeaderMap, ConnectInfo(info): ConnectInfo<SocketAddr>, body: String| async move {
         let stack =
-          auth_webhook::<P, Stack>(&id, &headers, &body).await?;
+          auth_webhook::<P, Stack>(&id, &headers, info.ip(), &body).await?;
         tokio::spawn(async move {
           let span = info_span!("StackWebhook", id);
           async {
@@ -126,9 +133,9 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
   .route(
     "/sync/{id}/{option}",
     post(
-      |Path(IdAndOption::<SyncWebhookOption> { id, option }), headers: HeaderMap, body: String| async move {
+      |Path(IdAndOption::<SyncWebhookOption> { id, option }), headers: HeaderMap, ConnectInfo(info): ConnectInfo<SocketAddr>, body: String| async move {
         let sync =
-          auth_webhook::<P, ResourceSync>(&id, &headers, &body).await?;
+          auth_webhook::<P, ResourceSync>(&id, &headers, info.ip(), &body).await?;
         tokio::spawn(async move {
           let span = info_span!("ResourceSyncWebhook", id);
           async {
@@ -152,9 +159,9 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
   .route(
     "/procedure/{id}/{branch}",
     post(
-      |Path(IdAndBranch { id, branch }), headers: HeaderMap, body: String| async move {
+      |Path(IdAndBranch { id, branch }), headers: HeaderMap, ConnectInfo(info): ConnectInfo<SocketAddr>, body: String| async move {
         let procedure =
-          auth_webhook::<P, Procedure>(&id, &headers, &body).await?;
+          auth_webhook::<P, Procedure>(&id, &headers, info.ip(), &body).await?;
         tokio::spawn(async move {
           let span = info_span!("ProcedureWebhook", id);
           async {
@@ -178,9 +185,9 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
   .route(
     "/action/{id}/{branch}",
     post(
-      |Path(IdAndBranch { id, branch }), headers: HeaderMap, body: String| async move {
+      |Path(IdAndBranch { id, branch }), headers: HeaderMap, ConnectInfo(info): ConnectInfo<SocketAddr>, body: String| async move {
         let action =
-          auth_webhook::<P, Action>(&id, &headers, &body).await?;
+          auth_webhook::<P, Action>(&id, &headers, info.ip(), &body).await?;
         tokio::spawn(async move {
           let span = info_span!("ActionWebhook", id);
           async {
@@ -206,6 +213,7 @@ pub fn router<P: VerifySecret + ExtractBranch>() -> Router {
 async fn auth_webhook<P, R>(
   id: &str,
   headers: &HeaderMap,
+  ip: IpAddr,
   body: &str,
 ) -> serror::Result<Resource<R::Config, R::Info>>
 where
@@ -220,6 +228,10 @@ where
       .status_code(StatusCode::UNAUTHORIZED)?;
     serror::Result::Ok(resource)
   }
-  .with_failure_rate_limit_using_headers(auth_rate_limiter(), headers)
+  .with_failure_rate_limit_using_headers(
+    auth_rate_limiter(),
+    headers,
+    Some(ip),
+  )
   .await
 }

@@ -82,7 +82,8 @@ async fn app() -> anyhow::Result<()> {
   .instrument(startup_span)
   .await;
 
-  let app = api::app().into_make_service();
+  let app =
+    api::app().into_make_service_with_connect_info::<SocketAddr>();
 
   let addr =
     format!("{}:{}", core_config().bind_ip, core_config().port);

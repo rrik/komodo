@@ -1,6 +1,15 @@
-use std::{sync::OnceLock, time::Instant};
+use std::{
+  net::{IpAddr, SocketAddr},
+  sync::OnceLock,
+  time::Instant,
+};
 
-use axum::{Router, extract::Path, http::HeaderMap, routing::post};
+use axum::{
+  Router,
+  extract::{ConnectInfo, Path},
+  http::HeaderMap,
+  routing::post,
+};
 use derive_variants::{EnumVariants, ExtractVariant};
 use komodo_client::{api::auth::*, entities::user::User};
 use rate_limit::WithFailureRateLimit;
@@ -27,9 +36,11 @@ use crate::{
 
 use super::Variant;
 
-#[derive(Default)]
 pub struct AuthArgs {
   pub headers: HeaderMap,
+  /// Prefer extracting IP from headers.
+  /// This IP will be the IP of reverse proxy itself.
+  pub ip: IpAddr,
 }
 
 #[typeshare]
@@ -79,6 +90,7 @@ pub fn router() -> Router {
 
 async fn variant_handler(
   headers: HeaderMap,
+  info: ConnectInfo<SocketAddr>,
   Path(Variant { variant }): Path<Variant>,
   Json(params): Json<serde_json::Value>,
 ) -> serror::Result<axum::response::Response> {
@@ -86,11 +98,12 @@ async fn variant_handler(
     "type": variant,
     "params": params,
   }))?;
-  handler(headers, Json(req)).await
+  handler(headers, info, Json(req)).await
 }
 
 async fn handler(
   headers: HeaderMap,
+  ConnectInfo(info): ConnectInfo<SocketAddr>,
   Json(request): Json<AuthRequest>,
 ) -> serror::Result<axum::response::Response> {
   let timer = Instant::now();
@@ -99,7 +112,12 @@ async fn handler(
     "/auth request {req_id} | METHOD: {:?}",
     request.extract_variant()
   );
-  let res = request.resolve(&AuthArgs { headers }).await;
+  let res = request
+    .resolve(&AuthArgs {
+      headers,
+      ip: info.ip(),
+    })
+    .await;
   if let Err(e) = &res {
     debug!("/auth request {req_id} | error: {:#}", e.error);
   }
@@ -136,13 +154,14 @@ impl Resolve<AuthArgs> for GetLoginOptions {
 impl Resolve<AuthArgs> for ExchangeForJwt {
   async fn resolve(
     self,
-    AuthArgs { headers }: &AuthArgs,
+    AuthArgs { headers, ip }: &AuthArgs,
   ) -> serror::Result<ExchangeForJwtResponse> {
     jwt_client()
       .redeem_exchange_token(&self.token)
       .with_failure_rate_limit_using_headers(
         auth_rate_limiter(),
         headers,
+        Some(*ip),
       )
       .await
   }
@@ -151,7 +170,7 @@ impl Resolve<AuthArgs> for ExchangeForJwt {
 impl Resolve<AuthArgs> for GetUser {
   async fn resolve(
     self,
-    AuthArgs { headers }: &AuthArgs,
+    AuthArgs { headers, ip }: &AuthArgs,
   ) -> serror::Result<User> {
     async {
       let user_id = get_user_id_from_headers(headers)
@@ -164,6 +183,7 @@ impl Resolve<AuthArgs> for GetUser {
     .with_failure_rate_limit_using_headers(
       auth_rate_limiter(),
       headers,
+      Some(*ip),
     )
     .await
   }

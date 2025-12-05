@@ -1,7 +1,11 @@
+use std::net::SocketAddr;
+
 use anyhow::{Context, anyhow};
 use async_timing_util::unix_timestamp_ms;
 use axum::{
-  extract::Request, http::HeaderMap, middleware::Next,
+  extract::{ConnectInfo, Request},
+  http::HeaderMap,
+  middleware::Next,
   response::Response,
 };
 use database::mungos::mongodb::bson::doc;
@@ -45,11 +49,16 @@ pub async fn auth_request(
   mut req: Request,
   next: Next,
 ) -> serror::Result<Response> {
+  let fallback = req
+    .extensions()
+    .get::<ConnectInfo<SocketAddr>>()
+    .map(|addr| addr.ip());
   let user = authenticate_check_enabled(&headers)
     .map_err(|e| e.status_code(StatusCode::UNAUTHORIZED))
     .with_failure_rate_limit_using_headers(
       auth_rate_limiter(),
       &headers,
+      fallback,
     )
     .await?;
   req.extensions_mut().insert(user);

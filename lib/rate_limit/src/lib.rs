@@ -101,13 +101,14 @@ where
     self,
     limiter: &RateLimiter,
     headers: &HeaderMap,
+    fallback: Option<IpAddr>,
   ) -> impl Future<Output = serror::Result<R>> {
-    async {
+    async move {
       // Can skip header ip extraction if disabled
       if limiter.disabled {
         return self.await;
       }
-      let ip = get_ip_from_headers(headers)?;
+      let ip = get_ip_from_headers(headers, fallback)?;
       self.with_failure_rate_limit_using_ip(limiter, &ip).await
     }
   }
@@ -186,6 +187,7 @@ fn spawn_cleanup_task(limiter: Arc<RateLimiter>) {
 
 pub fn get_ip_from_headers(
   headers: &HeaderMap,
+  fallback: Option<IpAddr>,
 ) -> serror::Result<IpAddr> {
   // Check X-Forwarded-For header (first IP in chain)
   if let Some(forwarded) = headers.get("x-forwarded-for")
@@ -202,8 +204,12 @@ pub fn get_ip_from_headers(
     return ip.trim().parse().status_code(StatusCode::UNAUTHORIZED);
   }
 
+  if let Some(fallback) = fallback {
+    return Ok(fallback);
+  }
+
   Err(
-    anyhow!("'x-forwarded-for' and 'x-real-ip' are both missing")
+    anyhow!("'x-forwarded-for' and 'x-real-ip' headers are both missing, and no fallback ip could be extracted from the request.")
       .status_code(StatusCode::UNAUTHORIZED),
   )
 }
