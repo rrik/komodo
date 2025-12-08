@@ -321,8 +321,8 @@ auth_rate_limit_max_attempts = 5
 
 ## Set the rate limiting window in seconds.
 ## Env: KOMODO_AUTH_RATE_LIMIT_WINDOW_SECONDS
-## Default: 60
-auth_rate_limit_window_seconds = 60
+## Default: 15
+auth_rate_limit_window_seconds = 15
 
 ########
 # CORS #
