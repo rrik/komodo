@@ -743,7 +743,7 @@ fn default_auth_rate_limit_max_attempts() -> u16 {
 }
 
 fn default_auth_rate_limit_window_seconds() -> u64 {
-  60
+  15
 }
 
 fn default_sync_directory() -> PathBuf {
