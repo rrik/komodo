@@ -44,7 +44,7 @@ bind_ip = "[::]"
 
 ## This is the token used to authenticate core requests to periphery.
 ## Ensure this matches a passkey in the connected periphery configs.
-## If the periphery servers don't have passkeys configured, this doesn't need to be changed.
+## If the periphery servers don't have passkey configured, this doesn't need to be changed.
 ## Env: KOMODO_PASSKEY or KOMODO_PASSKEY_FILE
 ## Required, no default
 passkey = "default-passkey-changeme"

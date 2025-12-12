@@ -83,7 +83,7 @@ async fn guard_request_by_passkey(
   req: Request<Body>,
   next: Next,
 ) -> serror::Result<Response> {
-  if periphery_config().passkeys.is_empty() {
+  if periphery_config().passkey.is_empty() {
     return Ok(next.run(req).await);
   }
   let Some(req_passkey) = req.headers().get("authorization") else {
@@ -97,7 +97,7 @@ async fn guard_request_by_passkey(
     .context("failed to convert passkey to str")
     .status_code(StatusCode::UNAUTHORIZED)?;
   if periphery_config()
-    .passkeys
+    .passkey
     .iter()
     .any(|passkey| passkey == req_passkey)
   {

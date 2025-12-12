@@ -109,11 +109,11 @@ exclude_disk_mounts = []
 ## Default: empty, which will not block any request by ip.
 allowed_ips = []
 
-## Optional. Require callers to provide on of the provided passkeys to access the periphery api.
-## Example: passkeys = ["your-passkey"]
-## Env: PERIPHERY_PASSKEYS or PERIPHERY_PASSKEYS_FILE
+## Optional. Require callers to provide on of the provided passkey to access the periphery api.
+## Example: passkey = ["your-passkey"]
+## Env: PERIPHERY_PASSKEY or PERIPHERY_PASSKEY_FILE
 ## Default: empty, which will not require any passkey to be passed by core.
-passkeys = []
+passkey = []
 
 ############
 # Security #

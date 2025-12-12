@@ -66,7 +66,7 @@ pub struct CliArgs {
   #[arg(long)]
   pub merge_nested_config: Option<bool>,
 
-  /// Extends config arrays, eg. allowed_ips, passkeys.
+  /// Extends config arrays, eg. allowed_ips, passkey.
   /// Will override the equivalent env configuration.
   /// Default: true
   #[arg(long)]
@@ -113,7 +113,7 @@ pub struct Env {
   #[serde(default = "super::default_merge_nested_config")]
   pub periphery_merge_nested_config: bool,
 
-  /// Will extend config arrays (eg. `allowed_ips`, `passkeys`) across multiple config files.
+  /// Will extend config arrays (eg. `allowed_ips`, `passkey`) across multiple config files.
   /// Default: `true`
   ///
   /// Note. This is overridden if the equivalent arg is passed in [CliArgs].
@@ -161,10 +161,10 @@ pub struct Env {
 
   /// Override `allowed_ips`
   pub periphery_allowed_ips: Option<ForgivingVec<IpNetwork>>,
-  /// Override `passkeys`
-  pub periphery_passkeys: Option<Vec<String>>,
-  /// Override `passkeys` from file
-  pub periphery_passkeys_file: Option<PathBuf>,
+  /// Override `passkey`
+  pub periphery_passkey: Option<Vec<String>>,
+  /// Override `passkey` from file
+  pub periphery_passkey_file: Option<PathBuf>,
   /// Override `include_disk_mounts`
   pub periphery_include_disk_mounts: Option<ForgivingVec<PathBuf>>,
   /// Override `exclude_disk_mounts`
@@ -267,12 +267,12 @@ pub struct PeripheryConfig {
   #[serde(default)]
   pub allowed_ips: ForgivingVec<IpNetwork>,
 
-  /// Limits the accepted passkeys.
+  /// Limits the accepted passkey.
   /// Default: none
   ///
   /// Note: this should be configured to increase security.
   #[serde(default)]
-  pub passkeys: Vec<String>,
+  pub passkey: Vec<String>,
 
   /// If non-empty, only includes specific mount paths in the disk report.
   #[serde(default)]
@@ -353,7 +353,7 @@ impl Default for PeripheryConfig {
       logging: Default::default(),
       pretty_startup_config: Default::default(),
       allowed_ips: Default::default(),
-      passkeys: Default::default(),
+      passkey: Default::default(),
       include_disk_mounts: Default::default(),
       exclude_disk_mounts: Default::default(),
       secrets: Default::default(),
@@ -383,8 +383,8 @@ impl PeripheryConfig {
       logging: self.logging.clone(),
       pretty_startup_config: self.pretty_startup_config,
       allowed_ips: self.allowed_ips.clone(),
-      passkeys: self
-        .passkeys
+      passkey: self
+        .passkey
         .iter()
         .map(|passkey| empty_or_redacted(passkey))
         .collect(),
